@@ -4,13 +4,13 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   Modal,
   ActivityIndicator,
   Alert,
   StatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { rescheduleBooking, cancelBooking } from '../../services/api';

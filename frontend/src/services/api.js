@@ -1,14 +1,40 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
-// Standard port is 5000. In Android emulator use 10.0.2.2, otherwise localhost or LAN IP.
-export const API_BASE_URL = Platform.select({
-  android: 'http://10.0.2.2:5000',
-  default: 'http://localhost:5000',
-});
+// Automatically detect host computer IP when using Expo Go on physical device or emulator
+export const getApiBaseUrl = () => {
+  try {
+    const hostUri =
+      Constants.expoConfig?.hostUri ||
+      Constants.manifest2?.extra?.expoClient?.hostUri ||
+      Constants.manifest?.debuggerHost;
 
-// Helper for fetch with auth token
+    if (hostUri) {
+      const ip = hostUri.split(':')[0];
+      if (ip && ip !== 'localhost' && ip !== '127.0.0.1') {
+        return `http://${ip}:5000`;
+      }
+    }
+  } catch (e) {
+    // fallback
+  }
+
+  if (Platform.OS === 'web') {
+    return 'http://localhost:5000';
+  }
+
+  // Default to Wi-Fi IP address
+  return 'http://192.168.8.176:5000';
+};
+
+export let API_BASE_URL = getApiBaseUrl();
+
+// Helper for fetch with auth token and timeout
 const apiRequest = async (endpoint, method = 'GET', body = null) => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout
+
   try {
     const token = await AsyncStorage.getItem('fixora_token');
     const headers = {
@@ -21,15 +47,21 @@ const apiRequest = async (endpoint, method = 'GET', body = null) => {
     const options = {
       method,
       headers,
+      signal: controller.signal,
     };
     if (body) {
       options.body = JSON.stringify(body);
     }
 
+    // Refresh base URL dynamically in case network changed
+    API_BASE_URL = getApiBaseUrl();
+
     const res = await fetch(`${API_BASE_URL}${endpoint}`, options);
+    clearTimeout(timeoutId);
     const data = await res.json();
     return data;
   } catch (error) {
+    clearTimeout(timeoutId);
     console.warn(`API call error on ${endpoint}:`, error.message);
     return { success: false, message: error.message };
   }

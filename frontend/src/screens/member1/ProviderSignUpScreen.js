@@ -5,13 +5,13 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { AuthContext } from '../../context/AuthContext';
@@ -27,6 +27,8 @@ export default function ProviderSignUpScreen({ navigation }) {
   const [hourlyRate, setHourlyRate] = useState('700');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { register } = useContext(AuthContext);
@@ -184,8 +186,15 @@ export default function ProviderSignUpScreen({ navigation }) {
                 placeholderTextColor={colors.textMuted}
                 value={password}
                 onChangeText={setPassword}
-                secureTextEntry
+                secureTextEntry={!showPassword}
               />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
+                <Ionicons
+                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color={colors.textSecondary}
+                />
+              </TouchableOpacity>
             </View>
 
             <Text style={styles.inputLabel}>Confirm Password</Text>
@@ -197,8 +206,15 @@ export default function ProviderSignUpScreen({ navigation }) {
                 placeholderTextColor={colors.textMuted}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
-                secureTextEntry
+                secureTextEntry={!showConfirmPassword}
               />
+              <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} style={styles.eyeBtn}>
+                <Ionicons
+                  name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color={colors.textSecondary}
+                />
+              </TouchableOpacity>
             </View>
 
             <TouchableOpacity
@@ -312,6 +328,9 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     color: colors.textPrimary,
+  },
+  eyeBtn: {
+    padding: 6,
   },
   categoryGrid: {
     flexDirection: 'row',
