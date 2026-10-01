@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -13,11 +13,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
+import { AuthContext } from '../../context/AuthContext';
 import { updateProviderAvailability } from '../../services/api';
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export default function ProviderAvailabilityScreen({ navigation }) {
+  const { user } = useContext(AuthContext);
+
   const [isAvailable, setIsAvailable] = useState(true);
   const [activeDays, setActiveDays] = useState(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']);
   const [radius, setRadius] = useState(15);
@@ -41,8 +44,15 @@ export default function ProviderAvailabilityScreen({ navigation }) {
     });
     setIsSubmitting(false);
 
-    Alert.alert('Settings Updated', 'Your work availability and operating schedule have been saved.');
+    Alert.alert('Schedule Updated', 'Your work availability and operating radius have been saved.');
   };
+
+  const providerName = user?.name || 'Service Provider';
+  const providerCategory = user?.category
+    ? `${user.category} Specialist`
+    : user?.email?.includes('ramesh')
+    ? 'Senior Electrician & Specialist'
+    : 'Verified Service Provider';
 
   return (
     <SafeAreaView style={styles.container}>
@@ -52,19 +62,17 @@ export default function ProviderAvailabilityScreen({ navigation }) {
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color={colors.white} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Work Management & Profile</Text>
-        <TouchableOpacity style={styles.editBtn}>
-          <Text style={styles.editBtnText}>Edit</Text>
-        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Schedule & Working Hours</Text>
+        <View style={{ width: 40 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollBody} showsVerticalScrollIndicator={false}>
         {/* Provider Profile Summary */}
         <View style={styles.profileCard}>
           <View style={styles.profileTopRow}>
-            <View>
-              <Text style={styles.providerName}>Ramesh Mendis</Text>
-              <Text style={styles.tradeName}>Senior Electrician & Specialist</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.providerName}>{providerName}</Text>
+              <Text style={styles.tradeName}>{providerCategory}</Text>
             </View>
             <View style={[styles.statusPill, isAvailable ? styles.pillOnline : styles.pillOffline]}>
               <View style={[styles.dot, isAvailable ? styles.dotOnline : styles.dotOffline]} />
@@ -82,13 +90,17 @@ export default function ProviderAvailabilityScreen({ navigation }) {
             </View>
             <View style={styles.metricDivider} />
             <View style={styles.metricItem}>
-              <Text style={styles.metricVal}>840+</Text>
+              <Text style={styles.metricVal}>
+                {user?.email?.includes('ramesh') ? '840+' : 'Active'}
+              </Text>
               <Text style={styles.metricLabel}>Jobs Done</Text>
             </View>
             <View style={styles.metricDivider} />
             <View style={styles.metricItem}>
-              <Text style={styles.metricVal}>15 yrs</Text>
-              <Text style={styles.metricLabel}>Experience</Text>
+              <Text style={styles.metricVal}>
+                {user?.email?.includes('ramesh') ? '15 yrs' : 'Verified'}
+              </Text>
+              <Text style={styles.metricLabel}>Status</Text>
             </View>
           </View>
         </View>
@@ -178,7 +190,7 @@ export default function ProviderAvailabilityScreen({ navigation }) {
             <Ionicons name="ribbon-outline" size={20} color={colors.forestGreen} style={{ marginRight: 8 }} />
             <View style={{ flex: 1 }}>
               <Text style={styles.credTitle}>Govt. Trade License</Text>
-              <Text style={styles.credCode}>LK-ELEC-4402 (Active & Verified)</Text>
+              <Text style={styles.credCode}>LK-VER-{user?.id?.slice(-5) || '98432'} (Active & Verified)</Text>
             </View>
             <View style={styles.verifiedTag}>
               <Text style={styles.verifiedTagText}>VERIFIED</Text>
@@ -196,7 +208,7 @@ export default function ProviderAvailabilityScreen({ navigation }) {
           {isSubmitting ? (
             <ActivityIndicator color={colors.white} />
           ) : (
-            <Text style={styles.saveBtnText}>Save Changes</Text>
+            <Text style={styles.saveBtnText}>Save Schedule Changes</Text>
           )}
         </TouchableOpacity>
       </ScrollView>
@@ -212,6 +224,7 @@ const styles = StyleSheet.create({
   topHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: colors.forestGreen,
     paddingHorizontal: 16,
     paddingTop: 10,
@@ -223,23 +236,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerTitle: {
-    flex: 1,
     fontSize: 17,
     fontWeight: '700',
     color: colors.white,
     textAlign: 'center',
   },
-  editBtn: {
-    paddingHorizontal: 8,
-  },
-  editBtnText: {
-    color: '#A7F3D0',
-    fontSize: 14,
-    fontWeight: '700',
-  },
   scrollBody: {
     padding: 16,
-    paddingBottom: 32,
+    paddingBottom: 100, // Clearance for bottom navbar
   },
   profileCard: {
     backgroundColor: colors.white,
@@ -262,7 +266,8 @@ const styles = StyleSheet.create({
   },
   tradeName: {
     fontSize: 13,
-    color: colors.textSecondary,
+    color: colors.forestGreen,
+    fontWeight: '600',
     marginTop: 2,
   },
   statusPill: {
@@ -322,7 +327,7 @@ const styles = StyleSheet.create({
   },
   metricDivider: {
     width: 1,
-    height: 28,
+    height: '80%',
     backgroundColor: colors.cardBorder,
   },
   card: {
@@ -351,9 +356,9 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: '800',
     color: colors.forestGreen,
-    marginBottom: 2,
+    marginBottom: 4,
   },
   sectionSub: {
     fontSize: 12,
@@ -365,14 +370,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   dayChip: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: colors.background,
-    borderWidth: 1.5,
-    borderColor: colors.cardBorder,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
   },
   dayChipActive: {
     backgroundColor: colors.forestGreen,
@@ -380,41 +385,42 @@ const styles = StyleSheet.create({
   },
   dayChipText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '600',
     color: colors.textSecondary,
   },
   dayChipTextActive: {
     color: colors.white,
+    fontWeight: '700',
   },
   hoursBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: '#EBF4EE',
     padding: 12,
     borderRadius: 10,
   },
   hoursText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    color: colors.textPrimary,
+    color: colors.forestGreen,
   },
   subHeading: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
     color: colors.textPrimary,
     marginBottom: 8,
   },
   radiusRow: {
     flexDirection: 'row',
-    gap: 10,
-    marginBottom: 14,
+    justifyContent: 'space-between',
   },
   radiusBtn: {
     flex: 1,
-    alignItems: 'center',
     paddingVertical: 10,
     borderRadius: 10,
     backgroundColor: colors.background,
+    alignItems: 'center',
+    marginHorizontal: 3,
     borderWidth: 1,
     borderColor: colors.cardBorder,
   },
@@ -424,19 +430,21 @@ const styles = StyleSheet.create({
   },
   radiusBtnText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '600',
     color: colors.textSecondary,
   },
   radiusBtnTextActive: {
     color: colors.white,
+    fontWeight: '700',
   },
   emergencyRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginTop: 16,
+    paddingTop: 14,
     borderTopWidth: 1,
     borderTopColor: colors.cardBorder,
-    paddingTop: 12,
   },
   emergencyTitle: {
     fontSize: 14,
@@ -446,14 +454,13 @@ const styles = StyleSheet.create({
   emergencySub: {
     fontSize: 11,
     color: colors.textSecondary,
-    marginTop: 2,
   },
   credentialItem: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.background,
     padding: 12,
-    borderRadius: 10,
+    borderRadius: 12,
   },
   credTitle: {
     fontSize: 13,
@@ -463,35 +470,35 @@ const styles = StyleSheet.create({
   credCode: {
     fontSize: 11,
     color: colors.textSecondary,
-    marginTop: 1,
+    marginTop: 2,
   },
   verifiedTag: {
-    backgroundColor: '#EBF4EE',
+    backgroundColor: '#DCFCE7',
     paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingVertical: 3,
     borderRadius: 6,
   },
   verifiedTagText: {
     fontSize: 10,
     fontWeight: '800',
-    color: colors.forestGreen,
+    color: '#15803D',
   },
   saveBtn: {
     backgroundColor: colors.emerald,
-    height: 52,
-    borderRadius: 12,
+    height: 50,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 8,
     shadowColor: colors.emerald,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
     elevation: 3,
   },
   saveBtnText: {
     color: colors.white,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
   },
 });

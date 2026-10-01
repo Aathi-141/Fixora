@@ -9,6 +9,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   StatusBar,
+  Linking,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -95,6 +97,28 @@ export default function ChatScreen({ navigation, route }) {
     });
   };
 
+  const handleCall = () => {
+    Alert.alert(
+      `Contact ${providerName}`,
+      'Choose call method:',
+      [
+        {
+          text: 'Direct Phone (+94 77 990 1122)',
+          onPress: () => {
+            Linking.openURL('tel:+94779901122').catch(() => {
+              Alert.alert('Calling', `Dialing ${providerName} at +94 77 990 1122`);
+            });
+          },
+        },
+        {
+          text: 'In-App Internet Call',
+          onPress: () => navigation.navigate('Call', { booking, providerName }),
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
@@ -112,7 +136,8 @@ export default function ChatScreen({ navigation, route }) {
         </View>
         <TouchableOpacity
           style={styles.callIconBtn}
-          onPress={() => navigation.navigate('Call', { booking, providerName })}
+          onPress={handleCall}
+          activeOpacity={0.8}
         >
           <Ionicons name="call" size={20} color={colors.white} />
         </TouchableOpacity>

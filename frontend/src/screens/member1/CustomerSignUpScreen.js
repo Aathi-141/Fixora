@@ -50,10 +50,10 @@ export default function CustomerSignUpScreen({ navigation }) {
     setIsSubmitting(false);
 
     if (res.success) {
-      Alert.alert('Account Created', 'Welcome to Fixora! Your account has been registered.', [
+      Alert.alert('Account Created!', 'Welcome to Fixora! Please log in with your email and password.', [
         {
-          text: 'Continue',
-          onPress: () => navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] }),
+          text: 'Go to Login',
+          onPress: () => navigation.navigate('Login'),
         },
       ]);
     } else {

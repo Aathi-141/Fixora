@@ -14,7 +14,7 @@ import { colors } from '../../theme/colors';
 import { AuthContext } from '../../context/AuthContext';
 
 export default function CustomerProfileScreen({ navigation }) {
-  const { user, logout, switchRole } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
 
   const handleLogout = async () => {
     Alert.alert('Log Out', 'Are you sure you want to log out of Fixora?', [
@@ -30,14 +30,7 @@ export default function CustomerProfileScreen({ navigation }) {
     ]);
   };
 
-  const handleSwitchRole = (newRole) => {
-    switchRole(newRole);
-    Alert.alert(
-      'Role Switched',
-      `Switched to ${newRole.toUpperCase()} mode. Your dashboard navigation will now update.`,
-      [{ text: 'OK' }]
-    );
-  };
+  const isAdmin = user?.role === 'admin';
 
   return (
     <SafeAreaView style={styles.container}>
@@ -48,124 +41,82 @@ export default function CustomerProfileScreen({ navigation }) {
             source={{
               uri:
                 user?.avatar ||
-                'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop',
+                (isAdmin
+                  ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200'
+                  : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop'),
             }}
             style={styles.avatar}
           />
           <View style={styles.profileInfo}>
-            <Text style={styles.userName}>{user?.name || 'Kasun Perera'}</Text>
-            <Text style={styles.userEmail}>{user?.email || 'kasun@gmail.com'}</Text>
+            <Text style={styles.userName}>{user?.name || (isAdmin ? 'M. Shibly' : 'Kasun Perera')}</Text>
+            <Text style={styles.userEmail}>{user?.email || (isAdmin ? 'admin@fixora.lk' : 'kasun@gmail.com')}</Text>
             <View style={styles.roleBadge}>
               <Ionicons
-                name={
-                  user?.role === 'admin'
-                    ? 'shield-checkmark'
-                    : user?.role === 'provider'
-                    ? 'construct'
-                    : 'person'
-                }
+                name={isAdmin ? 'shield-checkmark' : 'person'}
                 size={13}
                 color={colors.forestGreen}
                 style={{ marginRight: 4 }}
               />
-              <Text style={styles.roleBadgeText}>{(user?.role || 'customer').toUpperCase()}</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Switch Account Role Section (Realistic & Viva-Friendly) */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Account Role Switching</Text>
-          <Text style={styles.sectionSubtitle}>
-            In Fixora, each account role has a dedicated workspace:
-          </Text>
-
-          <View style={styles.roleBtnGroup}>
-            <TouchableOpacity
-              style={[styles.roleSwitchBtn, user?.role === 'customer' && styles.roleSwitchBtnActive]}
-              onPress={() => handleSwitchRole('customer')}
-            >
-              <Ionicons
-                name="home-outline"
-                size={16}
-                color={user?.role === 'customer' ? colors.white : colors.textPrimary}
-              />
-              <Text
-                style={[
-                  styles.roleSwitchText,
-                  user?.role === 'customer' && styles.roleSwitchTextActive,
-                ]}
-              >
-                Customer
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.roleSwitchBtn, user?.role === 'provider' && styles.roleSwitchBtnActive]}
-              onPress={() => handleSwitchRole('provider')}
-            >
-              <Ionicons
-                name="hammer-outline"
-                size={16}
-                color={user?.role === 'provider' ? colors.white : colors.textPrimary}
-              />
-              <Text
-                style={[
-                  styles.roleSwitchText,
-                  user?.role === 'provider' && styles.roleSwitchTextActive,
-                ]}
-              >
-                Provider
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.roleSwitchBtn, user?.role === 'admin' && styles.roleSwitchBtnActive]}
-              onPress={() => handleSwitchRole('admin')}
-            >
-              <Ionicons
-                name="shield-outline"
-                size={16}
-                color={user?.role === 'admin' ? colors.white : colors.textPrimary}
-              />
-              <Text
-                style={[styles.roleSwitchText, user?.role === 'admin' && styles.roleSwitchTextActive]}
-              >
-                Admin
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Saved Addresses */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Saved Service Address</Text>
-          <View style={styles.addressRow}>
-            <View style={styles.addressIconBox}>
-              <Ionicons name="location" size={20} color={colors.forestGreen} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.addressTitle}>Home</Text>
-              <Text style={styles.addressText}>
-                {user?.address || 'No 42, New Kandy Road, Malabe, Colombo'}
+              <Text style={styles.roleBadgeText}>
+                {isAdmin ? 'ADMINISTRATOR' : 'VERIFIED CUSTOMER'}
               </Text>
             </View>
           </View>
         </View>
+
+        {/* Admin Special Quick Access Card */}
+        {isAdmin ? (
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>Administrator Controls</Text>
+            <Text style={styles.sectionSubtitle}>
+              Logged in as System Admin. You have full access to provider verifications, disputes, and analytics.
+            </Text>
+            <TouchableOpacity
+              style={styles.adminActionBtn}
+              onPress={() => navigation.navigate('AdminDashboardTab')}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="speedometer" size={18} color={colors.white} style={{ marginRight: 8 }} />
+              <Text style={styles.adminActionBtnText}>Go to Admin Dashboard</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          /* Saved Addresses for Customers */
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>Saved Service Address</Text>
+            <View style={styles.addressRow}>
+              <View style={styles.addressIconBox}>
+                <Ionicons name="location" size={20} color={colors.forestGreen} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.addressTitle}>Home</Text>
+                <Text style={styles.addressText}>
+                  {user?.address || 'No 42, New Kandy Road, Malabe, Colombo'}
+                </Text>
+              </View>
+              <TouchableOpacity>
+                <Ionicons name="ellipsis-vertical" size={18} color={colors.textMuted} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
         {/* Support & Legal */}
         <View style={styles.menuCard}>
-          <TouchableOpacity style={styles.menuItem}>
-            <Ionicons name="card-outline" size={20} color={colors.textPrimary} style={styles.menuIcon} />
-            <Text style={styles.menuLabel}>Payment Methods (Visa •••• 4892)</Text>
-            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-          </TouchableOpacity>
-
-          <View style={styles.menuDivider} />
+          {!isAdmin && (
+            <>
+              <TouchableOpacity style={styles.menuItem}>
+                <Ionicons name="card-outline" size={20} color={colors.textPrimary} style={styles.menuIcon} />
+                <Text style={styles.menuLabel}>Payment Methods (Visa •••• 4892)</Text>
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+              </TouchableOpacity>
+              <View style={styles.menuDivider} />
+            </>
+          )}
 
           <TouchableOpacity style={styles.menuItem}>
             <Ionicons name="notifications-outline" size={20} color={colors.textPrimary} style={styles.menuIcon} />
-            <Text style={styles.menuLabel}>Push Notifications</Text>
+            <Text style={styles.menuLabel}>Push Notifications & Alerts</Text>
             <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
           </TouchableOpacity>
 
@@ -173,7 +124,15 @@ export default function CustomerProfileScreen({ navigation }) {
 
           <TouchableOpacity style={styles.menuItem}>
             <Ionicons name="help-buoy-outline" size={20} color={colors.textPrimary} style={styles.menuIcon} />
-            <Text style={styles.menuLabel}>Customer Support & Help Center</Text>
+            <Text style={styles.menuLabel}>Fixora Help Center & Support</Text>
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+          </TouchableOpacity>
+
+          <View style={styles.menuDivider} />
+
+          <TouchableOpacity style={styles.menuItem}>
+            <Ionicons name="lock-closed-outline" size={20} color={colors.textPrimary} style={styles.menuIcon} />
+            <Text style={styles.menuLabel}>Privacy & Terms of Service</Text>
             <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
           </TouchableOpacity>
         </View>
@@ -184,7 +143,7 @@ export default function CustomerProfileScreen({ navigation }) {
           <Text style={styles.logoutText}>Log Out</Text>
         </TouchableOpacity>
 
-        <Text style={styles.versionText}>Fixora Mobile App v1.2 • IT3060 Milestone 03</Text>
+        <Text style={styles.versionText}>Fixora v1.0.0 • Licensed by Fixora Lanka (Pvt) Ltd</Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -197,7 +156,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 20,
-    paddingBottom: 40,
+    paddingBottom: 90,
   },
   profileCard: {
     flexDirection: 'row',
@@ -250,14 +209,14 @@ const styles = StyleSheet.create({
   },
   sectionCard: {
     backgroundColor: colors.white,
-    padding: 18,
     borderRadius: 18,
+    padding: 18,
     marginBottom: 16,
     shadowColor: '#1E4D2B',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
     shadowRadius: 8,
-    elevation: 2,
+    elevation: 1,
   },
   sectionTitle: {
     fontSize: 15,
@@ -266,76 +225,66 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   sectionSubtitle: {
-    fontSize: 12,
+    fontSize: 13,
     color: colors.textSecondary,
     marginBottom: 14,
+    lineHeight: 18,
   },
-  roleBtnGroup: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  roleSwitchBtn: {
-    flex: 1,
+  adminActionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    marginHorizontal: 3,
-    borderRadius: 12,
-    backgroundColor: '#F3F4F6',
-  },
-  roleSwitchBtnActive: {
     backgroundColor: colors.forestGreen,
+    paddingVertical: 12,
+    borderRadius: 12,
   },
-  roleSwitchText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginLeft: 6,
-  },
-  roleSwitchTextActive: {
+  adminActionBtnText: {
     color: colors.white,
+    fontWeight: '700',
+    fontSize: 14,
   },
   addressRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 6,
+    backgroundColor: '#F8FAF9',
+    padding: 14,
+    borderRadius: 12,
   },
   addressIconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: '#EBF5EE',
-    justifyContent: 'center',
     alignItems: 'center',
+    justifyContent: 'center',
     marginRight: 12,
   },
   addressTitle: {
     fontSize: 14,
     fontWeight: '700',
     color: colors.textPrimary,
+    marginBottom: 2,
   },
   addressText: {
     fontSize: 12,
     color: colors.textSecondary,
-    marginTop: 2,
   },
   menuCard: {
     backgroundColor: colors.white,
     borderRadius: 18,
+    paddingHorizontal: 16,
     paddingVertical: 6,
     marginBottom: 20,
     shadowColor: '#1E4D2B',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
     shadowRadius: 8,
-    elevation: 2,
+    elevation: 1,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 14,
-    paddingHorizontal: 16,
   },
   menuIcon: {
     marginRight: 14,
@@ -349,7 +298,6 @@ const styles = StyleSheet.create({
   menuDivider: {
     height: 1,
     backgroundColor: colors.cardBorder,
-    marginHorizontal: 16,
   },
   logoutBtn: {
     flexDirection: 'row',
@@ -358,7 +306,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEE2E2',
     paddingVertical: 14,
     borderRadius: 14,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   logoutText: {
     fontSize: 15,
@@ -369,5 +317,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 12,
     color: colors.textMuted,
+    marginBottom: 10,
   },
 });

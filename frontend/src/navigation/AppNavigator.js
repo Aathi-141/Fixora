@@ -34,6 +34,7 @@ import ServiceHistoryScreen from '../screens/member3/ServiceHistoryScreen';
 // Member 4 Screens
 import ProviderRequestsScreen from '../screens/member4/ProviderRequestsScreen';
 import ProviderAvailabilityScreen from '../screens/member4/ProviderAvailabilityScreen';
+import ProviderAccountScreen from '../screens/member4/ProviderAccountScreen';
 import AdminDashboardScreen from '../screens/member4/AdminDashboardScreen';
 import FinalBillPaymentScreen from '../screens/member4/FinalBillPaymentScreen';
 
@@ -98,7 +99,7 @@ function CustomerTabNavigator() {
   );
 }
 
-// 2. Provider Portal (Job Requests, Schedule & Availability, Profile)
+// 2. Provider Portal (Requests, Schedule, My Jobs, Profile)
 function ProviderTabNavigator() {
   return (
     <Tab.Navigator
@@ -106,8 +107,9 @@ function ProviderTabNavigator() {
         ...commonTabScreenOptions,
         tabBarIcon: ({ focused, color }) => {
           let iconName;
-          if (route.name === 'ProviderRequestsTab') iconName = focused ? 'construct' : 'construct-outline';
+          if (route.name === 'ProviderRequestsTab') iconName = focused ? 'clipboard' : 'clipboard-outline';
           else if (route.name === 'AvailabilityTab') iconName = focused ? 'time' : 'time-outline';
+          else if (route.name === 'ProviderJobsTab') iconName = focused ? 'briefcase' : 'briefcase-outline';
           else if (route.name === 'ProviderProfileTab') iconName = focused ? 'person-circle' : 'person-circle-outline';
 
           return (
@@ -118,9 +120,10 @@ function ProviderTabNavigator() {
         },
       })}
     >
-      <Tab.Screen name="ProviderRequestsTab" component={ProviderRequestsScreen} options={{ title: 'Job Requests' }} />
-      <Tab.Screen name="AvailabilityTab" component={ProviderAvailabilityScreen} options={{ title: 'My Schedule' }} />
-      <Tab.Screen name="ProviderProfileTab" component={CustomerProfileScreen} options={{ title: 'Provider Account' }} />
+      <Tab.Screen name="ProviderRequestsTab" component={ProviderRequestsScreen} options={{ title: 'Requests' }} />
+      <Tab.Screen name="AvailabilityTab" component={ProviderAvailabilityScreen} options={{ title: 'Schedule' }} />
+      <Tab.Screen name="ProviderJobsTab" component={ServiceHistoryScreen} options={{ title: 'My Jobs' }} />
+      <Tab.Screen name="ProviderProfileTab" component={ProviderAccountScreen} options={{ title: 'Profile' }} />
     </Tab.Navigator>
   );
 }
@@ -210,6 +213,7 @@ export default function AppNavigator() {
         {/* Provider & Admin Management (Member 4) */}
         <Stack.Screen name="ProviderRequests" component={ProviderRequestsScreen} />
         <Stack.Screen name="ProviderAvailability" component={ProviderAvailabilityScreen} />
+        <Stack.Screen name="ProviderAccount" component={ProviderAccountScreen} />
         <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} />
         <Stack.Screen name="FinalBillPayment" component={FinalBillPaymentScreen} />
       </Stack.Navigator>

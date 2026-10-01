@@ -58,9 +58,9 @@ export default function ProviderSignUpScreen({ navigation }) {
 
     if (res.success) {
       Alert.alert(
-        'Provider Registered',
-        'Your profile has been created! You can now manage your availability and receive service requests.',
-        [{ text: 'Continue', onPress: () => navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] }) }]
+        'Registration Successful!',
+        'Your service provider profile has been created. Please log in with your email and password to access your dashboard.',
+        [{ text: 'Go to Login', onPress: () => navigation.navigate('Login') }]
       );
     } else {
       Alert.alert('Registration Failed', res.message || 'Could not complete registration.');
