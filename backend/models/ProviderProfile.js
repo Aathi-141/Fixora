@@ -10,7 +10,17 @@ const providerProfileSchema = new mongoose.Schema(
     category: {
       type: String,
       required: true,
-      enum: ['Electrician', 'Plumber', 'Cleaner', 'HVAC & AC', 'Carpentry', 'Painting'],
+      enum: [
+        'Electrician',
+        'Plumber',
+        'Cleaner',
+        'HVAC & AC',
+        'AC Technician',
+        'Carpentry',
+        'Carpenter',
+        'Painting',
+        'Painter',
+      ],
     },
     specialization: {
       type: String,

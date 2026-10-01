@@ -10,6 +10,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -51,6 +52,19 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
+  const setRoleCredentials = (role) => {
+    if (role === 'customer') {
+      setEmail('kasun@gmail.com');
+      setPassword('password123');
+    } else if (role === 'provider') {
+      setEmail('ramesh@fixora.lk');
+      setPassword('password123');
+    } else if (role === 'admin') {
+      setEmail('admin@fixora.lk');
+      setPassword('password123');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
@@ -60,11 +74,66 @@ export default function LoginScreen({ navigation }) {
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           {/* Header Brand */}
           <View style={styles.header}>
-            <View style={styles.logoBadge}>
-              <Ionicons name="home" size={32} color={colors.forestGreen} />
+            <View style={styles.logoContainer}>
+              <Image
+                source={require('../../../assets/logo.png')}
+                style={styles.logoImage}
+                resizeMode="contain"
+              />
             </View>
-            <Text style={styles.title}>Welcome Back</Text>
+            <Text style={styles.title}>Welcome to Fixora</Text>
             <Text style={styles.subtitle}>Log in to manage and book services</Text>
+          </View>
+
+          {/* Quick Demo Role Selector */}
+          <View style={styles.roleChipsCard}>
+            <Text style={styles.roleChipsTitle}>Select Account Role for Quick Login:</Text>
+            <View style={styles.roleChipsRow}>
+              <TouchableOpacity
+                style={[styles.roleChip, email === 'kasun@gmail.com' && styles.roleChipActive]}
+                onPress={() => setRoleCredentials('customer')}
+              >
+                <Ionicons
+                  name="person"
+                  size={14}
+                  color={email === 'kasun@gmail.com' ? colors.white : colors.forestGreen}
+                  style={{ marginRight: 4 }}
+                />
+                <Text style={[styles.roleChipText, email === 'kasun@gmail.com' && styles.roleChipTextActive]}>
+                  Customer
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.roleChip, email === 'ramesh@fixora.lk' && styles.roleChipActive]}
+                onPress={() => setRoleCredentials('provider')}
+              >
+                <Ionicons
+                  name="construct"
+                  size={14}
+                  color={email === 'ramesh@fixora.lk' ? colors.white : colors.forestGreen}
+                  style={{ marginRight: 4 }}
+                />
+                <Text style={[styles.roleChipText, email === 'ramesh@fixora.lk' && styles.roleChipTextActive]}>
+                  Provider
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.roleChip, email === 'admin@fixora.lk' && styles.roleChipActive]}
+                onPress={() => setRoleCredentials('admin')}
+              >
+                <Ionicons
+                  name="shield-checkmark"
+                  size={14}
+                  color={email === 'admin@fixora.lk' ? colors.white : colors.forestGreen}
+                  style={{ marginRight: 4 }}
+                />
+                <Text style={[styles.roleChipText, email === 'admin@fixora.lk' && styles.roleChipTextActive]}>
+                  Admin
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Form */}
@@ -111,7 +180,9 @@ export default function LoginScreen({ navigation }) {
               {isSubmitting ? (
                 <ActivityIndicator color={colors.white} />
               ) : (
-                <Text style={styles.loginBtnText}>LOGIN</Text>
+                <Text style={styles.loginBtnText}>
+                  LOGIN AS {email.includes('admin') ? 'ADMIN' : email.includes('ramesh') ? 'PROVIDER' : 'CUSTOMER'}
+                </Text>
               )}
             </TouchableOpacity>
 
@@ -149,34 +220,84 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingTop: 30,
-    paddingBottom: 24,
+    paddingTop: 20,
+    paddingBottom: 30,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 20,
   },
-  logoBadge: {
-    width: 64,
-    height: 64,
+  logoContainer: {
+    width: 80,
+    height: 80,
     borderRadius: 20,
-    backgroundColor: '#EBF4EE',
+    backgroundColor: '#FAFAF8',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+    padding: 8,
+  },
+  logoImage: {
+    width: '100%',
+    height: '100%',
   },
   title: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: '800',
     color: colors.forestGreen,
-    marginBottom: 6,
+    marginBottom: 4,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 13,
     color: colors.textSecondary,
   },
+  roleChipsCard: {
+    backgroundColor: '#F3F9F5',
+    padding: 12,
+    borderRadius: 14,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#D4EAD9',
+  },
+  roleChipsTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.forestGreen,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  roleChipsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  roleChip: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    marginHorizontal: 3,
+    borderRadius: 10,
+    backgroundColor: colors.white,
+    borderWidth: 1,
+    borderColor: '#C3DFCA',
+  },
+  roleChipActive: {
+    backgroundColor: colors.forestGreen,
+    borderColor: colors.forestGreen,
+  },
+  roleChipText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.forestGreen,
+  },
+  roleChipTextActive: {
+    color: colors.white,
+  },
   form: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   inputLabel: {
     fontSize: 13,
@@ -205,7 +326,7 @@ const styles = StyleSheet.create({
   },
   forgotPassBtn: {
     alignSelf: 'flex-end',
-    marginBottom: 20,
+    marginBottom: 18,
   },
   forgotPassText: {
     fontSize: 13,
@@ -226,14 +347,14 @@ const styles = StyleSheet.create({
   },
   loginBtnText: {
     color: colors.white,
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: 1,
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 20,
+    marginVertical: 18,
   },
   dividerLine: {
     flex: 1,

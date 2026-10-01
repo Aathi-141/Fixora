@@ -14,20 +14,52 @@ import { colors } from '../../theme/colors';
 
 const TIME_SLOTS = ['09:00 AM', '11:00 AM', '02:00 PM', '04:00 PM'];
 
-const INITIAL_ADDONS = [
-  { id: '1', name: 'Oven Deep Clean', price: 1500, selected: false },
-  { id: '2', name: 'Window Polish', price: 1200, selected: false },
-  { id: '3', name: 'Fridge Sanitization', price: 1000, selected: true }, // Pre-selected matching Milestone 02 user test task!
-];
+const DOMAIN_ADDONS = {
+  Electrician: [
+    { id: 'e1', name: 'Power Switch & Socket Replacement', price: 850, selected: true },
+    { id: 'e2', name: 'Ceiling Fan / Fixture Mounting', price: 1200, selected: false },
+    { id: 'e3', name: 'Safety MCB / Trip Switch Inspection', price: 1500, selected: false },
+    { id: 'e4', name: 'Surge Protection Wiring Check', price: 1100, selected: false },
+  ],
+  Plumber: [
+    { id: 'p1', name: 'Sink Tap & Faucet Replacement', price: 900, selected: true },
+    { id: 'p2', name: 'High-Pressure Drain Unclogging', price: 1400, selected: false },
+    { id: 'p3', name: 'Water Tank & Valve Pressure Check', price: 1800, selected: false },
+    { id: 'p4', name: 'Pipe Leak Sealant & Teflon Joint Overhaul', price: 650, selected: false },
+  ],
+  Cleaner: [
+    { id: 'c1', name: 'Kitchen Oven & Stove Deep Degreasing', price: 1200, selected: false },
+    { id: 'c2', name: 'Window & Glass Streak-Free Polish', price: 850, selected: false },
+    { id: 'c3', name: 'Double-Door Fridge Deep Sanitization', price: 1100, selected: true },
+    { id: 'c4', name: 'Bathroom Tile Grout Machine Scrub', price: 1400, selected: false },
+  ],
+  'AC Technician': [
+    { id: 'ac1', name: 'Eco-Freon Gas Top-Up (R32/R410A)', price: 3500, selected: false },
+    { id: 'ac2', name: 'Blower & Evaporator Coil Foam Wash', price: 1800, selected: true },
+    { id: 'ac3', name: 'Drain Pipe Flush & Anti-Bacterial Deodorize', price: 1000, selected: false },
+  ],
+  Painter: [
+    { id: 'pt1', name: 'Anti-Fungal Undercoat Primer (1 Room)', price: 2000, selected: false },
+    { id: 'pt2', name: 'Wall Crack Plastering & Putty Prep', price: 1500, selected: true },
+    { id: 'pt3', name: 'Waterproof Silicon Seal Coat', price: 2500, selected: false },
+  ],
+  Carpenter: [
+    { id: 'cp1', name: 'Mortise Door Lock & Deadbolt Fitting', price: 1500, selected: true },
+    { id: 'cp2', name: 'Hinge Alignment & Silent Dampers', price: 800, selected: false },
+    { id: 'cp3', name: 'Teak Wood Sanding & Lacquer Coat', price: 2000, selected: false },
+  ],
+};
 
 export default function DateTimeSelectionScreen({ navigation, route }) {
   const { provider } = route.params || {};
+  const category = provider?.category || 'Electrician';
 
+  const defaultAddOns = DOMAIN_ADDONS[category] || DOMAIN_ADDONS['Electrician'];
   const [selectedDay, setSelectedDay] = useState(15);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('11:00 AM');
-  const [addOns, setAddOns] = useState(INITIAL_ADDONS);
+  const [addOns, setAddOns] = useState(defaultAddOns);
 
-  const basePrice = (provider?.hourlyRate || 700) * 3.5; // ~2,500 LKR
+  const basePrice = (provider?.hourlyRate || 700) * 3.5; // realistic base job in LKR
   const addOnsTotal = addOns
     .filter((a) => a.selected)
     .reduce((sum, item) => sum + item.price, 0);
@@ -68,7 +100,7 @@ export default function DateTimeSelectionScreen({ navigation, route }) {
         <View style={styles.headerTitleWrap}>
           <Text style={styles.headerSubtitle}>Select Booking Date & Time</Text>
           <Text style={styles.headerTitle}>
-            {provider?.specialization || 'Deep Home Botanical Cleaning'}
+            {provider?.user?.name || provider?.name || 'Selected Specialist'} • {category}
           </Text>
         </View>
         <View style={{ width: 40 }} />
@@ -152,10 +184,13 @@ export default function DateTimeSelectionScreen({ navigation, route }) {
           </View>
         </View>
 
-        {/* Popular Add-Ons */}
+        {/* Domain-Specific Add-Ons */}
         <View style={styles.card}>
-          <Text style={styles.sectionHeading}>Popular Add-Ons</Text>
-          <Text style={styles.sectionSub}>Recommended extras with instant price calculation</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
+            <Ionicons name="sparkles" size={16} color={colors.forestGreen} style={{ marginRight: 6 }} />
+            <Text style={styles.sectionHeading}>{category} Add-Ons</Text>
+          </View>
+          <Text style={styles.sectionSub}>Custom services tailored for your {category} appointment</Text>
 
           {addOns.map((item) => (
             <View key={item.id} style={styles.addonItem}>
@@ -190,7 +225,7 @@ export default function DateTimeSelectionScreen({ navigation, route }) {
         </View>
 
         <TouchableOpacity style={styles.bookNowBtn} onPress={handleProceed} activeOpacity={0.85}>
-          <Text style={styles.bookNowBtnText}>Book Now</Text>
+          <Text style={styles.bookNowBtnText}>Review Booking</Text>
           <Ionicons name="arrow-forward" size={18} color={colors.white} style={{ marginLeft: 6 }} />
         </TouchableOpacity>
       </View>
@@ -226,7 +261,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   headerTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     color: colors.white,
     marginTop: 2,
@@ -304,12 +339,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '800',
     color: colors.forestGreen,
-    marginBottom: 4,
   },
   sectionSub: {
     fontSize: 12,
     color: colors.textSecondary,
     marginBottom: 14,
+    marginTop: 2,
   },
   timeSlotRow: {
     flexDirection: 'row',
@@ -400,7 +435,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.emerald,
-    paddingHorizontal: 24,
+    paddingHorizontal: 22,
     paddingVertical: 13,
     borderRadius: 12,
   },

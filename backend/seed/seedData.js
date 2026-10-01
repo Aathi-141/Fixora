@@ -1,9 +1,8 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
 const dotenv = require('dotenv');
-const path = require('path');
+const bcrypt = require('bcryptjs');
 
-dotenv.config({ path: path.join(__dirname, '../.env') });
+dotenv.config();
 
 const User = require('../models/User');
 const ProviderProfile = require('../models/ProviderProfile');
@@ -15,10 +14,10 @@ const Dispute = require('../models/Dispute');
 const seedDatabase = async () => {
   try {
     const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/fixora_db';
-    console.log('Connecting to MongoDB at:', mongoUri);
     await mongoose.connect(mongoUri);
-    console.log('MongoDB Connected. Clearing existing collections...');
+    console.log('MongoDB connected for seeding Fixora database...');
 
+    // Clear existing collections
     await User.deleteMany();
     await ProviderProfile.deleteMany();
     await Booking.deleteMany();
@@ -42,10 +41,10 @@ const seedDatabase = async () => {
     });
 
     const customerLakmini = await User.create({
-      name: 'Lakmini Silva',
+      name: 'Lakmini S.',
       email: 'lakmini@gmail.com',
       password: defaultPassword,
-      phone: '+94 71 889 2233',
+      phone: '+94 71 889 0011',
       role: 'customer',
       address: 'No 15, Station Road, Beliyatta',
       avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop',
@@ -57,8 +56,8 @@ const seedDatabase = async () => {
       password: defaultPassword,
       phone: '+94 70 334 5566',
       role: 'provider',
-      address: 'Colombo, Sri Lanka',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop',
+      address: 'Colombo 05, Sri Lanka',
+      avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=300&auto=format&fit=crop',
     });
 
     const userSunil = await User.create({
@@ -68,7 +67,7 @@ const seedDatabase = async () => {
       phone: '+94 77 990 1122',
       role: 'provider',
       address: 'Gothatuwa, Colombo',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop',
+      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop',
     });
 
     const userChaminda = await User.create({
@@ -77,28 +76,48 @@ const seedDatabase = async () => {
       password: defaultPassword,
       phone: '+94 76 555 4433',
       role: 'provider',
-      address: 'Nawagampura, Colombo',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&auto=format&fit=crop',
+      address: 'Malabe, Colombo',
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&auto=format&fit=crop',
     });
 
-    const userMarcus = await User.create({
-      name: 'Marcus Sterling',
-      email: 'marcus@fixora.lk',
+    const userNuwan = await User.create({
+      name: 'Nuwan Pradeep',
+      email: 'nuwan@fixora.lk',
       password: defaultPassword,
       phone: '+94 72 444 8899',
       role: 'provider',
-      address: 'Kaduwela, Colombo',
-      avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200&auto=format&fit=crop',
+      address: 'Rajagiriya, Colombo',
+      avatar: 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=300&auto=format&fit=crop',
+    });
+
+    const userRohan = await User.create({
+      name: 'Rohan Wickramasinghe',
+      email: 'rohan@fixora.lk',
+      password: defaultPassword,
+      phone: '+94 71 222 3344',
+      role: 'provider',
+      address: 'Nugegoda, Colombo',
+      avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=300&auto=format&fit=crop',
+    });
+
+    const userBandara = await User.create({
+      name: 'Bandara Wijethunga',
+      email: 'bandara@fixora.lk',
+      password: defaultPassword,
+      phone: '+94 75 888 9900',
+      role: 'provider',
+      address: 'Moratuwa, Western Province',
+      avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=300&auto=format&fit=crop',
     });
 
     const adminUser = await User.create({
-      name: 'Admin Coordinator',
+      name: 'M. Shibly (Admin Coordinator)',
       email: 'admin@fixora.lk',
       password: defaultPassword,
       phone: '+94 11 234 5678',
       role: 'admin',
       address: 'Headquarters, Colombo 03',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop',
+      avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200&auto=format&fit=crop',
     });
 
     // 2. Create Provider Profiles
@@ -106,7 +125,7 @@ const seedDatabase = async () => {
     const providerRamesh = await ProviderProfile.create({
       user: userRamesh._id,
       category: 'Electrician',
-      specialization: 'Senior Electrician & Specialist',
+      specialization: 'Senior Certified Electrician & Specialist',
       experienceYears: 15,
       hourlyRate: 700,
       rating: 4.8,
@@ -129,7 +148,7 @@ const seedDatabase = async () => {
     const providerSunil = await ProviderProfile.create({
       user: userSunil._id,
       category: 'Plumber',
-      specialization: 'Master Plumber',
+      specialization: 'Master High-Pressure Plumber',
       experienceYears: 12,
       hourlyRate: 650,
       rating: 4.9,
@@ -152,7 +171,7 @@ const seedDatabase = async () => {
     const providerChaminda = await ProviderProfile.create({
       user: userChaminda._id,
       category: 'Cleaner',
-      specialization: 'Deep Home Botanical Cleaning',
+      specialization: 'Deep Home Botanical & Floor Cleaning',
       experienceYears: 8,
       hourlyRate: 500,
       rating: 4.9,
@@ -163,7 +182,7 @@ const seedDatabase = async () => {
       weeklySchedule: ['Mon', 'Wed', 'Thu', 'Fri', 'Sat'],
       workingHours: { start: '08:00 AM', end: '05:00 PM' },
       serviceRadiusKm: 12,
-      city: 'Colombo',
+      city: 'Malabe',
       about:
         'Eco-friendly deep cleaning specialists using natural botanical sanitizers, allergen-free solutions, and commercial grade steamers.',
       skills: ['Full Home Sanitization', 'Oven Deep Clean', 'Window Polish', 'Carpet Steaming'],
@@ -172,26 +191,70 @@ const seedDatabase = async () => {
       avatar: userChaminda.avatar,
     });
 
-    const providerMarcus = await ProviderProfile.create({
-      user: userMarcus._id,
-      category: 'HVAC & AC',
-      specialization: 'HVAC Systems Overhaul & Inverter ACs',
+    const providerNuwan = await ProviderProfile.create({
+      user: userNuwan._id,
+      category: 'AC Technician',
+      specialization: 'Inverter AC & Refrigeration Expert',
       experienceYears: 10,
       hourlyRate: 850,
-      rating: 4.7,
-      reviewCount: 95,
+      rating: 4.8,
+      reviewCount: 92,
       onTimeRate: 97.5,
       jobsCompleted: 430,
-      isAvailable: false,
+      isAvailable: true,
       weeklySchedule: ['Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
       workingHours: { start: '09:00 AM', end: '06:00 PM' },
       serviceRadiusKm: 25,
-      city: 'Malabe',
+      city: 'Rajagiriya',
       about: 'Licensed refrigeration technician with deep expertise in multi-split VRV and eco-gas servicing.',
       skills: ['Gas Refilling', 'Compressor Diagnostic', 'Deep Coil Cleaning', 'Duct Sealing'],
-      verificationStatus: 'pending',
+      verificationStatus: 'verified',
       licenseNumber: 'LK-HVAC-3301',
-      avatar: userMarcus.avatar,
+      avatar: userNuwan.avatar,
+    });
+
+    const providerRohan = await ProviderProfile.create({
+      user: userRohan._id,
+      category: 'Painter',
+      specialization: 'Interior Weather-Shield & Wall Artisan',
+      experienceYears: 11,
+      hourlyRate: 600,
+      rating: 4.7,
+      reviewCount: 88,
+      onTimeRate: 98.0,
+      jobsCompleted: 310,
+      isAvailable: true,
+      weeklySchedule: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+      workingHours: { start: '08:30 AM', end: '05:30 PM' },
+      serviceRadiusKm: 15,
+      city: 'Nugegoda',
+      about: 'Professional interior and exterior painting with moisture barrier primer and precision edging.',
+      skills: ['Anti-Fungal Primer', 'Wall Putty', 'Spray Finishing', 'Waterproof Coating'],
+      verificationStatus: 'verified',
+      licenseNumber: 'LK-PNT-9921',
+      avatar: userRohan.avatar,
+    });
+
+    const providerBandara = await ProviderProfile.create({
+      user: userBandara._id,
+      category: 'Carpenter',
+      specialization: 'Master Furniture & Timber Specialist',
+      experienceYears: 16,
+      hourlyRate: 750,
+      rating: 4.9,
+      reviewCount: 142,
+      onTimeRate: 99.1,
+      jobsCompleted: 580,
+      isAvailable: true,
+      weeklySchedule: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+      workingHours: { start: '08:00 AM', end: '06:00 PM' },
+      serviceRadiusKm: 18,
+      city: 'Moratuwa',
+      about: 'Moratuwa-trained wood craftsman specializing in custom timber cabinetry, teak finishes, and lock fittings.',
+      skills: ['Mortise Locks', 'Teak Sanding', 'Cabinet Repair', 'Hydraulic Dampers'],
+      verificationStatus: 'verified',
+      licenseNumber: 'LK-CRP-1120',
+      avatar: userBandara.avatar,
     });
 
     // 3. Create Bookings
@@ -241,50 +304,26 @@ const seedDatabase = async () => {
       customerPhone: '+94 77 123 4567',
       notes: 'Regular scheduled monthly botanical cleaning with oven sanitization.',
       addOns: [
-        { name: 'Oven Deep Clean', price: 1500, selected: true },
-        { name: 'Window Polish', price: 1200, selected: false },
-        { name: 'Fridge Sanitization', price: 1000, selected: false },
+        { name: 'Kitchen Oven Degreasing', price: 1200, selected: true },
+        { name: 'Double-Door Fridge Sanitization', price: 1100, selected: true },
       ],
       pricing: {
-        basePrice: 2000,
-        addOnsTotal: 1500,
+        basePrice: 1450,
+        addOnsTotal: 2300,
         serviceFee: 250,
         discount: 0,
-        totalAmount: 3750,
+        totalAmount: 4000,
       },
       status: 'completed',
       isPaid: true,
-      paymentMethod: 'Credit/Debit Card',
-      paidAt: new Date('2026-09-25T11:45:00Z'),
+      paymentMethod: 'visa',
+      paidAt: new Date('2026-09-25T12:30:00Z'),
       transactionId: 'TXN-98432100',
       paymentBreakdown: [
-        { description: 'Botanical Cleaning Service (3 Hours)', amount: 2000 },
-        { description: 'Oven Deep Clean Add-On', amount: 1500 },
-        { description: 'Service & Booking Guarantee', amount: 250 },
+        { description: 'Full Residence Botanical Deep Clean', amount: 2650 },
+        { description: 'Degreasing & Sanitization Extras', amount: 1100 },
+        { description: 'Fixora Platform Guarantee Fee', amount: 250 },
       ],
-    });
-
-    const bookingPendingProvider = await Booking.create({
-      bookingRef: 'SR-88431',
-      customer: customerKasun._id,
-      provider: providerRamesh._id,
-      serviceCategory: 'Electrician',
-      serviceTitle: 'Electrical Wiring Safety Inspection',
-      scheduledDate: '2026-10-04',
-      timeSlot: '02:00 PM',
-      serviceAddress: 'No 42, New Kandy Road, Malabe',
-      customerPhone: '+94 77 123 4567',
-      notes: 'Tripping circuit breaker when AC is turned on. Need urgent diagnostic.',
-      addOns: [{ name: 'Surge Protector Testing', price: 1000, selected: true }],
-      pricing: {
-        basePrice: 2100,
-        addOnsTotal: 1000,
-        serviceFee: 250,
-        discount: 0,
-        totalAmount: 3350,
-      },
-      status: 'pending',
-      isPaid: false,
     });
 
     // 4. Create Chat Messages
@@ -292,27 +331,27 @@ const seedDatabase = async () => {
     await ChatMessage.create([
       {
         booking: bookingOngoing._id,
-        sender: providerSunil.user,
+        sender: userSunil._id,
         senderRole: 'provider',
         senderName: 'Sunil Perera',
-        text: 'Hello Kasun! I have picked up the replacement valves and am on my way to your location.',
-        isQuickReply: false,
+        text: 'Hello Kasun, I am on the way to Malabe. ETA is around 15 minutes.',
+        createdAt: new Date(Date.now() - 1000 * 60 * 12),
       },
       {
         booking: bookingOngoing._id,
         sender: customerKasun._id,
         senderRole: 'customer',
         senderName: 'Kasun Perera',
-        text: 'Thanks Sunil! Please ring the bell at Gate 2 when you arrive.',
-        isQuickReply: false,
+        text: 'Great, thank you! The gate is open, you can park in the driveway.',
+        createdAt: new Date(Date.now() - 1000 * 60 * 8),
       },
       {
         booking: bookingOngoing._id,
-        sender: providerSunil.user,
+        sender: userSunil._id,
         senderRole: 'provider',
         senderName: 'Sunil Perera',
-        text: 'Understood. I will be there in about 15 minutes.',
-        isQuickReply: true,
+        text: 'Noted! I have the pressure valves ready.',
+        createdAt: new Date(Date.now() - 1000 * 60 * 3),
       },
     ]);
 
@@ -365,7 +404,7 @@ const seedDatabase = async () => {
       resolutionNotes: '',
     });
 
-    console.log(' Database successfully seeded with full Fixora test data!');
+    console.log(' Database successfully seeded with all 6 Sri Lankan trades & Admin test data!');
     process.exit(0);
   } catch (error) {
     console.error('Seeding failed:', error);

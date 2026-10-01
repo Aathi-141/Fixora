@@ -1,7 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 
 export default function SplashScreen({ navigation }) {
@@ -9,18 +8,19 @@ export default function SplashScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
       <View style={styles.content}>
-        {/* Brand Icon & Logo */}
-        <View style={styles.logoBadge}>
-          <Ionicons name="home" size={48} color={colors.forestGreen} />
-          <View style={styles.wrenchCircle}>
-            <Ionicons name="construct" size={18} color={colors.white} />
-          </View>
+        {/* Brand Official Logo */}
+        <View style={styles.logoContainer}>
+          <Image
+            source={require('../../../assets/logo.png')}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
         </View>
 
         <Text style={styles.appName}>FIXORA</Text>
-        <Text style={styles.tagline}>Home-Service Booking App</Text>
+        <Text style={styles.tagline}>YOUR HOME, OUR SERVICES</Text>
         <Text style={styles.subtext}>
-          Reliable plumbers, electricians, cleaners & technicians across Sri Lanka.
+          Reliable plumbers, electricians, cleaners, painters & AC technicians across Sri Lanka.
         </Text>
       </View>
 
@@ -39,7 +39,9 @@ export default function SplashScreen({ navigation }) {
           onPress={() => navigation.navigate('Login')}
           activeOpacity={0.8}
         >
-          <Text style={styles.secondaryBtnText}>Already have an account? <Text style={styles.loginHighlight}>Log In</Text></Text>
+          <Text style={styles.secondaryBtnText}>
+            Already have an account? <Text style={styles.loginHighlight}>Log In</Text>
+          </Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -49,7 +51,7 @@ export default function SplashScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.white,
+    backgroundColor: '#FAFAF8',
     justifyContent: 'space-between',
     paddingHorizontal: 24,
     paddingVertical: 32,
@@ -59,41 +61,39 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  logoBadge: {
-    width: 100,
-    height: 100,
+  logoContainer: {
+    width: 170,
+    height: 170,
     borderRadius: 28,
-    backgroundColor: '#EBF4EE',
+    backgroundColor: colors.white,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
-    position: 'relative',
+    shadowColor: '#1E4D2B',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 6,
+    padding: 12,
   },
-  wrenchCircle: {
-    position: 'absolute',
-    bottom: -4,
-    right: -4,
-    backgroundColor: colors.sageGreen,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: colors.white,
+  logoImage: {
+    width: '100%',
+    height: '100%',
   },
   appName: {
-    fontSize: 34,
+    fontSize: 32,
     fontWeight: '800',
     color: colors.forestGreen,
     letterSpacing: 2,
     marginBottom: 6,
   },
   tagline: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '700',
     color: colors.emerald,
+    letterSpacing: 1.5,
     marginBottom: 12,
+    textTransform: 'uppercase',
   },
   subtext: {
     fontSize: 14,
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
   primaryBtn: {
     backgroundColor: colors.emerald,
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 14,
     alignItems: 'center',
     marginBottom: 14,
     shadowColor: colors.emerald,

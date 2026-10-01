@@ -17,7 +17,7 @@ export default function BookingSuccessfulScreen({ navigation, route }) {
 
   const bookingRef = booking?.bookingRef || '#FX-88431';
   const providerName =
-    booking?.provider?.user?.name || booking?.provider?.name || 'Kasun Perera / Chaminda';
+    booking?.provider?.user?.name || booking?.provider?.name || 'Kasun Perera / Specialist';
   const scheduledDate = booking?.scheduledDate || 'Thursday, Oct 15, 2026';
   const timeSlot = booking?.timeSlot || '11:00 AM';
   const totalAmount = booking?.pricing?.totalAmount || 3750;
@@ -32,7 +32,10 @@ export default function BookingSuccessfulScreen({ navigation, route }) {
       <StatusBar barStyle="light-content" />
       {/* Top Header */}
       <View style={styles.topHeader}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.navigate('Home')}>
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={() => navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] })}
+        >
           <Ionicons name="arrow-back" size={24} color={colors.white} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Booking Confirmed</Text>
@@ -101,29 +104,31 @@ export default function BookingSuccessfulScreen({ navigation, route }) {
           </View>
         </View>
 
-        {/* Action Buttons */}
+        {/* Clean Action Section with direct nav bar integration */}
         <View style={styles.actionSection}>
           <TouchableOpacity
-            style={styles.viewBookingsBtn}
-            onPress={() => navigation.navigate('HistoryTab')}
+            style={styles.trackStatusBtn}
+            onPress={() => navigation.navigate('RequestStatusTracking', { booking })}
             activeOpacity={0.85}
           >
-            <Text style={styles.viewBookingsBtnText}>View My Bookings</Text>
+            <Ionicons name="navigate-outline" size={20} color={colors.white} style={{ marginRight: 8 }} />
+            <Text style={styles.trackStatusBtnText}>Track Specialist in Timeline</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.manageBookingBtn}
+            style={styles.viewBookingsBtn}
+            onPress={() => navigation.reset({ index: 0, routes: [{ name: 'MainTabs', state: { routes: [{ name: 'HistoryTab' }] } }] })}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="calendar" size={18} color={colors.forestGreen} style={{ marginRight: 6 }} />
+            <Text style={styles.viewBookingsBtnText}>Go to Bookings Dashboard</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.manageLinkBtn}
             onPress={() => navigation.navigate('CancelReschedule', { booking })}
           >
-            <Ionicons name="options-outline" size={18} color={colors.forestGreen} style={{ marginRight: 6 }} />
-            <Text style={styles.manageBookingText}>Manage Booking (Cancel / Reschedule)</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.backHomeBtn}
-            onPress={() => navigation.navigate('Home')}
-          >
-            <Text style={styles.backHomeText}>Back to Home</Text>
+            <Text style={styles.manageLinkText}>Need to change time? Reschedule / Cancel</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -139,6 +144,7 @@ const styles = StyleSheet.create({
   topHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     backgroundColor: colors.forestGreen,
     paddingHorizontal: 16,
     paddingTop: 10,
@@ -150,38 +156,36 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   headerTitle: {
-    flex: 1,
     fontSize: 18,
     fontWeight: '700',
     color: colors.white,
-    textAlign: 'center',
   },
   scrollBody: {
     padding: 20,
-    paddingBottom: 32,
+    paddingBottom: 40,
   },
   celebrationCard: {
     backgroundColor: colors.white,
     borderRadius: 20,
     padding: 24,
     alignItems: 'center',
+    marginBottom: 16,
     borderWidth: 1,
     borderColor: colors.cardBorder,
-    marginBottom: 16,
+    shadowColor: '#1E4D2B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
   },
   checkCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     backgroundColor: colors.emerald,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
-    shadowColor: colors.emerald,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
   },
   successTitle: {
     fontSize: 22,
@@ -195,13 +199,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 18,
     paddingHorizontal: 10,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   refContainer: {
     backgroundColor: '#EBF4EE',
     paddingVertical: 10,
     paddingHorizontal: 16,
-    borderRadius: 12,
+    borderRadius: 14,
     width: '100%',
     alignItems: 'center',
   },
@@ -209,25 +213,24 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.textSecondary,
     fontWeight: '600',
+    marginBottom: 4,
   },
   refRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 4,
   },
   refCode: {
     fontSize: 18,
     fontWeight: '800',
     color: colors.forestGreen,
-    marginRight: 10,
     letterSpacing: 1,
+    marginRight: 12,
   },
   copyBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.white,
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
   },
@@ -238,17 +241,20 @@ const styles = StyleSheet.create({
   },
   summaryCard: {
     backgroundColor: colors.white,
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 18,
+    marginBottom: 20,
     borderWidth: 1,
     borderColor: colors.cardBorder,
-    marginBottom: 20,
   },
   summaryHeading: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '800',
-    color: colors.forestGreen,
+    color: colors.textPrimary,
     marginBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.cardBorder,
+    paddingBottom: 8,
   },
   detailItem: {
     flexDirection: 'row',
@@ -257,63 +263,62 @@ const styles = StyleSheet.create({
   },
   iconStyle: {
     marginRight: 12,
+    width: 24,
   },
   itemTitle: {
     fontSize: 11,
     color: colors.textMuted,
     fontWeight: '600',
-    textTransform: 'uppercase',
   },
   itemSub: {
     fontSize: 14,
     fontWeight: '700',
     color: colors.textPrimary,
-    marginTop: 1,
+    marginTop: 2,
   },
   actionSection: {
-    width: '100%',
+    gap: 12,
   },
-  viewBookingsBtn: {
+  trackStatusBtn: {
+    flexDirection: 'row',
     backgroundColor: colors.emerald,
     height: 52,
-    borderRadius: 12,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
     shadowColor: colors.emerald,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
     elevation: 3,
   },
-  viewBookingsBtnText: {
+  trackStatusBtnText: {
     color: colors.white,
     fontSize: 15,
     fontWeight: '700',
   },
-  manageBookingBtn: {
+  viewBookingsBtn: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: colors.sageGreen,
+    backgroundColor: '#EBF4EE',
     height: 50,
-    borderRadius: 12,
-    backgroundColor: '#F3F9F5',
-    marginBottom: 12,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#C3DFCA',
   },
-  manageBookingText: {
+  viewBookingsBtnText: {
+    color: colors.forestGreen,
     fontSize: 14,
     fontWeight: '700',
-    color: colors.forestGreen,
   },
-  backHomeBtn: {
+  manageLinkBtn: {
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 8,
   },
-  backHomeText: {
-    fontSize: 14,
+  manageLinkText: {
+    fontSize: 13,
     color: colors.textSecondary,
-    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
 });

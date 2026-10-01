@@ -1,4 +1,5 @@
 import React, { useContext } from 'react';
+import { View, StyleSheet, Platform } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
@@ -15,6 +16,7 @@ import ProviderSignUpScreen from '../screens/member1/ProviderSignUpScreen';
 import HomeScreen from '../screens/member1/HomeScreen';
 import FiltersScreen from '../screens/member1/FiltersScreen';
 import ProviderProfileScreen from '../screens/member1/ProviderProfileScreen';
+import CustomerProfileScreen from '../screens/member1/CustomerProfileScreen';
 
 // Member 2 Screens
 import DateTimeSelectionScreen from '../screens/member2/DateTimeSelectionScreen';
@@ -38,49 +40,127 @@ import FinalBillPaymentScreen from '../screens/member4/FinalBillPaymentScreen';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-function MainTabNavigator() {
+const commonTabScreenOptions = {
+  headerShown: false,
+  tabBarActiveTintColor: colors.forestGreen,
+  tabBarInactiveTintColor: '#8A9A8E',
+  tabBarStyle: {
+    backgroundColor: colors.white,
+    borderTopLeftRadius: 22,
+    borderTopRightRadius: 22,
+    height: Platform.OS === 'ios' ? 78 : 66,
+    paddingBottom: Platform.OS === 'ios' ? 20 : 10,
+    paddingTop: 8,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderWidth: 0,
+    shadowColor: '#1E4D2B',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  tabBarLabelStyle: {
+    fontSize: 11,
+    fontWeight: '700',
+    marginTop: 2,
+  },
+};
+
+// 1. Customer Portal (Explore, Bookings, Messages, Profile)
+function CustomerTabNavigator() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarActiveTintColor: colors.forestGreen,
-        tabBarInactiveTintColor: colors.textMuted,
-        tabBarStyle: {
-          backgroundColor: colors.white,
-          borderTopWidth: 1,
-          borderTopColor: colors.cardBorder,
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
-        },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '600',
-        },
-        tabBarIcon: ({ focused, color, size }) => {
+        ...commonTabScreenOptions,
+        tabBarIcon: ({ focused, color }) => {
           let iconName;
-          if (route.name === 'HomeTab') {
-            iconName = focused ? 'home' : 'home-outline';
-          } else if (route.name === 'HistoryTab') {
-            iconName = focused ? 'calendar' : 'calendar-outline';
-          } else if (route.name === 'ProviderTab') {
-            iconName = focused ? 'construct' : 'construct-outline';
-          } else if (route.name === 'AvailabilityTab') {
-            iconName = focused ? 'time' : 'time-outline';
-          } else if (route.name === 'AdminTab') {
-            iconName = focused ? 'shield-checkmark' : 'shield-checkmark-outline';
-          }
-          return <Ionicons name={iconName} size={22} color={color} />;
+          if (route.name === 'HomeTab') iconName = focused ? 'compass' : 'compass-outline';
+          else if (route.name === 'HistoryTab') iconName = focused ? 'calendar' : 'calendar-outline';
+          else if (route.name === 'ChatTab') iconName = focused ? 'chatbubble-ellipses' : 'chatbubble-ellipses-outline';
+          else if (route.name === 'ProfileTab') iconName = focused ? 'person' : 'person-outline';
+
+          return (
+            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
+              <Ionicons name={iconName} size={22} color={color} />
+            </View>
+          );
         },
       })}
     >
       <Tab.Screen name="HomeTab" component={HomeScreen} options={{ title: 'Explore' }} />
       <Tab.Screen name="HistoryTab" component={ServiceHistoryScreen} options={{ title: 'Bookings' }} />
-      <Tab.Screen name="ProviderTab" component={ProviderRequestsScreen} options={{ title: 'Requests' }} />
-      <Tab.Screen name="AvailabilityTab" component={ProviderAvailabilityScreen} options={{ title: 'Schedule' }} />
-      <Tab.Screen name="AdminTab" component={AdminDashboardScreen} options={{ title: 'Admin' }} />
+      <Tab.Screen name="ChatTab" component={ChatScreen} options={{ title: 'Messages' }} />
+      <Tab.Screen name="ProfileTab" component={CustomerProfileScreen} options={{ title: 'Profile' }} />
     </Tab.Navigator>
   );
+}
+
+// 2. Provider Portal (Job Requests, Schedule & Availability, Profile)
+function ProviderTabNavigator() {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        ...commonTabScreenOptions,
+        tabBarIcon: ({ focused, color }) => {
+          let iconName;
+          if (route.name === 'ProviderRequestsTab') iconName = focused ? 'construct' : 'construct-outline';
+          else if (route.name === 'AvailabilityTab') iconName = focused ? 'time' : 'time-outline';
+          else if (route.name === 'ProviderProfileTab') iconName = focused ? 'person-circle' : 'person-circle-outline';
+
+          return (
+            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
+              <Ionicons name={iconName} size={22} color={color} />
+            </View>
+          );
+        },
+      })}
+    >
+      <Tab.Screen name="ProviderRequestsTab" component={ProviderRequestsScreen} options={{ title: 'Job Requests' }} />
+      <Tab.Screen name="AvailabilityTab" component={ProviderAvailabilityScreen} options={{ title: 'My Schedule' }} />
+      <Tab.Screen name="ProviderProfileTab" component={CustomerProfileScreen} options={{ title: 'Provider Account' }} />
+    </Tab.Navigator>
+  );
+}
+
+// 3. Admin Management Portal (KPIs, Verifications & Disputes)
+function AdminTabNavigator() {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        ...commonTabScreenOptions,
+        tabBarIcon: ({ focused, color }) => {
+          let iconName;
+          if (route.name === 'AdminDashboardTab') iconName = focused ? 'shield-checkmark' : 'shield-checkmark-outline';
+          else if (route.name === 'AdminBookingsTab') iconName = focused ? 'clipboard' : 'clipboard-outline';
+          else if (route.name === 'AdminProfileTab') iconName = focused ? 'settings' : 'settings-outline';
+
+          return (
+            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
+              <Ionicons name={iconName} size={22} color={color} />
+            </View>
+          );
+        },
+      })}
+    >
+      <Tab.Screen name="AdminDashboardTab" component={AdminDashboardScreen} options={{ title: 'Overview' }} />
+      <Tab.Screen name="AdminBookingsTab" component={ServiceHistoryScreen} options={{ title: 'All Bookings' }} />
+      <Tab.Screen name="AdminProfileTab" component={CustomerProfileScreen} options={{ title: 'Settings' }} />
+    </Tab.Navigator>
+  );
+}
+
+function MainTabNavigator() {
+  const { user } = useContext(AuthContext);
+
+  if (user?.role === 'admin') {
+    return <AdminTabNavigator />;
+  } else if (user?.role === 'provider') {
+    return <ProviderTabNavigator />;
+  }
+  return <CustomerTabNavigator />;
 }
 
 export default function AppNavigator() {
@@ -100,7 +180,7 @@ export default function AppNavigator() {
         <Stack.Screen name="CustomerSignUp" component={CustomerSignUpScreen} />
         <Stack.Screen name="ProviderSignUp" component={ProviderSignUpScreen} />
 
-        {/* Main Tabs Container */}
+        {/* Role-Based Tab Navigator */}
         <Stack.Screen name="MainTabs" component={MainTabNavigator} />
 
         {/* Service Discovery (Member 1) */}
@@ -136,3 +216,16 @@ export default function AppNavigator() {
     </NavigationContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  iconContainer: {
+    paddingHorizontal: 12,
+    paddingVertical: 3,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconContainerActive: {
+    backgroundColor: '#EBF5EE',
+  },
+});
