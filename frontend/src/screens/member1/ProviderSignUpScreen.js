@@ -110,17 +110,20 @@ export default function ProviderSignUpScreen({ navigation }) {
         style={{ flex: 1 }}
       >
         <ScrollView
+          style={{ flex: 1 }}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          nestedScrollEnabled={true}
         >
           {/* Header Banner & Photo Placeholder */}
           <View style={styles.badgeSection}>
             <View style={styles.badgeCircle}>
               <Ionicons name="construct" size={38} color={colors.forestGreen} />
-              <View style={styles.addPhotoBadge}>
+              <TouchableOpacity style={styles.addPhotoBadge}>
                 <Ionicons name="camera" size={14} color={colors.white} />
-              </View>
+              </TouchableOpacity>
             </View>
             <Text style={styles.badgeTitle}>Service Provider Registration</Text>
             <Text style={styles.badgeSub}>Get discovered by verified customers in your area</Text>
@@ -316,7 +319,8 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 260,
+    paddingBottom: 160,
+    flexGrow: 1,
   },
   badgeSection: {
     alignItems: 'center',

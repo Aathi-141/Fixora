@@ -12,7 +12,14 @@ export const getApiBaseUrl = () => {
 
     if (hostUri) {
       const ip = hostUri.split(':')[0];
-      if (ip && ip !== 'localhost' && ip !== '127.0.0.1') {
+      if (
+        ip &&
+        ip !== 'localhost' &&
+        ip !== '127.0.0.1' &&
+        !ip.startsWith('192.168.139.') &&
+        !ip.startsWith('192.168.200.') &&
+        !ip.startsWith('10.0.1.')
+      ) {
         return `http://${ip}:5000`;
       }
     }
@@ -24,7 +31,7 @@ export const getApiBaseUrl = () => {
     return 'http://localhost:5000';
   }
 
-  // Default to Wi-Fi IP address
+  // Active Wi-Fi IP address
   return 'http://10.197.222.145:5000';
 };
 
@@ -33,7 +40,7 @@ export let API_BASE_URL = getApiBaseUrl();
 // Helper for fetch with auth token and timeout
 const apiRequest = async (endpoint, method = 'GET', body = null) => {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s timeout for snappy mobile UX
+  const timeoutId = setTimeout(() => controller.abort(), 12000); // 12s timeout for reliable cloud database requests
 
   try {
     const token = await AsyncStorage.getItem('fixora_token');
