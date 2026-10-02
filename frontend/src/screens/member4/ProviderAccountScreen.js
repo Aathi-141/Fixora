@@ -11,6 +11,7 @@ import {
   Alert,
   StatusBar,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,18 +22,60 @@ import { updateProviderProfile } from '../../services/api';
 export default function ProviderAccountScreen({ navigation }) {
   const { user, logout, updateUser } = useContext(AuthContext);
 
-  const [name, setName] = useState(user?.name || 'Service Provider');
-  const [phone, setPhone] = useState(user?.phone || '+94 77 990 1122');
+  const [name, setName] = useState(user?.name || 'Service Partner');
+  const [phone, setPhone] = useState(user?.phone || '+94 77 123 4567');
   const [hourlyRate, setHourlyRate] = useState(
-    user?.hourlyRate ? String(user.hourlyRate) : '2250'
+    user?.hourlyRate ? String(user.hourlyRate) : '700'
   );
-  const [city, setCity] = useState(user?.city || 'Malabe, Colombo');
+  const [city, setCity] = useState(user?.city || 'Colombo');
   const [bio, setBio] = useState(
     user?.bio ||
-      'Fixora certified master technician with 8+ years experience in domestic and commercial electrical and mechanical services across the Western Province.'
+      'Fixora certified master technician providing reliable on-demand domestic and commercial home repair services.'
   );
   const [isAvailable, setIsAvailable] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [photoUrlInput, setPhotoUrlInput] = useState('');
+
+  const getInitials = (fullName) => {
+    if (!fullName) return 'SP';
+    const parts = fullName.trim().split(' ').filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return fullName.slice(0, 2).toUpperCase();
+  };
+
+  const PRESET_AVATARS = [
+    { id: '1', label: 'Technician 1', uri: 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=200&auto=format&fit=crop' },
+    { id: '2', label: 'Technician 2', uri: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&auto=format&fit=crop' },
+    { id: '3', label: 'Technician 3', uri: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop' },
+  ];
+
+  const handleSelectAvatar = (uri) => {
+    if (updateUser) {
+      updateUser({ avatar: uri });
+    }
+    setShowPhotoModal(false);
+    Alert.alert('Profile Photo Updated', 'Your provider profile picture has been updated.');
+  };
+
+  const handleClearAvatar = () => {
+    if (updateUser) {
+      updateUser({ avatar: null });
+    }
+    setShowPhotoModal(false);
+    Alert.alert('Default Initials Set', 'Your provider card will now display your clean initials badge.');
+  };
+
+  const handleSaveCustomPhotoUrl = () => {
+    if (!photoUrlInput.trim()) {
+      Alert.alert('Please enter a valid photo link');
+      return;
+    }
+    handleSelectAvatar(photoUrlInput.trim());
+    setPhotoUrlInput('');
+  };
 
   const providerCategory = user?.category || 'Specialist';
 
@@ -99,21 +142,39 @@ export default function ProviderAccountScreen({ navigation }) {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Profile Identity Card */}
         <View style={styles.profileHeaderCard}>
-          <Image
-            source={{
-              uri:
-                user?.avatar ||
-                'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200',
-            }}
-            style={styles.avatar}
-          />
+          <TouchableOpacity
+            style={styles.avatarWrap}
+            onPress={() => setShowPhotoModal(true)}
+            activeOpacity={0.85}
+          >
+            {user?.avatar ? (
+              <Image source={{ uri: user.avatar }} style={styles.avatar} />
+            ) : (
+              <View style={styles.initialsAvatar}>
+                <Text style={styles.initialsText}>{getInitials(name)}</Text>
+              </View>
+            )}
+            <View style={styles.cameraBadge}>
+              <Ionicons name="camera" size={13} color={colors.white} />
+            </View>
+          </TouchableOpacity>
+
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>{name}</Text>
+            <Text style={styles.profileName}>{name || 'Service Partner'}</Text>
             <View style={styles.categoryBadge}>
               <Ionicons name="construct" size={13} color={colors.forestGreen} style={{ marginRight: 4 }} />
               <Text style={styles.categoryText}>{providerCategory} Partner</Text>
             </View>
             <Text style={styles.profileEmail}>{user?.email || 'provider@fixora.lk'}</Text>
+            <TouchableOpacity
+              onPress={() => setShowPhotoModal(true)}
+              style={styles.changePhotoBtn}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.changePhotoText}>
+                {user?.avatar ? 'Change Photo' : 'Add Profile Photo +'}
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -277,6 +338,63 @@ export default function ProviderAccountScreen({ navigation }) {
 
         <Text style={styles.footerText}>Fixora Provider v1.0.0 • Verified Commercial Platform</Text>
       </ScrollView>
+
+      {/* Photo Picker Modal */}
+      <Modal visible={showPhotoModal} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Update Provider Photo</Text>
+              <TouchableOpacity onPress={() => setShowPhotoModal(false)}>
+                <Ionicons name="close" size={24} color={colors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.modalSub}>
+              Select a professional trade badge or provide your image link for customer trust.
+            </Text>
+
+            <Text style={styles.inputLabel}>Choose Pro Technician Photo</Text>
+            <View style={styles.presetGrid}>
+              {PRESET_AVATARS.map((p) => (
+                <TouchableOpacity
+                  key={p.id}
+                  style={styles.presetItem}
+                  onPress={() => handleSelectAvatar(p.uri)}
+                  activeOpacity={0.8}
+                >
+                  <Image source={{ uri: p.uri }} style={styles.presetImg} />
+                  <Text style={styles.presetLabel}>{p.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={[styles.inputLabel, { marginTop: 10 }]}>Or Enter Custom Image URL</Text>
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
+              <TextInput
+                style={[styles.textInput, { flex: 1, marginBottom: 0 }]}
+                value={photoUrlInput}
+                onChangeText={setPhotoUrlInput}
+                placeholder="https://... photo link"
+                placeholderTextColor={colors.textMuted}
+                autoCapitalize="none"
+              />
+              <TouchableOpacity
+                style={[styles.saveBtn, { marginTop: 0, paddingHorizontal: 16 }]}
+                onPress={handleSaveCustomPhotoUrl}
+              >
+                <Text style={styles.saveBtnText}>Apply</Text>
+              </TouchableOpacity>
+            </View>
+
+            {user?.avatar ? (
+              <TouchableOpacity style={styles.clearAvatarBtn} onPress={handleClearAvatar}>
+                <Ionicons name="trash-outline" size={16} color="#DC2626" />
+                <Text style={styles.clearAvatarText}>Remove Photo & Use Initials</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -315,13 +433,89 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
+  avatarWrap: {
+    position: 'relative',
+    marginRight: 16,
+  },
   avatar: {
     width: 68,
     height: 68,
     borderRadius: 34,
     borderWidth: 2,
     borderColor: colors.sageGreen,
-    marginRight: 16,
+  },
+  initialsAvatar: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: colors.forestGreen,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.sageGreen,
+  },
+  initialsText: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: colors.white,
+  },
+  cameraBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    backgroundColor: colors.emerald,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.white,
+  },
+  changePhotoBtn: {
+    marginTop: 4,
+  },
+  changePhotoText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.emerald,
+  },
+  presetGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginVertical: 14,
+  },
+  presetItem: {
+    alignItems: 'center',
+  },
+  presetImg: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+    marginBottom: 4,
+  },
+  presetLabel: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    fontWeight: '600',
+  },
+  clearAvatarBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
+    marginTop: 12,
+  },
+  clearAvatarText: {
+    fontSize: 13,
+    color: '#DC2626',
+    fontWeight: '600',
+    marginLeft: 6,
   },
   profileInfo: {
     flex: 1,
