@@ -85,6 +85,8 @@ function HomeStackNavigator() {
       <HomeStack.Screen name="BookingSuccessful" component={BookingSuccessfulScreen} />
       <HomeStack.Screen name="CancelReschedule" component={CancelRescheduleScreen} />
       <HomeStack.Screen name="RequestStatusTracking" component={RequestStatusTrackingScreen} />
+      <HomeStack.Screen name="Chat" component={ChatScreen} />
+      <HomeStack.Screen name="Call" component={CallScreen} />
       <HomeStack.Screen name="RateReview" component={RateReviewScreen} />
       <HomeStack.Screen name="FinalBillPayment" component={FinalBillPaymentScreen} />
     </HomeStack.Navigator>
@@ -97,6 +99,8 @@ function BookingsStackNavigator() {
     <BookingsStack.Navigator screenOptions={{ headerShown: false }}>
       <BookingsStack.Screen name="ServiceHistory" component={ServiceHistoryScreen} />
       <BookingsStack.Screen name="RequestStatusTracking" component={RequestStatusTrackingScreen} />
+      <BookingsStack.Screen name="Chat" component={ChatScreen} />
+      <BookingsStack.Screen name="Call" component={CallScreen} />
       <BookingsStack.Screen name="CancelReschedule" component={CancelRescheduleScreen} />
       <BookingsStack.Screen name="RateReview" component={RateReviewScreen} />
       <BookingsStack.Screen name="FinalBillPayment" component={FinalBillPaymentScreen} />

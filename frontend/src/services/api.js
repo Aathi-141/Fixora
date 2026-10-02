@@ -33,7 +33,7 @@ export let API_BASE_URL = getApiBaseUrl();
 // Helper for fetch with auth token and timeout
 const apiRequest = async (endpoint, method = 'GET', body = null) => {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 6000); // 6s timeout
+  const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s timeout for snappy mobile UX
 
   try {
     const token = await AsyncStorage.getItem('fixora_token');
