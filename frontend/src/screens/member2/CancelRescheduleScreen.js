@@ -427,14 +427,19 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 150,
   },
-  // Top Policy Card matching Figma design
+  // Top Policy Card - Clean single white surface, no nested boxes
   policyCard: {
-    backgroundColor: '#EBF7F0',
-    borderRadius: 20,
+    backgroundColor: colors.white,
+    borderRadius: 18,
     padding: 18,
     borderWidth: 1,
-    borderColor: '#C7EAD4',
+    borderColor: '#E5E7EB',
     marginBottom: 16,
+    shadowColor: '#1E4D2B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
   },
   policyHeaderRow: {
     flexDirection: 'row',
@@ -445,7 +450,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#1E4D2B',
+    backgroundColor: colors.forestGreen,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,
@@ -453,26 +458,25 @@ const styles = StyleSheet.create({
   policyTitle: {
     fontSize: 16,
     fontWeight: '800',
-    color: '#1E4D2B',
+    color: colors.forestGreen,
   },
   policyBody: {
     fontSize: 13,
-    color: '#2D3748',
+    color: '#4B5563',
     lineHeight: 18,
     marginBottom: 12,
   },
   boldText: {
     fontWeight: '700',
-    color: '#1E4D2B',
+    color: colors.forestGreen,
   },
   refundWindowCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: colors.white,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
   },
   refundWindowLabel: {
     fontSize: 13,
@@ -480,7 +484,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   refundTimeBadge: {
-    backgroundColor: '#D1E7DD',
+    backgroundColor: '#EBF4EE',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
@@ -488,7 +492,7 @@ const styles = StyleSheet.create({
   refundTimeText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#1E4D2B',
+    color: colors.forestGreen,
   },
   // Segmented control [ Reschedule ] vs [ Cancel ]
   segmentContainer: {

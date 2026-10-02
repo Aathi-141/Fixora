@@ -7,13 +7,14 @@ import {
   ScrollView,
   Switch,
   StatusBar,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 
 const MONTH_DATA = [
-  { name: 'October 2026', daysInMonth: 31, startDayOffset: 3 }, // 1st is Thursday (Mon=0, Tue=1, Wed=2, Thu=3)
+  { name: 'October 2026', daysInMonth: 31, startDayOffset: 3 }, // 1st is Thursday
   { name: 'November 2026', daysInMonth: 30, startDayOffset: 6 }, // 1st is Sunday
   { name: 'December 2026', daysInMonth: 31, startDayOffset: 1 }, // 1st is Tuesday
 ];
@@ -75,9 +76,9 @@ export default function DateTimeSelectionScreen({ navigation, route }) {
 
   const defaultAddOns = DOMAIN_ADDONS[category] || DOMAIN_ADDONS['Electrician'];
   const [monthIdx, setMonthIdx] = useState(0);
-  const [selectedDay, setSelectedDay] = useState(24);
-  const [period, setPeriod] = useState('Morning'); // 'Morning' | 'Afternoon'
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState('08:30 AM');
+  const [selectedDay, setSelectedDay] = useState(2); // Today: October 2, 2026
+  const [period, setPeriod] = useState('Afternoon');
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState('04:30 PM');
   const [addOns, setAddOns] = useState(defaultAddOns);
 
   const basePrice = (provider?.hourlyRate || 700) * 3.5;
@@ -87,6 +88,7 @@ export default function DateTimeSelectionScreen({ navigation, route }) {
   const totalPrice = Math.round(basePrice + addOnsTotal);
 
   const currentMonth = MONTH_DATA[monthIdx];
+  const TODAY_DAY = 2; // Current active simulation date: Oct 2
 
   const toggleAddOn = (id) => {
     setAddOns(
@@ -142,9 +144,9 @@ export default function DateTimeSelectionScreen({ navigation, route }) {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollBody}>
-        {/* Full Month Calendar Grid Card */}
-        <View style={styles.card}>
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollBody}>
+        {/* Calendar Surface Card - Single clean card, no nested boxes */}
+        <View style={styles.calendarCard}>
           <View style={styles.calendarHeaderRow}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <View style={styles.calIconBox}>
@@ -157,7 +159,7 @@ export default function DateTimeSelectionScreen({ navigation, route }) {
                 onPress={() => {
                   if (monthIdx > 0) {
                     setMonthIdx(monthIdx - 1);
-                    setSelectedDay(15);
+                    setSelectedDay(2);
                   }
                 }}
                 style={[styles.chevronBtn, monthIdx === 0 && styles.chevronDisabled]}
@@ -173,7 +175,7 @@ export default function DateTimeSelectionScreen({ navigation, route }) {
                 onPress={() => {
                   if (monthIdx < MONTH_DATA.length - 1) {
                     setMonthIdx(monthIdx + 1);
-                    setSelectedDay(10);
+                    setSelectedDay(1);
                   }
                 }}
                 style={[
@@ -200,22 +202,39 @@ export default function DateTimeSelectionScreen({ navigation, route }) {
             ))}
           </View>
 
-          {/* 7-column Calendar Grid */}
+          {/* 7-column Calendar Grid with Past Days Frozen */}
           <View style={styles.gridContainer}>
             {calendarCells.map((cell) => {
               if (cell.empty) {
                 return <View key={cell.key} style={styles.dayCellEmpty} />;
               }
+
+              // Freeze/disable all days before today in current month
+              const isPast = monthIdx === 0 && cell.day < TODAY_DAY;
               const isSelected = cell.day === selectedDay;
+
               return (
                 <TouchableOpacity
                   key={cell.key}
                   style={styles.dayCellTouch}
-                  onPress={() => setSelectedDay(cell.day)}
+                  onPress={() => !isPast && setSelectedDay(cell.day)}
+                  disabled={isPast}
                   activeOpacity={0.7}
                 >
-                  <View style={[styles.dayCircle, isSelected && styles.dayCircleActive]}>
-                    <Text style={[styles.dayNumberText, isSelected && styles.dayNumberActive]}>
+                  <View
+                    style={[
+                      styles.dayCircle,
+                      isSelected && styles.dayCircleActive,
+                      isPast && styles.dayCircleDisabled,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.dayNumberText,
+                        isSelected && styles.dayNumberActive,
+                        isPast && styles.dayNumberDisabled,
+                      ]}
+                    >
                       {cell.day}
                     </Text>
                   </View>
@@ -228,7 +247,7 @@ export default function DateTimeSelectionScreen({ navigation, route }) {
           {/* Date Confirmation Bar & Legend */}
           <View style={styles.calendarFooter}>
             <View style={styles.confirmedDateBadge}>
-              <Ionicons name="checkmark-circle" size={16} color={colors.emerald} style={{ marginRight: 6 }} />
+              <Ionicons name="checkmark-circle" size={15} color={colors.emerald} style={{ marginRight: 6 }} />
               <Text style={styles.confirmedDateText}>Selected: {getFullFormattedDate()}</Text>
             </View>
             <View style={styles.legendWrap}>
@@ -237,124 +256,127 @@ export default function DateTimeSelectionScreen({ navigation, route }) {
                 <Text style={styles.legendLabel}>Selected</Text>
               </View>
               <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: colors.cardBorder }]} />
+                <View style={[styles.legendDot, { backgroundColor: '#E2E8F0' }]} />
                 <Text style={styles.legendLabel}>Available</Text>
               </View>
             </View>
           </View>
         </View>
 
-        {/* Available Time Slots Section */}
-        <View style={styles.card}>
-          <View style={styles.slotsHeaderRow}>
-            <View>
-              <Text style={styles.sectionHeading}>Available Slots</Text>
-              <Text style={styles.sectionSub}>Duration: ~3.5 hours</Text>
-            </View>
-
-            {/* Morning vs Afternoon Segmented Pill */}
-            <View style={styles.periodPillContainer}>
-              <TouchableOpacity
-                style={[styles.periodBtn, period === 'Morning' && styles.periodBtnActive]}
-                onPress={() => {
-                  setPeriod('Morning');
-                  setSelectedTimeSlot(MORNING_SLOTS[0].time);
-                }}
-              >
-                <Text
-                  style={[
-                    styles.periodBtnText,
-                    period === 'Morning' && styles.periodBtnTextActive,
-                  ]}
-                >
-                  Morning
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.periodBtn, period === 'Afternoon' && styles.periodBtnActive]}
-                onPress={() => {
-                  setPeriod('Afternoon');
-                  setSelectedTimeSlot(AFTERNOON_SLOTS[0].time);
-                }}
-              >
-                <Text
-                  style={[
-                    styles.periodBtnText,
-                    period === 'Afternoon' && styles.periodBtnTextActive,
-                  ]}
-                >
-                  Afternoon
-                </Text>
-              </TouchableOpacity>
-            </View>
+        {/* Section Heading directly on page (No nested box inside box) */}
+        <View style={styles.sectionHeaderRow}>
+          <View>
+            <Text style={styles.sectionHeading}>Available Slots</Text>
+            <Text style={styles.sectionSub}>Duration: ~3.5 hours</Text>
           </View>
 
-          {/* Time Slot Cards */}
-          <View style={styles.slotsList}>
-            {currentSlots.map((slot) => {
-              const isSelected = selectedTimeSlot === slot.time;
-              return (
-                <TouchableOpacity
-                  key={slot.time}
-                  style={[styles.slotCard, isSelected && styles.slotCardActive]}
-                  onPress={() => setSelectedTimeSlot(slot.time)}
-                  activeOpacity={0.8}
-                >
-                  <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <Text style={[styles.slotTime, isSelected && styles.slotTimeActive]}>
-                        {slot.time}
-                      </Text>
-                      {slot.badge && (
-                        <View style={styles.slotBadge}>
-                          <Text style={styles.slotBadgeText}>{slot.badge}</Text>
-                        </View>
-                      )}
-                    </View>
-                    <Text style={[styles.slotLabel, isSelected && styles.slotLabelActive]}>
-                      {slot.label}
-                    </Text>
-                  </View>
-                  <Ionicons
-                    name={isSelected ? 'radio-button-on' : 'radio-button-off'}
-                    size={22}
-                    color={isSelected ? colors.forestGreen : colors.textMuted}
-                  />
-                </TouchableOpacity>
-              );
-            })}
+          {/* Morning vs Afternoon Segmented Pill */}
+          <View style={styles.periodPillContainer}>
+            <TouchableOpacity
+              style={[styles.periodBtn, period === 'Morning' && styles.periodBtnActive]}
+              onPress={() => {
+                setPeriod('Morning');
+                setSelectedTimeSlot(MORNING_SLOTS[0].time);
+              }}
+            >
+              <Text
+                style={[
+                  styles.periodBtnText,
+                  period === 'Morning' && styles.periodBtnTextActive,
+                ]}
+              >
+                Morning
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.periodBtn, period === 'Afternoon' && styles.periodBtnActive]}
+              onPress={() => {
+                setPeriod('Afternoon');
+                setSelectedTimeSlot(AFTERNOON_SLOTS[1].time); // 03:00 PM
+              }}
+            >
+              <Text
+                style={[
+                  styles.periodBtnText,
+                  period === 'Afternoon' && styles.periodBtnTextActive,
+                ]}
+              >
+                Afternoon
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
 
-        {/* Domain-Specific Add-Ons with Live Pricing */}
-        <View style={styles.card}>
-          <Text style={styles.sectionHeading}>Domain Add-Ons ({category})</Text>
-          <Text style={styles.sectionSub}>Complement your service with expert additions</Text>
-
-          <View style={styles.addOnList}>
-            {addOns.map((item) => (
-              <View key={item.id} style={styles.addOnRow}>
-                <View style={styles.addOnIconBox}>
-                  <Ionicons name="sparkles" size={18} color={colors.forestGreen} />
+        {/* Standalone Slot Cards matching reference design */}
+        <View style={styles.slotsList}>
+          {currentSlots.map((slot) => {
+            const isSelected = selectedTimeSlot === slot.time;
+            return (
+              <TouchableOpacity
+                key={slot.time}
+                style={[styles.slotCard, isSelected && styles.slotCardActive]}
+                onPress={() => setSelectedTimeSlot(slot.time)}
+                activeOpacity={0.8}
+              >
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Text style={[styles.slotTime, isSelected && styles.slotTimeActive]}>
+                      {slot.time}
+                    </Text>
+                    {slot.badge && (
+                      <View style={styles.slotBadge}>
+                        <Text style={styles.slotBadgeText}>{slot.badge}</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={[styles.slotLabel, isSelected && styles.slotLabelActive]}>
+                    {slot.label}
+                  </Text>
                 </View>
-                <View style={{ flex: 1, marginHorizontal: 12 }}>
-                  <Text style={styles.addOnName}>{item.name}</Text>
-                  <Text style={styles.addOnPrice}>+Rs. {item.price.toLocaleString()}</Text>
-                </View>
-                <Switch
-                  value={item.selected}
-                  onValueChange={() => toggleAddOn(item.id)}
-                  trackColor={{ false: '#D1D5DB', true: colors.sageGreen }}
-                  thumbColor={item.selected ? colors.forestGreen : '#F3F4F6'}
+                <Ionicons
+                  name={isSelected ? 'radio-button-on' : 'radio-button-off'}
+                  size={22}
+                  color={isSelected ? colors.forestGreen : colors.textMuted}
                 />
-              </View>
-            ))}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* Domain-Specific Add-Ons Section */}
+        <View style={[styles.sectionHeaderRow, { marginTop: 26 }]}>
+          <View>
+            <Text style={styles.sectionHeading}>Domain Add-Ons ({category})</Text>
+            <Text style={styles.sectionSub}>Complement your service with expert additions</Text>
           </View>
+        </View>
+
+        <View style={styles.addOnCard}>
+          {addOns.map((item, index) => (
+            <View
+              key={item.id}
+              style={[styles.addOnRow, index === addOns.length - 1 && { borderBottomWidth: 0 }]}
+            >
+              <View style={styles.addOnIconBox}>
+                <Ionicons name="sparkles" size={18} color={colors.forestGreen} />
+              </View>
+              <View style={{ flex: 1, marginHorizontal: 12 }}>
+                <Text style={styles.addOnName}>{item.name}</Text>
+                <Text style={styles.addOnPrice}>+Rs. {item.price.toLocaleString()}</Text>
+              </View>
+              <Switch
+                value={item.selected}
+                onValueChange={() => toggleAddOn(item.id)}
+                trackColor={{ false: '#D1D5DB', true: colors.sageGreen }}
+                thumbColor={item.selected ? colors.forestGreen : '#F3F4F6'}
+              />
+            </View>
+          ))}
         </View>
       </ScrollView>
 
-      {/* Sticky Bottom Summary Bar */}
+      {/* Solid Opaque Sticky Bottom Bar with High zIndex so no text overlaps */}
       <View style={styles.bottomBar}>
         <View style={{ flex: 1 }}>
           <Text style={styles.totalEstimatedLabel}>Total Estimated Price</Text>
@@ -366,7 +388,7 @@ export default function DateTimeSelectionScreen({ navigation, route }) {
 
         <TouchableOpacity style={styles.bookNowStickyBtn} onPress={handleProceed} activeOpacity={0.85}>
           <Text style={styles.bookNowStickyText}>Book Now</Text>
-          <Ionicons name="arrow-forward" size={18} color={colors.white} style={{ marginLeft: 6 }} />
+          <Ionicons name="arrow-forward" size={17} color={colors.white} style={{ marginLeft: 6 }} />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -408,18 +430,19 @@ const styles = StyleSheet.create({
   },
   scrollBody: {
     padding: 16,
-    paddingBottom: 170,
+    paddingBottom: 24,
   },
-  card: {
+  // Single Clean Calendar Surface Card
+  calendarCard: {
     backgroundColor: colors.white,
     borderRadius: 20,
     padding: 18,
-    marginBottom: 16,
+    marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#E5E7EB',
     shadowColor: '#1E4D2B',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
     shadowRadius: 8,
     elevation: 2,
   },
@@ -433,7 +456,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 10,
-    backgroundColor: '#EBF5EE',
+    backgroundColor: '#EBF4EE',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,
@@ -451,12 +474,12 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 10,
-    backgroundColor: '#EBF5EE',
+    backgroundColor: '#EBF4EE',
     justifyContent: 'center',
     alignItems: 'center',
   },
   chevronDisabled: {
-    opacity: 0.4,
+    opacity: 0.35,
   },
   weekdaysRow: {
     flexDirection: 'row',
@@ -504,6 +527,9 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
+  dayCircleDisabled: {
+    opacity: 0.3,
+  },
   dayNumberText: {
     fontSize: 14,
     fontWeight: '600',
@@ -512,6 +538,9 @@ const styles = StyleSheet.create({
   dayNumberActive: {
     color: colors.white,
     fontWeight: '800',
+  },
+  dayNumberDisabled: {
+    color: '#94A3B8',
   },
   selectedDot: {
     width: 4,
@@ -532,7 +561,7 @@ const styles = StyleSheet.create({
   confirmedDateBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#EBF5EE',
+    backgroundColor: '#EBF4EE',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 8,
@@ -561,11 +590,12 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontWeight: '500',
   },
-  slotsHeaderRow: {
+  // Section Headings sitting directly on the canvas (No nested box inside box)
+  sectionHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   sectionHeading: {
     fontSize: 16,
@@ -579,7 +609,7 @@ const styles = StyleSheet.create({
   },
   periodPillContainer: {
     flexDirection: 'row',
-    backgroundColor: '#EBF5EE',
+    backgroundColor: '#EBF4EE',
     borderRadius: 12,
     padding: 3,
   },
@@ -604,6 +634,7 @@ const styles = StyleSheet.create({
   periodBtnTextActive: {
     color: colors.white,
   },
+  // Standalone slot cards
   slotsList: {
     gap: 10,
   },
@@ -611,14 +642,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.white,
-    borderRadius: 14,
+    borderRadius: 16,
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderWidth: 1.5,
-    borderColor: '#E2E8F0',
+    borderColor: '#E5E7EB',
+    shadowColor: '#1E4D2B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
   slotCardActive: {
-    backgroundColor: '#EBF5EE',
+    backgroundColor: '#EBF4EE',
     borderColor: colors.forestGreen,
   },
   slotTime: {
@@ -650,8 +686,19 @@ const styles = StyleSheet.create({
     color: colors.forestGreen,
     fontWeight: '600',
   },
-  addOnList: {
-    marginTop: 10,
+  // Add-ons Card
+  addOnCard: {
+    backgroundColor: colors.white,
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    shadowColor: '#1E4D2B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 1,
   },
   addOnRow: {
     flexDirection: 'row',
@@ -664,7 +711,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#EBF5EE',
+    backgroundColor: '#EBF4EE',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -679,24 +726,21 @@ const styles = StyleSheet.create({
     color: colors.forestGreen,
     marginTop: 2,
   },
+  // 100% Solid, Opaque White Bottom Bar - flex footer docked at bottom so content never collides
   bottomBar: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: colors.white,
+    backgroundColor: '#FFFFFF',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 16,
+    paddingTop: 14,
+    paddingBottom: Platform.OS === 'ios' ? 24 : 14,
     borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
+    borderTopColor: '#E5E7EB',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -3 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
-    elevation: 10,
+    elevation: 8,
   },
   totalEstimatedLabel: {
     fontSize: 11,
