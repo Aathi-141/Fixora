@@ -4,13 +4,12 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TextInput,
   ActivityIndicator,
-  Alert,
   StatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { AuthContext } from '../../context/AuthContext';
@@ -20,7 +19,7 @@ export default function BookingDetailsScreen({ navigation, route }) {
   const { provider, bookingData } = route.params || {};
   const { user } = useContext(AuthContext);
 
-  const [address, setAddress] = useState(user?.address || 'No 42, New Kandy Road, Malabe');
+  const currentAddress = user?.address || 'No 42, New Kandy Road, Malabe, Colombo';
   const [phone, setPhone] = useState(user?.phone || '+94 77 123 4567');
   const [notes, setNotes] = useState('Standard residential service with front gate entrance.');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,7 +42,7 @@ export default function BookingDetailsScreen({ navigation, route }) {
       serviceTitle: provider?.specialization || 'Deep Home Botanical Cleaning',
       scheduledDate: bookingData?.scheduledDate || '2026-10-15',
       timeSlot: bookingData?.timeSlot || '11:00 AM',
-      serviceAddress: address,
+      serviceAddress: currentAddress,
       customerPhone: phone,
       notes,
       addOns: bookingData?.addOns || [],
@@ -67,7 +66,7 @@ export default function BookingDetailsScreen({ navigation, route }) {
         },
         scheduledDate: bookingData?.scheduledDate || '2026-10-15',
         timeSlot: bookingData?.timeSlot || '11:00 AM',
-        serviceAddress: address,
+        serviceAddress: currentAddress,
         pricing,
         status: 'pending',
       };
@@ -83,118 +82,126 @@ export default function BookingDetailsScreen({ navigation, route }) {
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color={colors.white} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Booking Details</Text>
+        <Text style={styles.headerTitle}>Review & Confirm</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollBody}>
-        {/* Service Summary Card */}
+        {/* Unified Card 1: Service Specialist & Schedule Details */}
         <View style={styles.card}>
           <View style={styles.serviceHeaderRow}>
             <View style={styles.serviceIconCircle}>
-              <Ionicons name="sparkles" size={24} color={colors.forestGreen} />
+              <Ionicons name="sparkles" size={22} color={colors.forestGreen} />
             </View>
-            <View style={{ flex: 1, marginLeft: 12 }}>
+            <View style={{ flex: 1, marginLeft: 14 }}>
               <Text style={styles.serviceTitle}>
-                {provider?.specialization || 'Deep Home Botanical Cleaning'}
+                {provider?.specialization || 'Professional Service'}
               </Text>
               <Text style={styles.providerName}>
-                Provider: {provider?.user?.name || provider?.name || 'Chaminda W.'}
+                Specialist: {provider?.user?.name || provider?.name || 'Verified Professional'}
               </Text>
             </View>
           </View>
-        </View>
 
-        {/* Scheduled Date & Time with Edit Link */}
-        <View style={styles.card}>
-          <View style={styles.cardHeaderRow}>
+          <View style={styles.divider} />
+
+          <View style={styles.scheduleRow}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="calendar-outline" size={20} color={colors.forestGreen} style={{ marginRight: 8 }} />
-              <Text style={styles.cardSectionTitle}>Scheduled Date & Time</Text>
+              <Ionicons name="calendar" size={18} color={colors.forestGreen} style={{ marginRight: 8 }} />
+              <View>
+                <Text style={styles.metaLabel}>Scheduled Date & Time</Text>
+                <Text style={styles.metaValue}>
+                  {bookingData?.scheduledDate || 'Thursday, Oct 24, 2026'} • {bookingData?.timeSlot || '08:30 AM'}
+                </Text>
+              </View>
             </View>
-            <TouchableOpacity onPress={() => navigation.goBack()}>
-              <Text style={styles.editText}>Edit</Text>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.editPill}>
+              <Text style={styles.editPillText}>Change</Text>
             </TouchableOpacity>
           </View>
 
-          <View style={styles.dateTimeBadge}>
-            <Text style={styles.dateTimeText}>
-              {bookingData?.scheduledDate || 'Thursday, Oct 15, 2026'} • {bookingData?.timeSlot || '11:00 AM'}
-            </Text>
-          </View>
+          {/* Selected Add-Ons inside the service overview */}
+          {selectedAddons.length > 0 && (
+            <View style={styles.addonsSection}>
+              <Text style={styles.addonsSubTitle}>Included Add-Ons ({selectedAddons.length})</Text>
+              {selectedAddons.map((item, idx) => (
+                <View key={idx} style={styles.addonItemRow}>
+                  <Ionicons name="checkmark-circle" size={15} color={colors.emerald} style={{ marginRight: 6 }} />
+                  <Text style={styles.addonItemName} numberOfLines={1}>{item.name}</Text>
+                  <Text style={styles.addonItemPrice}>+Rs. {item.price.toLocaleString()}</Text>
+                </View>
+              ))}
+            </View>
+          )}
         </View>
 
-        {/* Service Address Card */}
+        {/* Unified Card 2: Service Location & Contact Notes */}
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Ionicons name="location-outline" size={20} color={colors.forestGreen} style={{ marginRight: 8 }} />
+              <Ionicons name="location" size={18} color={colors.forestGreen} style={{ marginRight: 8 }} />
               <Text style={styles.cardSectionTitle}>Service Address</Text>
+            </View>
+            <TouchableOpacity onPress={() => navigation.navigate('ProfileTab')}>
+              <Text style={styles.editText}>Edit Profile</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.addressBox}>
+            <Ionicons name="home-outline" size={18} color={colors.forestGreen} style={{ marginRight: 10, marginTop: 2 }} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.addressText}>{currentAddress}</Text>
+              <Text style={styles.addressSub}>Saved Primary Customer Address</Text>
             </View>
           </View>
 
-          <TextInput
-            style={styles.addressInput}
-            value={address}
-            onChangeText={setAddress}
-            placeholder="Enter full address"
-          />
-
-          <View style={styles.phoneInputRow}>
+          <Text style={styles.fieldLabel}>Contact Phone</Text>
+          <View style={styles.inputRow}>
             <Ionicons name="call-outline" size={16} color={colors.textSecondary} style={{ marginRight: 8 }} />
             <TextInput
-              style={styles.phoneInput}
+              style={styles.textInput}
               value={phone}
               onChangeText={setPhone}
               placeholder="Contact phone"
               keyboardType="phone-pad"
             />
           </View>
+
+          <Text style={styles.fieldLabel}>Special Instructions / Gate Access</Text>
+          <TextInput
+            style={styles.notesInput}
+            value={notes}
+            onChangeText={setNotes}
+            placeholder="e.g. Please call before arrival, gate access code..."
+            multiline
+            numberOfLines={2}
+          />
         </View>
 
-        {/* Selected Add-Ons */}
+        {/* Unified Card 3: Payment Breakdown */}
         <View style={styles.card}>
-          <Text style={styles.cardSectionTitle}>Selected Add-Ons</Text>
-          {selectedAddons.length > 0 ? (
-            selectedAddons.map((item, idx) => (
-              <View key={idx} style={styles.addonRow}>
-                <Text style={styles.addonText}>• {item.name}</Text>
-                <Text style={styles.addonPriceText}>+ LKR {item.price.toLocaleString()}</Text>
-              </View>
-            ))
-          ) : (
-            <Text style={styles.noAddons}>No optional add-ons selected</Text>
-          )}
-        </View>
-
-        {/* Payment Summary */}
-        <View style={styles.card}>
-          <Text style={styles.cardSectionTitle}>Payment Summary</Text>
+          <Text style={styles.cardSectionTitle}>Payment Breakdown</Text>
           <View style={styles.payRow}>
-            <Text style={styles.payLabel}>Base Service Inspection</Text>
-            <Text style={styles.payVal}>LKR {pricing.basePrice.toLocaleString()}</Text>
+            <Text style={styles.payLabel}>Standard Service Labor</Text>
+            <Text style={styles.payVal}>Rs. {pricing.basePrice.toLocaleString()}</Text>
           </View>
           <View style={styles.payRow}>
-            <Text style={styles.payLabel}>Selected Add-Ons</Text>
-            <Text style={styles.payVal}>LKR {pricing.addOnsTotal.toLocaleString()}</Text>
-          </View>
-          <View style={styles.payRow}>
-            <Text style={styles.payLabel}>Platform Guarantee Fee</Text>
-            <Text style={styles.payVal}>LKR {pricing.serviceFee.toLocaleString()}</Text>
+            <Text style={styles.payLabel}>Add-Ons Total</Text>
+            <Text style={styles.payVal}>Rs. {pricing.addOnsTotal.toLocaleString()}</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Total Confirmed</Text>
-            <Text style={styles.totalVal}>LKR {pricing.totalAmount.toLocaleString()}</Text>
+            <Text style={styles.totalLabel}>Estimated Total</Text>
+            <Text style={styles.totalVal}>Rs. {pricing.totalAmount.toLocaleString()}</Text>
           </View>
         </View>
       </ScrollView>
 
-      {/* Sticky Bottom Bar */}
+      {/* Sticky Bottom Footer */}
       <View style={styles.stickyFooter}>
         <View>
           <Text style={styles.footerLabel}>Total Amount</Text>
-          <Text style={styles.footerAmount}>LKR {pricing.totalAmount.toLocaleString()}</Text>
+          <Text style={styles.footerAmount}>Rs. {pricing.totalAmount.toLocaleString()}</Text>
         </View>
 
         <TouchableOpacity
@@ -207,8 +214,8 @@ export default function BookingDetailsScreen({ navigation, route }) {
             <ActivityIndicator color={colors.white} />
           ) : (
             <>
-              <Text style={styles.confirmBtnText}>Confirm & Schedule Clean</Text>
-              <Ionicons name="checkmark-circle" size={18} color={colors.white} style={{ marginLeft: 6 }} />
+              <Text style={styles.confirmBtnText}>Confirm Booking</Text>
+              <Ionicons name="arrow-forward" size={18} color={colors.white} style={{ marginLeft: 6 }} />
             </>
           )}
         </TouchableOpacity>
@@ -220,7 +227,7 @@ export default function BookingDetailsScreen({ navigation, route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#F8FAF9',
   },
   topHeader: {
     flexDirection: 'row',
@@ -244,24 +251,29 @@ const styles = StyleSheet.create({
   },
   scrollBody: {
     padding: 16,
-    paddingBottom: 24,
+    paddingBottom: 120,
   },
   card: {
     backgroundColor: colors.white,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 14,
+    borderRadius: 20,
+    padding: 18,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: '#E2E8F0',
+    shadowColor: '#1E4D2B',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   serviceHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   serviceIconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     backgroundColor: '#EBF4EE',
     justifyContent: 'center',
     alignItems: 'center',
@@ -276,15 +288,74 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 2,
   },
+  divider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginVertical: 14,
+  },
+  scheduleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  metaLabel: {
+    fontSize: 11,
+    color: colors.textMuted,
+    fontWeight: '600',
+  },
+  metaValue: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.forestGreen,
+    marginTop: 2,
+  },
+  editPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    backgroundColor: '#EBF4EE',
+  },
+  editPillText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.forestGreen,
+  },
+  addonsSection: {
+    marginTop: 14,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F8FAF9',
+  },
+  addonsSubTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textSecondary,
+    marginBottom: 8,
+  },
+  addonItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  addonItemName: {
+    flex: 1,
+    fontSize: 13,
+    color: colors.textPrimary,
+  },
+  addonItemPrice: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.forestGreen,
+  },
   cardHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   cardSectionTitle: {
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: '800',
     color: colors.forestGreen,
   },
   editText: {
@@ -292,61 +363,60 @@ const styles = StyleSheet.create({
     color: colors.emerald,
     fontWeight: '700',
   },
-  dateTimeBadge: {
-    backgroundColor: '#EBF4EE',
+  addressBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#F8FAF9',
     padding: 12,
-    borderRadius: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 12,
   },
-  dateTimeText: {
-    fontSize: 14,
+  addressText: {
+    fontSize: 13,
     fontWeight: '700',
-    color: colors.forestGreen,
-  },
-  addressInput: {
-    borderWidth: 1.5,
-    borderColor: colors.cardBorder,
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 14,
     color: colors.textPrimary,
-    backgroundColor: colors.background,
-    marginBottom: 10,
+    lineHeight: 18,
   },
-  phoneInputRow: {
+  addressSub: {
+    fontSize: 11,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  fieldLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginBottom: 6,
+    marginTop: 4,
+  },
+  inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: colors.cardBorder,
-    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
     paddingHorizontal: 12,
     height: 44,
-    backgroundColor: colors.background,
+    backgroundColor: '#F8FAF9',
+    marginBottom: 10,
   },
-  phoneInput: {
+  textInput: {
     flex: 1,
     fontSize: 14,
     color: colors.textPrimary,
   },
-  addonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 6,
-  },
-  addonText: {
+  notesInput: {
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
+    padding: 10,
     fontSize: 13,
     color: colors.textPrimary,
-    fontWeight: '500',
-  },
-  addonPriceText: {
-    fontSize: 13,
-    color: colors.forestGreen,
-    fontWeight: '600',
-  },
-  noAddons: {
-    fontSize: 13,
-    color: colors.textMuted,
-    fontStyle: 'italic',
-    marginTop: 4,
+    backgroundColor: '#F8FAF9',
+    height: 60,
+    textAlignVertical: 'top',
   },
   payRow: {
     flexDirection: 'row',
@@ -362,11 +432,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.textPrimary,
   },
-  divider: {
-    height: 1,
-    backgroundColor: colors.cardBorder,
-    marginVertical: 10,
-  },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -378,7 +443,7 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   totalVal: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '800',
     color: colors.forestGreen,
   },
@@ -390,7 +455,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderTopWidth: 1,
-    borderTopColor: colors.cardBorder,
+    borderTopColor: '#E2E8F0',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.05,

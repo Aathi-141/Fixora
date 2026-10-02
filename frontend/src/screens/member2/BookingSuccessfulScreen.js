@@ -4,10 +4,10 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   StatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 
@@ -17,9 +17,9 @@ export default function BookingSuccessfulScreen({ navigation, route }) {
 
   const bookingRef = booking?.bookingRef || '#FX-88431';
   const providerName =
-    booking?.provider?.user?.name || booking?.provider?.name || 'Kasun Perera / Chaminda';
-  const scheduledDate = booking?.scheduledDate || 'Thursday, Oct 15, 2026';
-  const timeSlot = booking?.timeSlot || '11:00 AM';
+    booking?.provider?.user?.name || booking?.provider?.name || 'Selected Specialist';
+  const scheduledDate = booking?.scheduledDate || 'Thursday, Oct 24, 2026';
+  const timeSlot = booking?.timeSlot || '08:30 AM';
   const totalAmount = booking?.pricing?.totalAmount || 3750;
 
   const handleCopyRef = () => {
@@ -32,7 +32,10 @@ export default function BookingSuccessfulScreen({ navigation, route }) {
       <StatusBar barStyle="light-content" />
       {/* Top Header */}
       <View style={styles.topHeader}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.navigate('Home')}>
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={() => navigation.navigate('Home')}
+        >
           <Ionicons name="arrow-back" size={24} color={colors.white} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Booking Confirmed</Text>
@@ -101,29 +104,22 @@ export default function BookingSuccessfulScreen({ navigation, route }) {
           </View>
         </View>
 
-        {/* Action Buttons */}
+        {/* Actions */}
         <View style={styles.actionSection}>
           <TouchableOpacity
-            style={styles.viewBookingsBtn}
-            onPress={() => navigation.navigate('HistoryTab')}
+            style={styles.trackStatusBtn}
+            onPress={() => navigation.navigate('RequestStatusTracking', { booking })}
             activeOpacity={0.85}
           >
-            <Text style={styles.viewBookingsBtnText}>View My Bookings</Text>
+            <Ionicons name="navigate-outline" size={20} color={colors.white} style={{ marginRight: 8 }} />
+            <Text style={styles.trackStatusBtnText}>Track Specialist in Timeline</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.manageBookingBtn}
+            style={styles.manageLinkBtn}
             onPress={() => navigation.navigate('CancelReschedule', { booking })}
           >
-            <Ionicons name="options-outline" size={18} color={colors.forestGreen} style={{ marginRight: 6 }} />
-            <Text style={styles.manageBookingText}>Manage Booking (Cancel / Reschedule)</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.backHomeBtn}
-            onPress={() => navigation.navigate('Home')}
-          >
-            <Text style={styles.backHomeText}>Back to Home</Text>
+            <Text style={styles.manageLinkText}>Need to change time? Reschedule / Cancel</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -134,7 +130,7 @@ export default function BookingSuccessfulScreen({ navigation, route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#F8FAF9',
   },
   topHeader: {
     flexDirection: 'row',
@@ -158,35 +154,40 @@ const styles = StyleSheet.create({
   },
   scrollBody: {
     padding: 20,
-    paddingBottom: 32,
+    paddingBottom: 110,
   },
   celebrationCard: {
     backgroundColor: colors.white,
     borderRadius: 20,
     padding: 24,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#1E4D2B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 3,
   },
   checkCircle: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: colors.emerald,
+    backgroundColor: colors.forestGreen,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
-    shadowColor: colors.emerald,
+    shadowColor: colors.forestGreen,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 4,
   },
   successTitle: {
     fontSize: 22,
     fontWeight: '800',
-    color: colors.forestGreen,
+    color: colors.textPrimary,
     marginBottom: 6,
   },
   successSub: {
@@ -194,39 +195,41 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 18,
-    paddingHorizontal: 10,
-    marginBottom: 20,
+    marginBottom: 18,
   },
   refContainer: {
-    backgroundColor: '#EBF4EE',
-    paddingVertical: 10,
+    backgroundColor: '#F8FAF9',
+    borderRadius: 14,
     paddingHorizontal: 16,
-    borderRadius: 12,
+    paddingVertical: 12,
     width: '100%',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   refLabel: {
     fontSize: 11,
-    color: colors.textSecondary,
+    color: colors.textMuted,
     fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   refRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     marginTop: 4,
   },
   refCode: {
     fontSize: 18,
     fontWeight: '800',
     color: colors.forestGreen,
-    marginRight: 10,
     letterSpacing: 1,
+    marginRight: 10,
   },
   copyBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.white,
+    backgroundColor: '#EBF4EE',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 8,
@@ -238,82 +241,72 @@ const styles = StyleSheet.create({
   },
   summaryCard: {
     backgroundColor: colors.white,
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 18,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
     marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#1E4D2B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   summaryHeading: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: colors.forestGreen,
+    fontSize: 15,
+    fontWeight: '700',
+    color: colors.textPrimary,
     marginBottom: 14,
   },
   detailItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
   },
   iconStyle: {
-    marginRight: 12,
+    marginRight: 14,
   },
   itemTitle: {
-    fontSize: 11,
-    color: colors.textMuted,
-    fontWeight: '600',
-    textTransform: 'uppercase',
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontWeight: '500',
   },
   itemSub: {
     fontSize: 14,
     fontWeight: '700',
     color: colors.textPrimary,
-    marginTop: 1,
+    marginTop: 2,
   },
   actionSection: {
-    width: '100%',
+    gap: 12,
   },
-  viewBookingsBtn: {
-    backgroundColor: colors.emerald,
-    height: 52,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
-    shadowColor: colors.emerald,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  viewBookingsBtnText: {
-    color: colors.white,
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  manageBookingBtn: {
+  trackStatusBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: colors.sageGreen,
-    height: 50,
-    borderRadius: 12,
-    backgroundColor: '#F3F9F5',
-    marginBottom: 12,
+    backgroundColor: colors.forestGreen,
+    paddingVertical: 14,
+    borderRadius: 14,
+    shadowColor: colors.forestGreen,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  manageBookingText: {
-    fontSize: 14,
+  trackStatusBtnText: {
+    fontSize: 15,
     fontWeight: '700',
-    color: colors.forestGreen,
+    color: colors.white,
   },
-  backHomeBtn: {
-    alignItems: 'center',
+  manageLinkBtn: {
     paddingVertical: 10,
+    alignItems: 'center',
   },
-  backHomeText: {
-    fontSize: 14,
-    color: colors.textSecondary,
+  manageLinkText: {
+    fontSize: 13,
+    color: colors.emerald,
     fontWeight: '600',
   },
 });
