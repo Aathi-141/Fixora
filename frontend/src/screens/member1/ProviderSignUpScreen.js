@@ -16,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { AuthContext } from '../../context/AuthContext';
 
-const CATEGORIES = ['Electrician', 'Plumber', 'Cleaner', 'HVAC & AC', 'Carpentry', 'Painting'];
+const CATEGORIES = ['Electrician', 'Plumber', 'Cleaner', 'AC Technician', 'Carpenter', 'Painter'];
 
 export default function ProviderSignUpScreen({ navigation }) {
   const [name, setName] = useState('');
@@ -34,32 +34,58 @@ export default function ProviderSignUpScreen({ navigation }) {
   const { register } = useContext(AuthContext);
 
   const handleProviderSignUp = async () => {
-    if (!name || !email || !password) {
-      Alert.alert('Incomplete Form', 'Please enter your business/full name, email, and password.');
+    // 1. Name validation
+    if (!name.trim()) {
+      Alert.alert('Required Field', 'Please enter your business or full name.');
       return;
     }
+
+    // 2. Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email.trim() || !emailRegex.test(email.trim())) {
+      Alert.alert('Invalid Email', 'Please enter a valid email address (e.g. name@example.com).');
+      return;
+    }
+
+    // 3. Sri Lankan Phone validation
+    const cleanedPhone = phone.trim().replace(/[\s\-]/g, '');
+    const phoneRegex = /^(\+94|0)?7[0-9]{8}$/;
+    if (!cleanedPhone || !phoneRegex.test(cleanedPhone)) {
+      Alert.alert(
+        'Invalid Phone Number',
+        'Please enter a valid Sri Lankan mobile number starting with 07X or +947X (e.g. 0771234567).'
+      );
+      return;
+    }
+
+    // 4. Password validation
+    if (!password || password.length < 6) {
+      Alert.alert('Password Too Short', 'Password must be at least 6 characters long.');
+      return;
+    }
+
     if (password !== confirmPassword) {
-      Alert.alert('Password Mismatch', 'The passwords entered do not match.');
+      Alert.alert('Password Mismatch', 'The passwords entered do not match. Please re-check.');
       return;
     }
 
     setIsSubmitting(true);
     const res = await register({
-      name,
-      email,
-      phone: phone || '+94 77 999 8888',
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      phone: cleanedPhone,
       password,
       role: 'provider',
       category,
-      city,
+      city: city.trim() || 'Colombo',
       hourlyRate: Number(hourlyRate) || 700,
     });
     setIsSubmitting(false);
 
     if (res.success) {
       Alert.alert(
-        'Registration Successful!',
-        'Your service provider profile has been created. Please log in with your email and password to access your dashboard.',
+        'Provider Account Created!',
+        `Welcome to Fixora Partner Network! Your ${category} profile has been registered and synced with MongoDB. Please log in to view your incoming jobs.`,
         [{ text: 'Go to Login', onPress: () => navigation.navigate('Login') }]
       );
     } else {
@@ -69,27 +95,38 @@ export default function ProviderSignUpScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Provider Registration</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
         style={{ flex: 1 }}
       >
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Provider Registration</Text>
-          <View style={{ width: 40 }} />
-        </View>
-
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Header Banner & Photo Placeholder */}
           <View style={styles.badgeSection}>
             <View style={styles.badgeCircle}>
-              <Ionicons name="construct" size={36} color={colors.forestGreen} />
+              <Ionicons name="construct" size={38} color={colors.forestGreen} />
+              <View style={styles.addPhotoBadge}>
+                <Ionicons name="camera" size={14} color={colors.white} />
+              </View>
             </View>
-            <Text style={styles.badgeTitle}>Service Provider Sign Up</Text>
+            <Text style={styles.badgeTitle}>Service Provider Registration</Text>
             <Text style={styles.badgeSub}>Get discovered by verified customers in your area</Text>
           </View>
 
+          {/* Form */}
           <View style={styles.form}>
             <Text style={styles.inputLabel}>Full Name / Business Name</Text>
             <View style={styles.inputBox}>
@@ -100,6 +137,7 @@ export default function ProviderSignUpScreen({ navigation }) {
                 placeholderTextColor={colors.textMuted}
                 value={name}
                 onChangeText={setName}
+                returnKeyType="next"
               />
             </View>
 
@@ -108,36 +146,39 @@ export default function ProviderSignUpScreen({ navigation }) {
               <Ionicons name="mail-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Enter email address"
+                placeholder="e.g. provider@fixora.lk"
                 placeholderTextColor={colors.textMuted}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
+                returnKeyType="next"
               />
             </View>
 
-            <Text style={styles.inputLabel}>Phone Number</Text>
+            <Text style={styles.inputLabel}>Phone Number (Sri Lanka)</Text>
             <View style={styles.inputBox}>
               <Ionicons name="call-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="+94 7X XXX XXXX"
+                placeholder="077 123 4567 or +94 77..."
                 placeholderTextColor={colors.textMuted}
                 value={phone}
                 onChangeText={setPhone}
                 keyboardType="phone-pad"
+                returnKeyType="next"
               />
             </View>
 
             {/* Category Select Chips */}
-            <Text style={styles.inputLabel}>Primary Trade / Category</Text>
+            <Text style={styles.inputLabel}>Primary Trade / Specialty</Text>
             <View style={styles.categoryGrid}>
               {CATEGORIES.map((cat) => (
                 <TouchableOpacity
                   key={cat}
                   style={[styles.categoryChip, category === cat && styles.categoryChipActive]}
                   onPress={() => setCategory(cat)}
+                  activeOpacity={0.8}
                 >
                   <Text style={[styles.categoryChipText, category === cat && styles.categoryChipTextActive]}>
                     {cat}
@@ -177,7 +218,7 @@ export default function ProviderSignUpScreen({ navigation }) {
               </View>
             </View>
 
-            <Text style={styles.inputLabel}>Create Password</Text>
+            <Text style={styles.inputLabel}>Create Password (min 6 chars)</Text>
             <View style={styles.inputBox}>
               <Ionicons name="lock-closed-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
               <TextInput
@@ -187,6 +228,7 @@ export default function ProviderSignUpScreen({ navigation }) {
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
+                returnKeyType="next"
               />
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
                 <Ionicons
@@ -207,6 +249,7 @@ export default function ProviderSignUpScreen({ navigation }) {
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 secureTextEntry={!showConfirmPassword}
+                returnKeyType="done"
               />
               <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} style={styles.eyeBtn}>
                 <Ionicons
@@ -226,7 +269,7 @@ export default function ProviderSignUpScreen({ navigation }) {
               {isSubmitting ? (
                 <ActivityIndicator color={colors.white} />
               ) : (
-                <Text style={styles.createBtnText}>Create Account +</Text>
+                <Text style={styles.createBtnText}>Create Provider Account +</Text>
               )}
             </TouchableOpacity>
 
@@ -235,6 +278,8 @@ export default function ProviderSignUpScreen({ navigation }) {
                 Already have an account? <Text style={styles.loginHighlight}>Log In</Text>
               </Text>
             </TouchableOpacity>
+
+            <View style={{ height: 40 }} />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -245,14 +290,15 @@ export default function ProviderSignUpScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.white,
+    backgroundColor: '#F8FAF9',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 12,
+    backgroundColor: colors.white,
     borderBottomWidth: 1,
     borderBottomColor: colors.cardBorder,
   },
@@ -260,6 +306,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 18,
@@ -267,66 +314,83 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   scrollContent: {
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 32,
+    paddingBottom: 260,
   },
   badgeSection: {
     alignItems: 'center',
     marginBottom: 20,
   },
   badgeCircle: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     backgroundColor: '#EBF4EE',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 10,
+    position: 'relative',
+  },
+  addPhotoBadge: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: colors.emerald,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.white,
   },
   badgeTitle: {
     fontSize: 20,
     fontWeight: '800',
     color: colors.forestGreen,
-    marginBottom: 4,
   },
   badgeSub: {
     fontSize: 13,
     color: colors.textSecondary,
+    marginTop: 4,
     textAlign: 'center',
   },
   form: {
-    width: '100%',
+    backgroundColor: colors.white,
+    padding: 20,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+    shadowColor: '#1E4D2B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
   },
   inputLabel: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
     color: colors.textPrimary,
     marginBottom: 6,
+    marginTop: 10,
   },
   inputBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1.5,
+    backgroundColor: '#F8FAF9',
+    borderWidth: 1,
     borderColor: colors.cardBorder,
     borderRadius: 12,
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     height: 50,
-    marginBottom: 14,
-    backgroundColor: colors.background,
   },
   inputIcon: {
     marginRight: 10,
   },
-  lkrPrefix: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.forestGreen,
-    marginRight: 8,
-  },
   input: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 14,
     color: colors.textPrimary,
   },
   eyeBtn: {
@@ -336,40 +400,46 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    marginBottom: 14,
+    marginBottom: 8,
   },
   categoryChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: colors.background,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 10,
+    backgroundColor: '#F3F4F6',
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: '#E5E7EB',
   },
   categoryChipActive: {
-    backgroundColor: colors.sageGreen,
-    borderColor: colors.sageGreen,
+    backgroundColor: colors.forestGreen,
+    borderColor: colors.forestGreen,
   },
   categoryChipText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
     color: colors.textSecondary,
   },
   categoryChipTextActive: {
     color: colors.white,
+    fontWeight: '700',
   },
   row: {
     flexDirection: 'row',
   },
+  lkrPrefix: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.forestGreen,
+    marginRight: 6,
+  },
   createBtn: {
-    backgroundColor: colors.emerald,
+    backgroundColor: colors.forestGreen,
     height: 52,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
-    marginBottom: 16,
-    shadowColor: colors.emerald,
+    marginTop: 22,
+    shadowColor: colors.forestGreen,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
@@ -382,7 +452,7 @@ const styles = StyleSheet.create({
   },
   loginLink: {
     alignItems: 'center',
-    paddingVertical: 6,
+    marginTop: 16,
   },
   loginLinkText: {
     fontSize: 14,
@@ -390,6 +460,6 @@ const styles = StyleSheet.create({
   },
   loginHighlight: {
     color: colors.forestGreen,
-    fontWeight: '700',
+    fontWeight: '800',
   },
 });

@@ -64,11 +64,11 @@ export const AuthProvider = ({ children }) => {
           isSunil ||
           isRamesh;
 
-        let resolvedName = 'Kasun Perera';
+        let resolvedName = '';
         let resolvedRole = 'customer';
         let resolvedCategory = 'Customer';
-        let resolvedAddress = 'No 42, New Kandy Road, Malabe';
-        let resolvedAvatar = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200';
+        let resolvedAddress = 'Colombo, Sri Lanka';
+        let resolvedAvatar = null;
 
         if (matchedAccount) {
           resolvedName = matchedAccount.name;
@@ -77,6 +77,7 @@ export const AuthProvider = ({ children }) => {
           resolvedAddress = matchedAccount.city
             ? `${matchedAccount.city}, Sri Lanka`
             : matchedAccount.businessAddress || 'Colombo, Sri Lanka';
+          resolvedAvatar = matchedAccount.avatar || null;
         } else if (isAdmin) {
           resolvedName = 'M. Shibly (Admin Coordinator)';
           resolvedRole = 'admin';
@@ -100,9 +101,11 @@ export const AuthProvider = ({ children }) => {
           resolvedRole = 'provider';
           resolvedCategory = 'Service Specialist';
           resolvedAddress = 'Colombo, Sri Lanka';
+          resolvedAvatar = null;
         } else {
           const emailPrefix = email.split('@')[0];
           resolvedName = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1);
+          resolvedAvatar = null;
         }
 
         const demoUser = {
@@ -148,7 +151,7 @@ export const AuthProvider = ({ children }) => {
         setUser(res.user);
         await AsyncStorage.setItem('fixora_token', res.token);
         await AsyncStorage.setItem('fixora_user', JSON.stringify(res.user));
-        return { success: true };
+        return { success: true, user: res.user };
       }
 
       // If backend network error, create local authenticated account
@@ -167,14 +170,14 @@ export const AuthProvider = ({ children }) => {
           role: userData.role || 'customer',
           category: userData.category || (userData.role === 'provider' ? 'Electrician' : undefined),
           address: userData.city ? `${userData.city}, Sri Lanka` : 'Colombo, Sri Lanka',
-          avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200',
+          avatar: null, // Allow user to add their own photo
         };
         const demoToken = 'demo_jwt_token_' + Date.now();
         setToken(demoToken);
         setUser(demoUser);
         await AsyncStorage.setItem('fixora_token', demoToken);
         await AsyncStorage.setItem('fixora_user', JSON.stringify(demoUser));
-        return { success: true, isDemo: true };
+        return { success: true, isDemo: true, user: demoUser };
       }
       return { success: false, message: res.message || 'Registration failed' };
     } catch (error) {

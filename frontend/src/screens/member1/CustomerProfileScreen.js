@@ -57,6 +57,49 @@ export default function CustomerProfileScreen({ navigation }) {
     Alert.alert('Address Updated', 'Your default service address has been updated successfully.');
   };
 
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [photoUrlInput, setPhotoUrlInput] = useState('');
+
+  const getInitials = (fullName) => {
+    if (!fullName) return 'FM';
+    const parts = fullName.trim().split(' ').filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return fullName.slice(0, 2).toUpperCase();
+  };
+
+  const PRESET_AVATARS = [
+    { id: '1', label: 'Classic Pro', uri: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop' },
+    { id: '2', label: 'Executive', uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop' },
+    { id: '3', label: 'Modern', uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop' },
+  ];
+
+  const handleSelectAvatar = (uri) => {
+    if (updateUser) {
+      updateUser({ avatar: uri });
+    }
+    setShowPhotoModal(false);
+    Alert.alert('Profile Photo Updated', 'Your profile photo has been refreshed.');
+  };
+
+  const handleClearAvatar = () => {
+    if (updateUser) {
+      updateUser({ avatar: null });
+    }
+    setShowPhotoModal(false);
+    Alert.alert('Default Initials Set', 'Your profile will now show your custom initials badge.');
+  };
+
+  const handleSaveCustomPhotoUrl = () => {
+    if (!photoUrlInput.trim()) {
+      Alert.alert('Please enter a valid image URL');
+      return;
+    }
+    handleSelectAvatar(photoUrlInput.trim());
+    setPhotoUrlInput('');
+  };
+
   const isAdmin = user?.role === 'admin';
 
   return (
@@ -64,23 +107,40 @@ export default function CustomerProfileScreen({ navigation }) {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Profile Header */}
         <View style={styles.profileCard}>
-          <Image
-            source={{
-              uri:
-                user?.avatar ||
-                (isAdmin
-                  ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200'
-                  : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop'),
-            }}
-            style={styles.avatar}
-          />
+          <TouchableOpacity
+            style={styles.avatarWrap}
+            onPress={() => setShowPhotoModal(true)}
+            activeOpacity={0.85}
+          >
+            {user?.avatar ? (
+              <Image source={{ uri: user.avatar }} style={styles.avatar} />
+            ) : (
+              <View style={styles.initialsAvatar}>
+                <Text style={styles.initialsText}>{getInitials(user?.name)}</Text>
+              </View>
+            )}
+            <View style={styles.cameraBadge}>
+              <Ionicons name="camera" size={13} color={colors.white} />
+            </View>
+          </TouchableOpacity>
+
           <View style={styles.profileInfo}>
-            <Text style={styles.userName}>{user?.name || (isAdmin ? 'M. Shibly' : 'Kasun Perera')}</Text>
-            <Text style={styles.userEmail}>{user?.email || (isAdmin ? 'admin@fixora.lk' : 'kasun@gmail.com')}</Text>
+            <Text style={styles.userName}>{user?.name || (isAdmin ? 'Admin' : 'Fixora Member')}</Text>
+            <Text style={styles.userEmail}>{user?.email || 'member@fixora.lk'}</Text>
+            <TouchableOpacity
+              onPress={() => setShowPhotoModal(true)}
+              style={styles.changePhotoBtn}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.changePhotoText}>
+                {user?.avatar ? 'Change Photo' : 'Add Profile Photo +'}
+              </Text>
+            </TouchableOpacity>
+
             <View style={styles.roleBadge}>
               <Ionicons
                 name={isAdmin ? 'shield-checkmark' : 'person'}
-                size={13}
+                size={12}
                 color={colors.forestGreen}
                 style={{ marginRight: 4 }}
               />
@@ -231,6 +291,63 @@ export default function CustomerProfileScreen({ navigation }) {
           </View>
         </View>
       </Modal>
+
+      {/* Photo Picker Modal */}
+      <Modal visible={showPhotoModal} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Update Profile Photo</Text>
+              <TouchableOpacity onPress={() => setShowPhotoModal(false)}>
+                <Ionicons name="close" size={24} color={colors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.modalSub}>
+              Choose a curated profile style or paste an image URL to customize your account.
+            </Text>
+
+            <Text style={styles.inputLabel}>Choose Professional Style</Text>
+            <View style={styles.presetGrid}>
+              {PRESET_AVATARS.map((p) => (
+                <TouchableOpacity
+                  key={p.id}
+                  style={styles.presetItem}
+                  onPress={() => handleSelectAvatar(p.uri)}
+                  activeOpacity={0.8}
+                >
+                  <Image source={{ uri: p.uri }} style={styles.presetImg} />
+                  <Text style={styles.presetLabel}>{p.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={[styles.inputLabel, { marginTop: 10 }]}>Or Enter Custom Image URL</Text>
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
+              <TextInput
+                style={[styles.textInput, { flex: 1 }]}
+                value={photoUrlInput}
+                onChangeText={setPhotoUrlInput}
+                placeholder="https://... photo link"
+                placeholderTextColor={colors.textMuted}
+                autoCapitalize="none"
+              />
+              <TouchableOpacity
+                style={[styles.modalSaveBtn, { justifyContent: 'center' }]}
+                onPress={handleSaveCustomPhotoUrl}
+              >
+                <Text style={styles.modalSaveText}>Apply</Text>
+              </TouchableOpacity>
+            </View>
+
+            {user?.avatar ? (
+              <TouchableOpacity style={styles.clearAvatarBtn} onPress={handleClearAvatar}>
+                <Ionicons name="trash-outline" size={16} color="#DC2626" />
+                <Text style={[styles.clearAvatarText, { color: '#DC2626' }]}>Remove Custom Photo & Use Initials</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -257,13 +374,90 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 2,
   },
+  avatarWrap: {
+    position: 'relative',
+    marginRight: 16,
+  },
   avatar: {
     width: 68,
     height: 68,
     borderRadius: 34,
     borderWidth: 2,
     borderColor: colors.sageGreen,
-    marginRight: 16,
+  },
+  initialsAvatar: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: colors.forestGreen,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.sageGreen,
+  },
+  initialsText: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: colors.white,
+  },
+  cameraBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    backgroundColor: colors.emerald,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.white,
+  },
+  changePhotoBtn: {
+    marginTop: 2,
+    marginBottom: 6,
+  },
+  changePhotoText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.emerald,
+  },
+  presetGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginVertical: 14,
+  },
+  presetItem: {
+    alignItems: 'center',
+  },
+  presetImg: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+    marginBottom: 4,
+  },
+  presetLabel: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    fontWeight: '600',
+  },
+  clearAvatarBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
+    marginTop: 12,
+  },
+  clearAvatarText: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    fontWeight: '600',
+    marginLeft: 6,
   },
   profileInfo: {
     flex: 1,

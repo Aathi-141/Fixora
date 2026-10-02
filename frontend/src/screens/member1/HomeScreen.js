@@ -16,25 +16,36 @@ import { colors } from '../../theme/colors';
 import { AuthContext } from '../../context/AuthContext';
 import { getProviders } from '../../services/api';
 
-const CATEGORIES = [
-  { name: 'All', icon: 'grid-outline' },
-  { name: 'Electrician', icon: 'flash-outline' },
-  { name: 'Plumber', icon: 'water-outline' },
-  { name: 'Cleaner', icon: 'sparkles-outline' },
-  { name: 'AC Technician', icon: 'snow-outline' },
-  { name: 'Painter', icon: 'color-palette-outline' },
-  { name: 'Carpenter', icon: 'hammer-outline' },
+const POPULAR_SERVICES = [
+  { id: '1', title: 'House Cleaning', icon: 'home-outline', category: 'Cleaner' },
+  { id: '2', title: 'AC Repair', icon: 'snow-outline', category: 'AC Technician' },
+  { id: '3', title: 'Plumbing', icon: 'water-outline', category: 'Plumber' },
+  { id: '4', title: 'Electrical', icon: 'flash-outline', category: 'Electrician' },
+  { id: '5', title: 'Washing Machine', icon: 'hardware-chip-outline', category: 'Electrician' },
+  { id: '6', title: 'Refrigerator', icon: 'cube-outline', category: 'AC Technician' },
+  { id: '7', title: 'Painting', icon: 'color-palette-outline', category: 'Painter' },
+  { id: '8', title: 'Carpentry', icon: 'hammer-outline', category: 'Carpenter' },
 ];
+
+const CATEGORY_BANNERS = {
+  Electrician: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=600&auto=format&fit=crop',
+  Plumber: 'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?w=600&auto=format&fit=crop',
+  Cleaner: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&auto=format&fit=crop',
+  'AC Technician': 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=600&auto=format&fit=crop',
+  Painter: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=600&auto=format&fit=crop',
+  Carpenter: 'https://images.unsplash.com/photo-1530124566582-a618bc2615dc?w=600&auto=format&fit=crop',
+};
 
 const SRI_LANKAN_PROVIDERS = [
   {
     _id: 'p1',
     category: 'Electrician',
-    specialization: 'Senior Certified Electrician & Specialist',
+    specialization: 'Senior Certified Electrician & Wiring Specialist',
     hourlyRate: 700,
     rating: 4.8,
     reviewCount: 124,
     experienceYears: 15,
+    tag: 'Bestseller',
     user: {
       name: 'Ramesh Mendis',
       avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=300&auto=format&fit=crop',
@@ -44,11 +55,12 @@ const SRI_LANKAN_PROVIDERS = [
   {
     _id: 'p2',
     category: 'Plumber',
-    specialization: 'Master High-Pressure Plumber',
+    specialization: 'Master High-Pressure Plumbing & Pipe Diagnostics',
     hourlyRate: 650,
     rating: 4.9,
     reviewCount: 168,
     experienceYears: 12,
+    tag: 'Top Rated',
     user: {
       name: 'Sunil Perera',
       avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop',
@@ -58,11 +70,12 @@ const SRI_LANKAN_PROVIDERS = [
   {
     _id: 'p3',
     category: 'Cleaner',
-    specialization: 'Deep Home Botanical & Floor Cleaning',
+    specialization: 'Deep Home Sanitization & Surface Detailing',
     hourlyRate: 500,
     rating: 4.9,
     reviewCount: 204,
     experienceYears: 8,
+    tag: 'Popular',
     user: {
       name: 'Chaminda Wickramasinghe',
       avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&auto=format&fit=crop',
@@ -72,11 +85,12 @@ const SRI_LANKAN_PROVIDERS = [
   {
     _id: 'p4',
     category: 'AC Technician',
-    specialization: 'Inverter AC & Refrigeration Expert',
+    specialization: 'Inverter AC & Eco-Freon Refrigeration Expert',
     hourlyRate: 850,
     rating: 4.8,
     reviewCount: 92,
     experienceYears: 10,
+    tag: 'Instant 30m',
     user: {
       name: 'Nuwan Pradeep',
       avatar: 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?w=300&auto=format&fit=crop',
@@ -86,11 +100,12 @@ const SRI_LANKAN_PROVIDERS = [
   {
     _id: 'p5',
     category: 'Painter',
-    specialization: 'Interior Weather-Shield & Wall Artisan',
+    specialization: 'Interior Weather-Shield & Wall Artisan Prep',
     hourlyRate: 600,
     rating: 4.7,
     reviewCount: 88,
     experienceYears: 11,
+    tag: 'Verified',
     user: {
       name: 'Rohan Wickramasinghe',
       avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=300&auto=format&fit=crop',
@@ -100,11 +115,12 @@ const SRI_LANKAN_PROVIDERS = [
   {
     _id: 'p6',
     category: 'Carpenter',
-    specialization: 'Master Furniture & Timber Specialist',
+    specialization: 'Master Furniture Fitting & Timber Overhaul',
     hourlyRate: 750,
     rating: 4.9,
     reviewCount: 142,
     experienceYears: 16,
+    tag: 'Bestseller',
     user: {
       name: 'Bandara Wijethunga',
       avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=300&auto=format&fit=crop',
@@ -120,7 +136,6 @@ export default function HomeScreen({ navigation, route }) {
   const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // If filters were passed back from FiltersScreen
   const filterParams = route.params?.filters || {};
 
   useEffect(() => {
@@ -142,7 +157,9 @@ export default function HomeScreen({ navigation, route }) {
     } else {
       let filtered = [...SRI_LANKAN_PROVIDERS];
       if (selectedCategory && selectedCategory !== 'All') {
-        filtered = filtered.filter((p) => p.category.toLowerCase() === selectedCategory.toLowerCase());
+        filtered = filtered.filter(
+          (p) => p.category.toLowerCase() === selectedCategory.toLowerCase()
+        );
       }
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
@@ -164,33 +181,70 @@ export default function HomeScreen({ navigation, route }) {
     setLoading(false);
   };
 
+  const handleSelectPopularService = (categoryName) => {
+    if (selectedCategory === categoryName) {
+      setSelectedCategory('All');
+    } else {
+      setSelectedCategory(categoryName);
+    }
+  };
+
+  const userAddress = user?.address || 'No. 42, New Kandy Road, Malabe';
+  const displayAddress = userAddress.split(',')[0];
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" />
-      {/* Top Bar with user greeting and role badge */}
-      <View style={styles.topBar}>
-        <View>
-          <Text style={styles.greetingSub}>Welcome back,</Text>
-          <Text style={styles.greetingTitle}>Need a service today?</Text>
+
+      {/* 1. Top Location Header Bar (Matching Reference) */}
+      <View style={styles.locationHeaderRow}>
+        <View style={styles.locationWrap}>
+          <View style={styles.pinCircle}>
+            <Ionicons name="location-sharp" size={18} color={colors.forestGreen} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <TouchableOpacity
+              style={styles.addressTouch}
+              onPress={() => navigation.navigate('ProfileTab')}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.addressMain} numberOfLines={1}>
+                {displayAddress}
+              </Text>
+              <Ionicons name="chevron-down" size={14} color={colors.textPrimary} style={{ marginLeft: 4 }} />
+            </TouchableOpacity>
+            <Text style={styles.addressSub}>Delivering to your location</Text>
+          </View>
         </View>
-        <TouchableOpacity
-          style={styles.avatarBtn}
-          onPress={() => navigation.navigate('ProfileTab')}
-        >
-          <Image
-            source={{ uri: user?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200' }}
-            style={styles.avatarImg}
-          />
-        </TouchableOpacity>
+
+        {/* Right Action Icons: Notification Bell & Cart */}
+        <View style={styles.topRightActions}>
+          <TouchableOpacity
+            style={styles.iconCircleBtn}
+            onPress={() => navigation.navigate('HistoryTab')}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="notifications-outline" size={20} color={colors.textPrimary} />
+            <View style={styles.notifDot} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.iconCircleBtn}
+            onPress={() => navigation.navigate('HistoryTab')}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="cart-outline" size={20} color={colors.textPrimary} />
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* Search Input Bar with Filter Button */}
-      <View style={styles.searchRow}>
+      {/* 2. Clean Search Bar with Filter Adjustment Sliders (Matching Reference) */}
+      <View style={styles.searchContainer}>
         <View style={styles.searchBar}>
-          <Ionicons name="search-outline" size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
+          <Ionicons name="search-outline" size={19} color={colors.textMuted} style={{ marginRight: 8 }} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search plumber, electrician, cleaner, AC..."
+            placeholder="Search for appliance or service"
             placeholderTextColor={colors.textMuted}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -205,147 +259,239 @@ export default function HomeScreen({ navigation, route }) {
         <TouchableOpacity
           style={[styles.filterBtn, filterParams.applied && styles.filterBtnActive]}
           onPress={() => navigation.navigate('Filters', { currentFilters: filterParams })}
+          activeOpacity={0.8}
         >
           <Ionicons
             name="options-outline"
-            size={22}
+            size={20}
             color={filterParams.applied ? colors.white : colors.forestGreen}
           />
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollBody}>
-        {/* Categories Section */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Categories</Text>
+      {/* Main Scroll Content */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollBody}
+      >
+        {/* 3. Hero Promo Banner (Matching Reference Image) */}
+        <View style={styles.heroBanner}>
+          <View style={styles.heroContentLeft}>
+            <Text style={styles.heroHeading}>AC not cooling?{'\n'}We'll fix it fast.</Text>
+
+            <View style={styles.heroBulletRow}>
+              <Ionicons name="flash" size={13} color="#FBBF24" style={{ marginRight: 6 }} />
+              <Text style={styles.heroBulletText}>Instant service in 30 mins</Text>
+            </View>
+
+            <View style={styles.heroBulletRow}>
+              <Ionicons name="shield-checkmark" size={13} color="#A7F3D0" style={{ marginRight: 6 }} />
+              <Text style={styles.heroBulletText}>Expert technicians • Genuine parts</Text>
+            </View>
+
+            {/* Quick Action Buttons */}
+            <View style={styles.heroBtnRow}>
+              <TouchableOpacity
+                style={styles.instantPillBtn}
+                onPress={() => handleSelectPopularService('AC Technician')}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="flash" size={14} color={colors.forestGreen} style={{ marginRight: 4 }} />
+                <Text style={styles.instantPillText}>Instant Service</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.schedulePillBtn}
+                onPress={() => {
+                  if (providers.length > 0) {
+                    navigation.navigate('DateTimeSelection', { provider: providers[0] });
+                  }
+                }}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="calendar-outline" size={14} color={colors.white} style={{ marginRight: 4 }} />
+                <Text style={styles.schedulePillText}>Schedule</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Banner Graphic Technician */}
+          <View style={styles.heroGraphicBox}>
+            <Image
+              source={{ uri: 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=400&auto=format&fit=crop' }}
+              style={styles.heroTechnicianImg}
+            />
+          </View>
+        </View>
+
+        {/* Carousel Pagination Dots */}
+        <View style={styles.dotsRow}>
+          <View style={[styles.dot, styles.dotActive]} />
+          <View style={styles.dot} />
+          <View style={styles.dot} />
+        </View>
+
+        {/* 4. Popular Services Section (2x4 Grid Matching Reference) */}
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionTitle}>Popular Services</Text>
           <TouchableOpacity onPress={() => setSelectedCategory('All')}>
-            <Text style={styles.seeAllText}>Show All</Text>
+            <Text style={styles.seeAllLink}>
+              {selectedCategory !== 'All' ? 'Clear Filter' : 'See all >'}
+            </Text>
           </TouchableOpacity>
         </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoryScroll}
-        >
-          {CATEGORIES.map((cat) => {
-            const isActive = selectedCategory === cat.name;
+        <View style={styles.servicesGrid}>
+          {POPULAR_SERVICES.map((item) => {
+            const isSelected = selectedCategory === item.category;
             return (
               <TouchableOpacity
-                key={cat.name}
-                style={[styles.categoryCard, isActive && styles.categoryCardActive]}
-                onPress={() => setSelectedCategory(cat.name)}
+                key={item.id}
+                style={[styles.serviceTile, isSelected && styles.serviceTileActive]}
+                onPress={() => handleSelectPopularService(item.category)}
                 activeOpacity={0.8}
               >
-                <View style={[styles.catIconCircle, isActive && styles.catIconCircleActive]}>
+                <View style={[styles.serviceIconWrap, isSelected && styles.serviceIconWrapActive]}>
                   <Ionicons
-                    name={cat.icon}
-                    size={22}
-                    color={isActive ? colors.white : colors.forestGreen}
+                    name={item.icon}
+                    size={24}
+                    color={isSelected ? colors.white : colors.forestGreen}
                   />
                 </View>
-                <Text style={[styles.catName, isActive && styles.catNameActive]}>{cat.name}</Text>
+                <Text
+                  style={[styles.serviceTileTitle, isSelected && styles.serviceTileTitleActive]}
+                  numberOfLines={2}
+                >
+                  {item.title}
+                </Text>
               </TouchableOpacity>
             );
           })}
-        </ScrollView>
+        </View>
 
-        {/* Top Rated Providers Header */}
-        <View style={[styles.sectionHeader, { marginTop: 24 }]}>
-          <Text style={styles.sectionTitle}>Top Rated Sri Lankan Professionals</Text>
-          <Text style={styles.countBadge}>{providers.length} Available</Text>
+        {/* 5. Recommended For You Section (Clean Cards Matching Reference) */}
+        <View style={[styles.sectionHeaderRow, { marginTop: 26 }]}>
+          <Text style={styles.sectionTitle}>Recommended for you</Text>
+          <TouchableOpacity onPress={() => setSelectedCategory('All')}>
+            <Text style={styles.seeAllLink}>View all &gt;</Text>
+          </TouchableOpacity>
         </View>
 
         {loading ? (
-          <ActivityIndicator color={colors.forestGreen} style={{ marginTop: 30 }} />
+          <ActivityIndicator color={colors.forestGreen} style={{ marginVertical: 30 }} />
         ) : providers.length === 0 ? (
           <View style={styles.emptyBox}>
             <Ionicons name="search" size={40} color={colors.textMuted} />
             <Text style={styles.emptyText}>No specialists found matching your search.</Text>
+            <TouchableOpacity style={styles.resetFilterBtn} onPress={() => setSelectedCategory('All')}>
+              <Text style={styles.resetFilterText}>Show All Services</Text>
+            </TouchableOpacity>
           </View>
         ) : (
-          providers.map((p) => {
-            const providerName = p.user?.name || 'Verified Professional';
-            const avatarUrl =
-              p.user?.avatar ||
-              p.avatar ||
-              'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=200';
+          <View style={styles.cardsContainer}>
+            {providers.map((p, index) => {
+              const providerName = p.user?.name || 'Verified Professional';
+              const bannerUrl =
+                CATEGORY_BANNERS[p.category] ||
+                'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=600&auto=format&fit=crop';
+              const strikePrice = Math.round((p.hourlyRate || 700) * 1.25);
+              const cardTag = p.tag || (index % 2 === 0 ? 'Bestseller' : 'Top Rated');
 
-            return (
-              <TouchableOpacity
-                key={p._id}
-                style={styles.providerCard}
-                onPress={() => navigation.navigate('ProviderProfile', { providerId: p._id, provider: p })}
-                activeOpacity={0.92}
-              >
-                {/* Header: Avatar + Name + Category Pill + Rating */}
-                <View style={styles.cardHeader}>
-                  <Image source={{ uri: avatarUrl }} style={styles.providerImg} />
-                  <View style={styles.providerHeaderInfo}>
-                    <View style={styles.nameRow}>
-                      <Text style={styles.providerName} numberOfLines={1}>
-                        {providerName}
-                      </Text>
-                      <View style={styles.ratingBadge}>
-                        <Ionicons name="star" size={13} color="#F59E0B" />
-                        <Text style={styles.ratingText}>{p.rating?.toFixed(1) || '4.8'}</Text>
+              return (
+                <TouchableOpacity
+                  key={p._id}
+                  style={styles.recommendedCard}
+                  onPress={() => navigation.navigate('ProviderProfile', { providerId: p._id, provider: p })}
+                  activeOpacity={0.92}
+                >
+                  {/* Top Image Banner with Tag Badge */}
+                  <View style={styles.cardBannerWrap}>
+                    <Image source={{ uri: bannerUrl }} style={styles.cardBannerImg} />
+                    <View style={styles.bestsellerBadge}>
+                      <Text style={styles.bestsellerText}>{cardTag}</Text>
+                    </View>
+                  </View>
+
+                  {/* Card Content Body */}
+                  <View style={styles.cardBody}>
+                    <Text style={styles.cardTitle} numberOfLines={1}>
+                      {providerName} • {p.category}
+                    </Text>
+
+                    {/* Rating & Estimated Duration Row */}
+                    <View style={styles.cardRatingRow}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Ionicons name="star" size={13} color="#F59E0B" style={{ marginRight: 3 }} />
+                        <Text style={styles.cardRatingNum}>{p.rating?.toFixed(1) || '4.8'}</Text>
+                        <Text style={styles.cardReviewCount}>({p.reviewCount || 124})</Text>
+                      </View>
+                      <View style={styles.dotDivider} />
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Ionicons name="time-outline" size={13} color={colors.textSecondary} style={{ marginRight: 3 }} />
+                        <Text style={styles.cardDurationText}>60 mins</Text>
                       </View>
                     </View>
 
-                    <View style={styles.categoryBadgeRow}>
-                      <View style={styles.categoryPill}>
-                        <Text style={styles.categoryPillText}>{p.category}</Text>
-                      </View>
-                      <View style={styles.verifiedBadge}>
-                        <Ionicons name="checkmark-circle" size={13} color={colors.emerald} />
-                        <Text style={styles.verifiedText}>Verified</Text>
-                      </View>
+                    {/* Verified Professional Pill */}
+                    <View style={styles.verifiedProfessionalPill}>
+                      <Ionicons name="shield-checkmark" size={12} color={colors.forestGreen} style={{ marginRight: 4 }} />
+                      <Text style={styles.verifiedProfessionalText}>Verified Professional</Text>
                     </View>
 
-                    <Text style={styles.providerSpec} numberOfLines={2}>
-                      {p.specialization || `${p.category} Specialist`}
-                    </Text>
-                  </View>
-                </View>
+                    {/* Price and Book Now Action Row */}
+                    <View style={styles.cardBottomRow}>
+                      <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                        <Text style={styles.cardPriceAmount}>Rs. {p.hourlyRate?.toLocaleString() || p.hourlyRate}</Text>
+                        <Text style={styles.cardStrikePrice}>Rs. {strikePrice.toLocaleString()}</Text>
+                      </View>
 
-                {/* Meta details: Location & Experience */}
-                <View style={styles.cardMetaRow}>
-                  <View style={styles.metaItem}>
-                    <Ionicons name="location-outline" size={15} color={colors.textSecondary} />
-                    <Text style={styles.metaText} numberOfLines={1}>
-                      {p.user?.address || p.city || 'Colombo, Sri Lanka'}
-                    </Text>
+                      <TouchableOpacity
+                        style={styles.bookNowCompactBtn}
+                        onPress={() => navigation.navigate('DateTimeSelection', { provider: p })}
+                        activeOpacity={0.85}
+                      >
+                        <Text style={styles.bookNowCompactText}>Book Now</Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
-                  <View style={styles.metaDivider} />
-                  <View style={styles.metaItem}>
-                    <Ionicons name="ribbon-outline" size={15} color={colors.forestGreen} />
-                    <Text style={styles.metaText}>{p.experienceYears || 5}+ yrs exp</Text>
-                  </View>
-                </View>
-
-                {/* Footer: Price tag & Book Now Button */}
-                <View style={styles.cardFooter}>
-                  <View>
-                    <Text style={styles.rateCaption}>Starting hourly rate</Text>
-                    <Text style={styles.priceTag}>
-                      Rs. {p.hourlyRate?.toLocaleString() || p.hourlyRate}{' '}
-                      <Text style={styles.perHour}>/hr</Text>
-                    </Text>
-                  </View>
-
-                  <TouchableOpacity
-                    style={styles.bookNowBtn}
-                    onPress={() => navigation.navigate('DateTimeSelection', { provider: p })}
-                    activeOpacity={0.85}
-                  >
-                    <Text style={styles.bookNowBtnText}>Book Now</Text>
-                    <Ionicons name="arrow-forward" size={15} color={colors.white} style={{ marginLeft: 5 }} />
-                  </TouchableOpacity>
-                </View>
-              </TouchableOpacity>
-            );
-          })
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         )}
+
+        {/* 6. Fixora Trust Guarantee Badges (Matching Reference Footer) */}
+        <View style={styles.trustBadgesRow}>
+          <View style={styles.trustBadgeItem}>
+            <View style={styles.trustIconCircle}>
+              <Ionicons name="shield-checkmark-outline" size={18} color={colors.forestGreen} />
+            </View>
+            <Text style={styles.trustBadgeLabel}>Verified{'\n'}Professionals</Text>
+          </View>
+
+          <View style={styles.trustBadgeItem}>
+            <View style={styles.trustIconCircle}>
+              <Ionicons name="pricetag-outline" size={18} color={colors.forestGreen} />
+            </View>
+            <Text style={styles.trustBadgeLabel}>Transparent{'\n'}Pricing</Text>
+          </View>
+
+          <View style={styles.trustBadgeItem}>
+            <View style={styles.trustIconCircle}>
+              <Ionicons name="ribbon-outline" size={18} color={colors.forestGreen} />
+            </View>
+            <Text style={styles.trustBadgeLabel}>Up to 30 Days{'\n'}Warranty</Text>
+          </View>
+
+          <View style={styles.trustBadgeItem}>
+            <View style={styles.trustIconCircle}>
+              <Ionicons name="navigate-outline" size={18} color={colors.forestGreen} />
+            </View>
+            <Text style={styles.trustBadgeLabel}>Live{'\n'}Tracking</Text>
+          </View>
+        </View>
+
+        <View style={{ height: 40 }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -356,41 +502,76 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8FAF9',
   },
-  topBar: {
+  // 1. Top Location Header Bar
+  locationHeaderRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 10,
+    justifyContent: 'space-between',
+    paddingHorizontal: 18,
+    paddingTop: 8,
+    paddingBottom: 8,
     backgroundColor: colors.white,
   },
-  greetingSub: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    fontWeight: '500',
-  },
-  greetingTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: colors.forestGreen,
-  },
-  avatarBtn: {
-    padding: 2,
-    borderWidth: 2,
-    borderColor: colors.sageGreen,
-    borderRadius: 24,
-  },
-  avatarImg: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-  },
-  searchRow: {
+  locationWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    flex: 1,
+  },
+  pinCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#EBF4EE',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  addressTouch: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  addressMain: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: colors.textPrimary,
+    maxWidth: 200,
+  },
+  addressSub: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    fontWeight: '500',
+    marginTop: 1,
+  },
+  topRightActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  iconCircleBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  notifDot: {
+    position: 'absolute',
+    top: 8,
+    right: 9,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: colors.emerald,
+  },
+
+  // 2. Search Bar
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 18,
+    paddingVertical: 10,
     backgroundColor: colors.white,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
@@ -400,22 +581,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#F3F4F6',
-    borderRadius: 12,
+    borderRadius: 14,
     paddingHorizontal: 12,
-    height: 46,
+    height: 44,
     marginRight: 10,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
   },
   searchInput: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 13,
     color: colors.textPrimary,
   },
   filterBtn: {
-    width: 46,
-    height: 46,
-    borderRadius: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     backgroundColor: '#EBF4EE',
     justifyContent: 'center',
     alignItems: 'center',
@@ -423,246 +602,357 @@ const styles = StyleSheet.create({
   filterBtnActive: {
     backgroundColor: colors.emerald,
   },
+
+  // Main Scroll Body
   scrollBody: {
     paddingHorizontal: 18,
-    paddingTop: 12,
-    paddingBottom: 110,
+    paddingTop: 14,
+    paddingBottom: 40,
   },
-  sectionHeader: {
+
+  // 3. Hero Promo Banner
+  heroBanner: {
+    backgroundColor: '#1E4D2B',
+    borderRadius: 20,
+    flexDirection: 'row',
+    overflow: 'hidden',
+    shadowColor: '#1E4D2B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  heroContentLeft: {
+    flex: 1.15,
+    padding: 18,
+    justifyContent: 'center',
+  },
+  heroHeading: {
+    fontSize: 19,
+    fontWeight: '800',
+    color: colors.white,
+    lineHeight: 24,
+    marginBottom: 8,
+  },
+  heroBulletRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  heroBulletText: {
+    fontSize: 11,
+    color: '#E2E8F0',
+    fontWeight: '500',
+  },
+  heroBtnRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 14,
+  },
+  instantPillBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.white,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+  },
+  instantPillText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: colors.forestGreen,
+  },
+  schedulePillBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.6)',
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 20,
+  },
+  schedulePillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.white,
+  },
+  heroGraphicBox: {
+    flex: 0.85,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+  },
+  heroTechnicianImg: {
+    width: '100%',
+    height: '100%',
+    minHeight: 140,
+    resizeMode: 'cover',
+  },
+
+  // Carousel Dots
+  dotsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 10,
+    marginBottom: 16,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#D1D5DB',
+  },
+  dotActive: {
+    width: 18,
+    backgroundColor: colors.forestGreen,
+  },
+
+  // Section Headers
+  sectionHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 16,
     marginBottom: 12,
   },
   sectionTitle: {
     fontSize: 17,
     fontWeight: '800',
+    color: colors.textPrimary,
+  },
+  seeAllLink: {
+    fontSize: 13,
+    fontWeight: '700',
     color: colors.forestGreen,
   },
-  seeAllText: {
-    fontSize: 13,
-    color: colors.emerald,
-    fontWeight: '600',
+
+  // 4. Popular Services Grid (4 Columns x 2 Rows)
+  servicesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
   },
-  categoryScroll: {
-    paddingRight: 10,
-    gap: 12,
-  },
-  categoryCard: {
+  serviceTile: {
+    width: '22.7%', // 4 items per row with gap
+    aspectRatio: 0.9,
+    backgroundColor: '#EBF5EE',
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    backgroundColor: colors.white,
-    borderRadius: 16,
+    padding: 6,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
-    minWidth: 86,
-    shadowColor: '#1E4D2B',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 1,
+    borderColor: 'transparent',
   },
-  categoryCardActive: {
+  serviceTileActive: {
     backgroundColor: colors.forestGreen,
     borderColor: colors.forestGreen,
   },
-  catIconCircle: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: '#EBF4EE',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  catIconCircleActive: {
-    backgroundColor: colors.emerald,
-  },
-  catName: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  catNameActive: {
-    color: colors.white,
-  },
-  countBadge: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.textSecondary,
-    backgroundColor: '#E5E7EB',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
-  },
-  emptyBox: {
-    alignItems: 'center',
-    paddingVertical: 40,
-  },
-  emptyText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  // Spacious, Breathable, Professional Provider Card
-  providerCard: {
-    backgroundColor: colors.white,
+  serviceIconWrap: {
+    width: 40,
+    height: 40,
     borderRadius: 20,
-    padding: 18,
-    marginBottom: 18,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#1E4D2B',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.07,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  providerImg: {
-    width: 80,
-    height: 80,
-    borderRadius: 18,
-    marginRight: 16,
-    backgroundColor: '#EBF4EE',
-  },
-  providerHeaderInfo: {
-    flex: 1,
     justifyContent: 'center',
-  },
-  nameRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 4,
   },
-  providerName: {
-    fontSize: 17,
+  serviceIconWrapActive: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  serviceTileTitle: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    textAlign: 'center',
+    lineHeight: 13,
+  },
+  serviceTileTitleActive: {
+    color: colors.white,
+  },
+
+  // 5. Recommended Cards
+  cardsContainer: {
+    gap: 14,
+  },
+  recommendedCard: {
+    backgroundColor: colors.white,
+    borderRadius: 18,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    shadowColor: '#1E4D2B',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  cardBannerWrap: {
+    height: 125,
+    width: '100%',
+    position: 'relative',
+    backgroundColor: '#E5E7EB',
+  },
+  cardBannerImg: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  bestsellerBadge: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  bestsellerText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: colors.forestGreen,
+  },
+  cardBody: {
+    padding: 14,
+  },
+  cardTitle: {
+    fontSize: 16,
     fontWeight: '800',
     color: colors.textPrimary,
-    flex: 1,
-    marginRight: 6,
+    marginBottom: 6,
   },
-  ratingBadge: {
+  cardRatingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FEF3C7',
+    marginBottom: 8,
+  },
+  cardRatingNum: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginRight: 2,
+  },
+  cardReviewCount: {
+    fontSize: 11,
+    color: colors.textSecondary,
+  },
+  dotDivider: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: '#9CA3AF',
+    marginHorizontal: 8,
+  },
+  cardDurationText: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    fontWeight: '500',
+  },
+  verifiedProfessionalPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: '#EBF4EE',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 8,
+    marginBottom: 12,
   },
-  ratingText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#92400E',
-    marginLeft: 3,
-  },
-  categoryBadgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 6,
-  },
-  categoryPill: {
-    backgroundColor: '#EBF5EE',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  categoryPillText: {
+  verifiedProfessionalText: {
     fontSize: 11,
     fontWeight: '700',
     color: colors.forestGreen,
   },
-  verifiedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-  },
-  verifiedText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: colors.emerald,
-  },
-  providerSpec: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    lineHeight: 18,
-  },
-  cardMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F8FAF9',
-    borderRadius: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    marginTop: 14,
-    marginBottom: 14,
-  },
-  metaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  metaText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginLeft: 5,
-    fontWeight: '500',
-  },
-  metaDivider: {
-    width: 1,
-    height: 14,
-    backgroundColor: '#E2E8F0',
-    marginHorizontal: 8,
-  },
-  cardFooter: {
+  cardBottomRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
-    paddingTop: 12,
+    borderTopColor: '#F3F4F6',
+    paddingTop: 10,
   },
-  rateCaption: {
-    fontSize: 11,
-    color: colors.textMuted,
-    fontWeight: '500',
-  },
-  priceTag: {
-    fontSize: 18,
+  cardPriceAmount: {
+    fontSize: 17,
     fontWeight: '800',
-    color: colors.forestGreen,
-    marginTop: 1,
+    color: colors.textPrimary,
+    marginRight: 6,
   },
-  perHour: {
-    fontSize: 12,
+  cardStrikePrice: {
+    fontSize: 13,
+    color: '#9CA3AF',
+    textDecorationLine: 'line-through',
     fontWeight: '500',
-    color: colors.textSecondary,
   },
-  bookNowBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.emerald,
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 12,
-    shadowColor: colors.emerald,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 2,
+  bookNowCompactBtn: {
+    backgroundColor: colors.forestGreen,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 10,
   },
-  bookNowBtnText: {
-    color: colors.white,
-    fontSize: 14,
+  bookNowCompactText: {
+    fontSize: 12,
     fontWeight: '700',
+    color: colors.white,
+  },
+
+  // Empty state
+  emptyBox: {
+    alignItems: 'center',
+    paddingVertical: 36,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  resetFilterBtn: {
+    marginTop: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#EBF4EE',
+    borderRadius: 10,
+  },
+  resetFilterText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.forestGreen,
+  },
+
+  // 6. Trust Badges Row
+  trustBadgesRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: colors.white,
+    paddingVertical: 18,
+    paddingHorizontal: 12,
+    borderRadius: 18,
+    marginTop: 24,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  trustBadgeItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  trustIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#EBF4EE',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  trustBadgeLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 13,
   },
 });
