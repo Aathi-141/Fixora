@@ -4,17 +4,20 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TextInput,
   StatusBar,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 
-const SERVICE_TYPES = ['Electrician', 'Plumber', 'Cleaner', 'HVAC & AC', 'Carpentry', 'Painting'];
+const SERVICE_TYPES = ['Electrician', 'Plumber', 'Cleaner', 'AC Technician', 'Painter', 'Carpenter'];
 const RATINGS = ['Any', '3.0+', '4.0+', '4.5+', '5.0'];
 const RADII = [5, 10, 15, 25, 50];
+const PRICE_PRESETS = ['600', '800', '1000', '1500', '2500'];
 
 export default function FiltersScreen({ navigation, route }) {
   const currentFilters = route.params?.currentFilters || {};
@@ -22,10 +25,10 @@ export default function FiltersScreen({ navigation, route }) {
   const [location, setLocation] = useState(currentFilters.city || 'Colombo, Western Province');
   const [selectedRadius, setSelectedRadius] = useState(currentFilters.radius || 15);
   const [selectedTypes, setSelectedTypes] = useState(
-    currentFilters.category ? [currentFilters.category] : ['Plumber']
+    currentFilters.category ? [currentFilters.category] : ['Electrician']
   );
   const [minRating, setMinRating] = useState(currentFilters.minRating || '4.0+');
-  const [maxPrice, setMaxPrice] = useState(currentFilters.maxPrice || '1500');
+  const [maxPrice, setMaxPrice] = useState(currentFilters.maxPrice ? String(currentFilters.maxPrice) : '1500');
 
   const toggleType = (type) => {
     if (selectedTypes.includes(type)) {
@@ -70,107 +73,136 @@ export default function FiltersScreen({ navigation, route }) {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Applied Filter Count */}
-        <View style={styles.appliedBadge}>
-          <Ionicons name="funnel" size={14} color={colors.forestGreen} style={{ marginRight: 6 }} />
-          <Text style={styles.appliedText}>Active Filters Applied</Text>
-        </View>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Applied Filter Count */}
+          <View style={styles.appliedBadge}>
+            <Ionicons name="funnel" size={14} color={colors.forestGreen} style={{ marginRight: 6 }} />
+            <Text style={styles.appliedText}>Refine Specialist Search</Text>
+          </View>
 
-        {/* Location Section */}
-        <Text style={styles.filterGroupTitle}>Location</Text>
-        <View style={styles.locationBox}>
-          <Ionicons name="location" size={18} color={colors.forestGreen} style={{ marginRight: 8 }} />
-          <TextInput
-            style={styles.locationInput}
-            value={location}
-            onChangeText={setLocation}
-            placeholder="Enter city or district"
-          />
-        </View>
+          {/* Location Section */}
+          <Text style={styles.filterGroupTitle}>Location</Text>
+          <View style={styles.locationBox}>
+            <Ionicons name="location" size={18} color={colors.forestGreen} style={{ marginRight: 8 }} />
+            <TextInput
+              style={styles.locationInput}
+              value={location}
+              onChangeText={setLocation}
+              placeholder="Enter city or district (e.g. Colombo, Malabe)"
+              placeholderTextColor={colors.textMuted}
+            />
+          </View>
 
-        {/* Search Radius */}
-        <View style={styles.groupHeaderRow}>
-          <Text style={styles.filterGroupTitle}>Search Radius</Text>
-          <Text style={styles.radiusValText}>{selectedRadius} km</Text>
-        </View>
-        <View style={styles.chipRow}>
-          {RADII.map((r) => (
-            <TouchableOpacity
-              key={r}
-              style={[styles.radiusChip, selectedRadius === r && styles.radiusChipActive]}
-              onPress={() => setSelectedRadius(r)}
-            >
-              <Text style={[styles.radiusChipText, selectedRadius === r && styles.radiusChipTextActive]}>
-                {r} km
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Service Type */}
-        <Text style={[styles.filterGroupTitle, { marginTop: 24 }]}>Service Type</Text>
-        <View style={styles.typeGrid}>
-          {SERVICE_TYPES.map((type) => {
-            const isSelected = selectedTypes.includes(type);
-            return (
+          {/* Search Radius */}
+          <View style={styles.groupHeaderRow}>
+            <Text style={styles.filterGroupTitle}>Search Radius</Text>
+            <Text style={styles.radiusValText}>{selectedRadius} km</Text>
+          </View>
+          <View style={styles.chipRow}>
+            {RADII.map((r) => (
               <TouchableOpacity
-                key={type}
-                style={[styles.typeChip, isSelected && styles.typeChipActive]}
-                onPress={() => toggleType(type)}
+                key={r}
+                style={[styles.radiusChip, selectedRadius === r && styles.radiusChipActive]}
+                onPress={() => setSelectedRadius(r)}
               >
-                <Ionicons
-                  name={isSelected ? 'checkbox' : 'square-outline'}
-                  size={16}
-                  color={isSelected ? colors.white : colors.textSecondary}
-                  style={{ marginRight: 6 }}
-                />
-                <Text style={[styles.typeChipText, isSelected && styles.typeChipTextActive]}>{type}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* Minimum Rating */}
-        <Text style={[styles.filterGroupTitle, { marginTop: 24 }]}>Minimum Rating</Text>
-        <View style={styles.chipRow}>
-          {RATINGS.map((rate) => {
-            const isSelected = minRating === rate;
-            return (
-              <TouchableOpacity
-                key={rate}
-                style={[styles.ratingChip, isSelected && styles.ratingChipActive]}
-                onPress={() => setMinRating(rate)}
-              >
-                {rate !== 'Any' && (
-                  <Ionicons
-                    name="star"
-                    size={14}
-                    color={isSelected ? colors.white : '#F59E0B'}
-                    style={{ marginRight: 4 }}
-                  />
-                )}
-                <Text style={[styles.ratingChipText, isSelected && styles.ratingChipTextActive]}>
-                  {rate}
+                <Text style={[styles.radiusChipText, selectedRadius === r && styles.radiusChipTextActive]}>
+                  {r} km
                 </Text>
               </TouchableOpacity>
-            );
-          })}
-        </View>
+            ))}
+          </View>
 
-        {/* Price Range */}
-        <Text style={[styles.filterGroupTitle, { marginTop: 24 }]}>Max Hourly Rate (LKR)</Text>
-        <View style={styles.priceInputBox}>
-          <Text style={styles.lkrLabel}>Rs.</Text>
-          <TextInput
-            style={styles.priceInput}
-            value={maxPrice}
-            onChangeText={setMaxPrice}
-            placeholder="e.g. 1000"
-            keyboardType="numeric"
-          />
-        </View>
-      </ScrollView>
+          {/* Service Type */}
+          <Text style={[styles.filterGroupTitle, { marginTop: 24 }]}>Service Category</Text>
+          <View style={styles.typeGrid}>
+            {SERVICE_TYPES.map((type) => {
+              const isSelected = selectedTypes.includes(type);
+              return (
+                <TouchableOpacity
+                  key={type}
+                  style={[styles.typeChip, isSelected && styles.typeChipActive]}
+                  onPress={() => toggleType(type)}
+                >
+                  <Ionicons
+                    name={isSelected ? 'checkbox' : 'square-outline'}
+                    size={16}
+                    color={isSelected ? colors.white : colors.textSecondary}
+                    style={{ marginRight: 6 }}
+                  />
+                  <Text style={[styles.typeChipText, isSelected && styles.typeChipTextActive]}>{type}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* Minimum Rating */}
+          <Text style={[styles.filterGroupTitle, { marginTop: 24 }]}>Minimum Rating</Text>
+          <View style={styles.chipRow}>
+            {RATINGS.map((rate) => {
+              const isSelected = minRating === rate;
+              return (
+                <TouchableOpacity
+                  key={rate}
+                  style={[styles.ratingChip, isSelected && styles.ratingChipActive]}
+                  onPress={() => setMinRating(rate)}
+                >
+                  {rate !== 'Any' && (
+                    <Ionicons
+                      name="star"
+                      size={14}
+                      color={isSelected ? colors.white : '#F59E0B'}
+                      style={{ marginRight: 4 }}
+                    />
+                  )}
+                  <Text style={[styles.ratingChipText, isSelected && styles.ratingChipTextActive]}>
+                    {rate}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* Price Range */}
+          <Text style={[styles.filterGroupTitle, { marginTop: 24 }]}>Max Hourly Rate (LKR)</Text>
+
+          {/* Quick Price Preset Chips */}
+          <View style={[styles.chipRow, { marginBottom: 10 }]}>
+            {PRICE_PRESETS.map((p) => (
+              <TouchableOpacity
+                key={p}
+                style={[styles.pricePresetChip, maxPrice === p && styles.pricePresetChipActive]}
+                onPress={() => setMaxPrice(p)}
+              >
+                <Text style={[styles.pricePresetText, maxPrice === p && styles.pricePresetTextActive]}>
+                  Rs. {p}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <View style={styles.priceInputBox}>
+            <Text style={styles.lkrLabel}>Rs.</Text>
+            <TextInput
+              style={styles.priceInput}
+              value={maxPrice}
+              onChangeText={setMaxPrice}
+              placeholder="e.g. 1000"
+              placeholderTextColor={colors.textMuted}
+              keyboardType="numeric"
+            />
+          </View>
+
+          <View style={{ height: 40 }} />
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Sticky Bottom Footer */}
       <View style={styles.footer}>
@@ -192,7 +224,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderBottomWidth: 1,
     borderBottomColor: colors.cardBorder,
   },
@@ -206,13 +238,13 @@ const styles = StyleSheet.create({
   },
   clearBtnText: {
     fontSize: 14,
-    color: colors.danger,
+    color: '#DC2626',
     fontWeight: '600',
   },
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 30,
+    paddingBottom: 150, // Ensures plenty of room above keyboard and sticky footer
   },
   appliedBadge: {
     flexDirection: 'row',
@@ -335,6 +367,26 @@ const styles = StyleSheet.create({
   ratingChipTextActive: {
     color: colors.white,
   },
+  pricePresetChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  pricePresetChipActive: {
+    backgroundColor: colors.forestGreen,
+    borderColor: colors.forestGreen,
+  },
+  pricePresetText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textPrimary,
+  },
+  pricePresetTextActive: {
+    color: colors.white,
+  },
   priceInputBox: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -353,18 +405,18 @@ const styles = StyleSheet.create({
   },
   priceInput: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     color: colors.textPrimary,
   },
   footer: {
-    padding: 20,
+    padding: 16,
     borderTopWidth: 1,
     borderTopColor: colors.cardBorder,
     backgroundColor: colors.white,
   },
   applyBtn: {
     backgroundColor: colors.emerald,
-    height: 52,
+    height: 50,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
