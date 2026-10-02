@@ -11,27 +11,11 @@ import {
   ActivityIndicator,
   Alert,
   Image,
-  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { AuthContext } from '../../context/AuthContext';
-
-const GOOGLE_ACCOUNTS = [
-  {
-    id: 'g_1',
-    name: 'Kasun Perera',
-    email: 'kasun.perera@gmail.com',
-    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200',
-  },
-  {
-    id: 'g_2',
-    name: 'Aathika Asmeer',
-    email: 'aathika.asmeer@gmail.com',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200',
-  },
-];
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
@@ -39,12 +23,7 @@ export default function LoginScreen({ navigation }) {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Google Authenticator Modal
-  const [showGoogleModal, setShowGoogleModal] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [selectedGoogleAccount, setSelectedGoogleAccount] = useState(null);
-
-  const { login, googleLogin } = useContext(AuthContext);
+  const { login } = useContext(AuthContext);
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -60,30 +39,6 @@ export default function LoginScreen({ navigation }) {
     } else {
       Alert.alert('Login Failed', res.message || 'Please check your credentials.');
     }
-  };
-
-  const handleSelectGoogleAccount = async (account) => {
-    setSelectedGoogleAccount(account);
-    setIsGoogleLoading(true);
-
-    // Simulate authentic Google OAuth network token exchange
-    setTimeout(async () => {
-      const res = await googleLogin('customer', {
-        email: account.email,
-        name: account.name,
-        avatar: account.avatar,
-        googleId: account.id,
-      });
-
-      setIsGoogleLoading(false);
-      setShowGoogleModal(false);
-
-      if (res.success) {
-        navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
-      } else {
-        Alert.alert('Google Authentication', res.message || 'Could not complete Google Sign-In.');
-      }
-    }, 1200);
   };
 
   return (
@@ -122,7 +77,7 @@ export default function LoginScreen({ navigation }) {
               />
             </View>
 
-            <Text style={[styles.label, { marginTop: 14 }]}>Password</Text>
+            <Text style={[styles.label, { marginTop: 16 }]}>Password</Text>
             <View style={styles.inputContainer}>
               <Ionicons name="lock-closed-outline" size={20} color={colors.textMuted} style={styles.inputIcon} />
               <TextInput
@@ -142,7 +97,10 @@ export default function LoginScreen({ navigation }) {
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity style={styles.forgotBtn}>
+            <TouchableOpacity
+              style={styles.forgotBtn}
+              onPress={() => Alert.alert('Forgot Password', 'Please contact support at support@fixora.lk to reset your password.')}
+            >
               <Text style={styles.forgotText}>Forgot Password?</Text>
             </TouchableOpacity>
 
@@ -159,23 +117,6 @@ export default function LoginScreen({ navigation }) {
                 <Text style={styles.loginBtnText}>Sign In</Text>
               )}
             </TouchableOpacity>
-
-            {/* Divider */}
-            <View style={styles.dividerRow}>
-              <View style={styles.divider} />
-              <Text style={styles.dividerText}>or continue with</Text>
-              <View style={styles.divider} />
-            </View>
-
-            {/* Real Google Authenticator Button */}
-            <TouchableOpacity
-              style={styles.googleBtn}
-              onPress={() => setShowGoogleModal(true)}
-              activeOpacity={0.85}
-            >
-              <Ionicons name="logo-google" size={20} color="#EA4335" style={{ marginRight: 10 }} />
-              <Text style={styles.googleBtnText}>Continue with Google</Text>
-            </TouchableOpacity>
           </View>
 
           {/* Footer Register Navigation */}
@@ -187,84 +128,6 @@ export default function LoginScreen({ navigation }) {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-
-      {/* Google Authenticator Bottom Sheet Modal */}
-      <Modal visible={showGoogleModal} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.googleModalContent}>
-            {/* Modal Header */}
-            <View style={styles.googleHeader}>
-              <View style={styles.googleLogoRow}>
-                <Ionicons name="logo-google" size={24} color="#4285F4" style={{ marginRight: 8 }} />
-                <Text style={styles.googleModalTitle}>Sign in with Google</Text>
-              </View>
-              <TouchableOpacity
-                onPress={() => !isGoogleLoading && setShowGoogleModal(false)}
-                style={styles.googleCloseBtn}
-              >
-                <Ionicons name="close" size={22} color={colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
-
-            <Text style={styles.googleSubtitle}>Choose an account to continue to Fixora</Text>
-
-            {isGoogleLoading ? (
-              <View style={styles.googleLoadingBox}>
-                <ActivityIndicator size="large" color="#4285F4" />
-                <Text style={styles.googleLoadingText}>
-                  Signing in with {selectedGoogleAccount?.name}...
-                </Text>
-                <Text style={styles.googleSecuringText}>
-                  Securing session with accounts.google.com
-                </Text>
-              </View>
-            ) : (
-              <View style={styles.accountsList}>
-                {GOOGLE_ACCOUNTS.map((acc) => (
-                  <TouchableOpacity
-                    key={acc.id}
-                    style={styles.accountRow}
-                    onPress={() => handleSelectGoogleAccount(acc)}
-                    activeOpacity={0.7}
-                  >
-                    <Image source={{ uri: acc.avatar }} style={styles.accountAvatar} />
-                    <View style={{ flex: 1, marginLeft: 14 }}>
-                      <Text style={styles.accountName}>{acc.name}</Text>
-                      <Text style={styles.accountEmail}>{acc.email}</Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-                  </TouchableOpacity>
-                ))}
-
-                <TouchableOpacity
-                  style={styles.addAccountRow}
-                  onPress={() => {
-                    handleSelectGoogleAccount({
-                      id: 'g_custom_' + Date.now(),
-                      name: 'Google User',
-                      email: 'user@gmail.com',
-                      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200',
-                    });
-                  }}
-                >
-                  <View style={styles.addAccountIcon}>
-                    <Ionicons name="person-add-outline" size={18} color={colors.forestGreen} />
-                  </View>
-                  <Text style={styles.addAccountText}>Use another account</Text>
-                </TouchableOpacity>
-
-                {/* Consent & Privacy Notice */}
-                <Text style={styles.googleTermsText}>
-                  To continue, Google will share your name, email address, and profile picture with
-                  Fixora. See Fixora's{' '}
-                  <Text style={{ textDecorationLine: 'underline' }}>Privacy Policy</Text> and{' '}
-                  <Text style={{ textDecorationLine: 'underline' }}>Terms of Service</Text>.
-                </Text>
-              </View>
-            )}
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 }
@@ -276,17 +139,17 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
-    paddingTop: 20,
+    paddingTop: 36,
     paddingBottom: 40,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 28,
+    marginBottom: 32,
   },
   logoContainer: {
-    width: 90,
-    height: 90,
-    borderRadius: 22,
+    width: 96,
+    height: 96,
+    borderRadius: 24,
     backgroundColor: colors.white,
     justifyContent: 'center',
     alignItems: 'center',
@@ -298,8 +161,8 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   logoImage: {
-    width: 68,
-    height: 68,
+    width: 72,
+    height: 72,
   },
   title: {
     fontSize: 26,
@@ -315,14 +178,16 @@ const styles = StyleSheet.create({
   },
   form: {
     backgroundColor: colors.white,
-    padding: 22,
+    padding: 24,
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
     shadowColor: '#1E4D2B',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 12,
     elevation: 2,
-    marginBottom: 20,
+    marginBottom: 24,
   },
   label: {
     fontSize: 13,
@@ -337,8 +202,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.cardBorder,
     borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 50,
+    paddingHorizontal: 14,
+    height: 52,
   },
   inputIcon: {
     marginRight: 10,
@@ -353,8 +218,8 @@ const styles = StyleSheet.create({
   },
   forgotBtn: {
     alignSelf: 'flex-end',
-    marginTop: 8,
-    marginBottom: 18,
+    marginTop: 10,
+    marginBottom: 20,
   },
   forgotText: {
     fontSize: 13,
@@ -363,7 +228,7 @@ const styles = StyleSheet.create({
   },
   loginBtn: {
     backgroundColor: colors.forestGreen,
-    height: 50,
+    height: 52,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
@@ -378,37 +243,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 18,
-  },
-  divider: {
-    flex: 1,
-    height: 1,
-    backgroundColor: colors.cardBorder,
-  },
-  dividerText: {
-    fontSize: 12,
-    color: colors.textMuted,
-    marginHorizontal: 10,
-    fontWeight: '500',
-  },
-  googleBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.white,
-    borderWidth: 1.5,
-    borderColor: '#E5E7EB',
-    height: 50,
-    borderRadius: 12,
-  },
-  googleBtnText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -422,108 +256,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
     color: colors.forestGreen,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-  },
-  googleModalContent: {
-    backgroundColor: colors.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 28,
-  },
-  googleHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  googleLogoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  googleModalTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#202124',
-  },
-  googleCloseBtn: {
-    padding: 4,
-  },
-  googleSubtitle: {
-    fontSize: 13,
-    color: '#5F6368',
-    marginBottom: 18,
-  },
-  accountsList: {
-    marginBottom: 10,
-  },
-  accountRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F3F4',
-  },
-  accountAvatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-  },
-  accountName: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#202124',
-  },
-  accountEmail: {
-    fontSize: 13,
-    color: '#5F6368',
-    marginTop: 1,
-  },
-  addAccountRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F3F4',
-  },
-  addAccountIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: '#EBF5EE',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
-  },
-  addAccountText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.forestGreen,
-  },
-  googleTermsText: {
-    fontSize: 11,
-    color: '#5F6368',
-    marginTop: 18,
-    lineHeight: 16,
-    textAlign: 'center',
-  },
-  googleLoadingBox: {
-    alignItems: 'center',
-    paddingVertical: 36,
-  },
-  googleLoadingText: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#202124',
-    marginTop: 16,
-  },
-  googleSecuringText: {
-    fontSize: 12,
-    color: '#5F6368',
-    marginTop: 4,
   },
 });

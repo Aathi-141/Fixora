@@ -179,18 +179,6 @@ export default function ProviderRequestsScreen({ navigation }) {
               <Text style={styles.onlineStatusText}>Listening for incoming customer bookings</Text>
             </View>
 
-            {/* Demo Simulator button for University Viva Presentation */}
-            <TouchableOpacity
-              style={styles.simulateBtn}
-              onPress={() => {
-                setHasActiveRequest(true);
-                setTicketStatus('Pending Review');
-              }}
-              activeOpacity={0.85}
-            >
-              <Ionicons name="flash" size={18} color={colors.white} style={{ marginRight: 8 }} />
-              <Text style={styles.simulateBtnText}>Simulate Customer Booking (Demo)</Text>
-            </TouchableOpacity>
           </View>
         ) : (
           // Active Request View

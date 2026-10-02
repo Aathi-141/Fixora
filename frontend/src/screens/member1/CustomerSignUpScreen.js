@@ -29,20 +29,46 @@ export default function CustomerSignUpScreen({ navigation }) {
   const { register } = useContext(AuthContext);
 
   const handleSignUp = async () => {
-    if (!name || !email || !password) {
-      Alert.alert('Incomplete Form', 'Please provide your full name, email, and password.');
+    // 1. Name validation
+    if (!name.trim()) {
+      Alert.alert('Full Name Required', 'Please enter your full name.');
       return;
     }
+
+    // 2. Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email.trim() || !emailRegex.test(email.trim())) {
+      Alert.alert('Invalid Email', 'Please enter a valid email address (e.g. name@example.com).');
+      return;
+    }
+
+    // 3. Sri Lankan Phone validation
+    const cleanedPhone = phone.trim().replace(/[\s\-]/g, '');
+    const phoneRegex = /^(\+94|0)?7[0-9]{8}$/;
+    if (!cleanedPhone || !phoneRegex.test(cleanedPhone)) {
+      Alert.alert(
+        'Invalid Phone Number',
+        'Please enter a valid Sri Lankan mobile number starting with 07X or +947X (e.g. 0771234567).'
+      );
+      return;
+    }
+
+    // 4. Password validation
+    if (!password || password.length < 6) {
+      Alert.alert('Password Too Short', 'Password must be at least 6 characters long.');
+      return;
+    }
+
     if (password !== confirmPassword) {
-      Alert.alert('Password Mismatch', 'The passwords entered do not match.');
+      Alert.alert('Password Mismatch', 'The passwords entered do not match. Please verify both passwords.');
       return;
     }
 
     setIsSubmitting(true);
     const res = await register({
-      name,
-      email,
-      phone: phone || '+94 77 123 4567',
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      phone: cleanedPhone,
       password,
       role: 'customer',
       city: 'Colombo',
@@ -63,20 +89,25 @@ export default function CustomerSignUpScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Top App Bar */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Customer Sign Up</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
         style={{ flex: 1 }}
       >
-        {/* Top App Bar */}
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Customer Sign Up</Text>
-          <View style={{ width: 40 }} />
-        </View>
-
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
           {/* Avatar Placeholder */}
           <View style={styles.avatarSection}>
             <View style={styles.avatarCircle}>
@@ -95,10 +126,11 @@ export default function CustomerSignUpScreen({ navigation }) {
               <Ionicons name="person-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Enter your full name"
+                placeholder="e.g. Kasun Perera"
                 placeholderTextColor={colors.textMuted}
                 value={name}
                 onChangeText={setName}
+                returnKeyType="next"
               />
             </View>
 
@@ -107,38 +139,41 @@ export default function CustomerSignUpScreen({ navigation }) {
               <Ionicons name="mail-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Enter your email"
+                placeholder="e.g. kasun@example.com"
                 placeholderTextColor={colors.textMuted}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
+                returnKeyType="next"
               />
             </View>
 
-            <Text style={styles.inputLabel}>Phone Number</Text>
+            <Text style={styles.inputLabel}>Phone Number (Sri Lanka)</Text>
             <View style={styles.inputBox}>
               <Ionicons name="call-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="+94 7X XXX XXXX"
+                placeholder="077 123 4567 or +94 77..."
                 placeholderTextColor={colors.textMuted}
                 value={phone}
                 onChangeText={setPhone}
                 keyboardType="phone-pad"
+                returnKeyType="next"
               />
             </View>
 
-            <Text style={styles.inputLabel}>Password</Text>
+            <Text style={styles.inputLabel}>Password (min 6 characters)</Text>
             <View style={styles.inputBox}>
               <Ionicons name="lock-closed-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Create a password"
+                placeholder="Create a strong password"
                 placeholderTextColor={colors.textMuted}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
+                returnKeyType="next"
               />
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
                 <Ionicons
@@ -159,6 +194,7 @@ export default function CustomerSignUpScreen({ navigation }) {
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 secureTextEntry={!showConfirmPassword}
+                returnKeyType="done"
               />
               <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} style={styles.eyeBtn}>
                 <Ionicons
@@ -173,9 +209,9 @@ export default function CustomerSignUpScreen({ navigation }) {
             <View style={styles.protectionCard}>
               <Ionicons name="shield-checkmark" size={20} color={colors.forestGreen} style={{ marginRight: 10 }} />
               <View style={{ flex: 1 }}>
-                <Text style={styles.protectionTitle}>Account Protection</Text>
+                <Text style={styles.protectionTitle}>Fixora Guarantee</Text>
                 <Text style={styles.protectionText}>
-                  Verified ratings, transparent pricing, and 100% satisfaction guarantee on all service calls.
+                  Verified ratings, transparent pricing, and 100% satisfaction guarantee on all bookings.
                 </Text>
               </View>
             </View>
@@ -189,9 +225,11 @@ export default function CustomerSignUpScreen({ navigation }) {
               {isSubmitting ? (
                 <ActivityIndicator color={colors.white} />
               ) : (
-                <Text style={styles.createBtnText}>Create Account +</Text>
+                <Text style={styles.createBtnText}>Create Customer Account</Text>
               )}
             </TouchableOpacity>
+
+            <View style={styles.bottomSpacer} />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -202,14 +240,15 @@ export default function CustomerSignUpScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.white,
+    backgroundColor: '#F8FAF9',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 12,
+    backgroundColor: colors.white,
     borderBottomWidth: 1,
     borderBottomColor: colors.cardBorder,
   },
@@ -217,6 +256,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 18,
@@ -224,9 +264,9 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   scrollContent: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 32,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 160,
   },
   avatarSection: {
     alignItems: 'center',
@@ -256,29 +296,38 @@ const styles = StyleSheet.create({
     borderColor: colors.white,
   },
   avatarHint: {
-    fontSize: 12,
+    fontSize: 13,
     color: colors.textSecondary,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   form: {
-    width: '100%',
+    backgroundColor: colors.white,
+    padding: 20,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+    shadowColor: '#1E4D2B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
   },
   inputLabel: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
     color: colors.textPrimary,
     marginBottom: 6,
+    marginTop: 10,
   },
   inputBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1.5,
+    backgroundColor: '#F8FAF9',
+    borderWidth: 1,
     borderColor: colors.cardBorder,
     borderRadius: 12,
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     height: 50,
-    marginBottom: 14,
-    backgroundColor: colors.background,
   },
   inputIcon: {
     marginRight: 10,
@@ -293,31 +342,31 @@ const styles = StyleSheet.create({
   },
   protectionCard: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     backgroundColor: '#EBF4EE',
-    padding: 12,
     borderRadius: 12,
-    marginTop: 6,
+    padding: 12,
+    marginTop: 20,
     marginBottom: 20,
   },
   protectionTitle: {
     fontSize: 13,
     fontWeight: '700',
     color: colors.forestGreen,
+    marginBottom: 2,
   },
   protectionText: {
-    fontSize: 11,
+    fontSize: 12,
     color: colors.textSecondary,
-    marginTop: 2,
-    lineHeight: 15,
+    lineHeight: 16,
   },
   createBtn: {
-    backgroundColor: colors.emerald,
+    backgroundColor: colors.forestGreen,
     height: 52,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: colors.emerald,
+    shadowColor: colors.forestGreen,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 8,
@@ -327,5 +376,8 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: 16,
     fontWeight: '700',
+  },
+  bottomSpacer: {
+    height: 40,
   },
 });

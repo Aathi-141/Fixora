@@ -251,7 +251,7 @@ export default function HomeScreen({ navigation, route }) {
         </ScrollView>
 
         {/* Top Rated Providers Header */}
-        <View style={[styles.sectionHeader, { marginTop: 26 }]}>
+        <View style={[styles.sectionHeader, { marginTop: 24 }]}>
           <Text style={styles.sectionTitle}>Top Rated Sri Lankan Professionals</Text>
           <Text style={styles.countBadge}>{providers.length} Available</Text>
         </View>
@@ -276,44 +276,71 @@ export default function HomeScreen({ navigation, route }) {
                 key={p._id}
                 style={styles.providerCard}
                 onPress={() => navigation.navigate('ProviderProfile', { providerId: p._id, provider: p })}
-                activeOpacity={0.9}
+                activeOpacity={0.92}
               >
-                <Image source={{ uri: avatarUrl }} style={styles.providerImg} />
-                <View style={styles.providerInfo}>
-                  <View style={styles.cardTopRow}>
-                    <Text style={styles.providerName}>{providerName}</Text>
-                    <View style={styles.ratingBadge}>
-                      <Ionicons name="star" size={13} color="#F59E0B" />
-                      <Text style={styles.ratingText}>{p.rating?.toFixed(1) || '4.8'}</Text>
+                {/* Header: Avatar + Name + Category Pill + Rating */}
+                <View style={styles.cardHeader}>
+                  <Image source={{ uri: avatarUrl }} style={styles.providerImg} />
+                  <View style={styles.providerHeaderInfo}>
+                    <View style={styles.nameRow}>
+                      <Text style={styles.providerName} numberOfLines={1}>
+                        {providerName}
+                      </Text>
+                      <View style={styles.ratingBadge}>
+                        <Ionicons name="star" size={13} color="#F59E0B" />
+                        <Text style={styles.ratingText}>{p.rating?.toFixed(1) || '4.8'}</Text>
+                      </View>
                     </View>
-                  </View>
 
-                  <Text style={styles.providerSpec} numberOfLines={1}>
-                    {p.specialization || p.category}
-                  </Text>
+                    <View style={styles.categoryBadgeRow}>
+                      <View style={styles.categoryPill}>
+                        <Text style={styles.categoryPillText}>{p.category}</Text>
+                      </View>
+                      <View style={styles.verifiedBadge}>
+                        <Ionicons name="checkmark-circle" size={13} color={colors.emerald} />
+                        <Text style={styles.verifiedText}>Verified</Text>
+                      </View>
+                    </View>
 
-                  <View style={styles.detailRow}>
-                    <Ionicons name="location-outline" size={14} color={colors.textSecondary} />
-                    <Text style={styles.cityText} numberOfLines={1}>
-                      {p.user?.address || p.city || 'Colombo'}
+                    <Text style={styles.providerSpec} numberOfLines={2}>
+                      {p.specialization || `${p.category} Specialist`}
                     </Text>
-                    <Text style={styles.dot}>•</Text>
-                    <Text style={styles.expText}>{p.experienceYears || 5}+ yrs exp</Text>
                   </View>
+                </View>
 
-                  <View style={styles.cardBottomRow}>
+                {/* Meta details: Location & Experience */}
+                <View style={styles.cardMetaRow}>
+                  <View style={styles.metaItem}>
+                    <Ionicons name="location-outline" size={15} color={colors.textSecondary} />
+                    <Text style={styles.metaText} numberOfLines={1}>
+                      {p.user?.address || p.city || 'Colombo, Sri Lanka'}
+                    </Text>
+                  </View>
+                  <View style={styles.metaDivider} />
+                  <View style={styles.metaItem}>
+                    <Ionicons name="ribbon-outline" size={15} color={colors.forestGreen} />
+                    <Text style={styles.metaText}>{p.experienceYears || 5}+ yrs exp</Text>
+                  </View>
+                </View>
+
+                {/* Footer: Price tag & Book Now Button */}
+                <View style={styles.cardFooter}>
+                  <View>
+                    <Text style={styles.rateCaption}>Starting hourly rate</Text>
                     <Text style={styles.priceTag}>
-                      Rs. {p.hourlyRate} <Text style={styles.perHour}>/hr</Text>
+                      Rs. {p.hourlyRate?.toLocaleString() || p.hourlyRate}{' '}
+                      <Text style={styles.perHour}>/hr</Text>
                     </Text>
-
-                    <TouchableOpacity
-                      style={styles.bookNowBtn}
-                      onPress={() => navigation.navigate('DateTimeSelection', { provider: p })}
-                      activeOpacity={0.85}
-                    >
-                      <Text style={styles.bookNowBtnText}>Book Now</Text>
-                    </TouchableOpacity>
                   </View>
+
+                  <TouchableOpacity
+                    style={styles.bookNowBtn}
+                    onPress={() => navigation.navigate('DateTimeSelection', { provider: p })}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={styles.bookNowBtnText}>Book Now</Text>
+                    <Ionicons name="arrow-forward" size={15} color={colors.white} style={{ marginLeft: 5 }} />
+                  </TouchableOpacity>
                 </View>
               </TouchableOpacity>
             );
@@ -398,8 +425,8 @@ const styles = StyleSheet.create({
   },
   scrollBody: {
     paddingHorizontal: 18,
-    paddingTop: 10,
-    paddingBottom: 110, // Generous spacing so bottom tab bar never covers items
+    paddingTop: 12,
+    paddingBottom: 110,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -481,45 +508,53 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
   },
+  // Spacious, Breathable, Professional Provider Card
   providerCard: {
-    flexDirection: 'row',
     backgroundColor: colors.white,
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 16,
+    borderRadius: 20,
+    padding: 18,
+    marginBottom: 18,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     shadowColor: '#1E4D2B',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.07,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
   },
   providerImg: {
-    width: 86,
-    height: 86,
-    borderRadius: 16,
-    marginRight: 14,
+    width: 80,
+    height: 80,
+    borderRadius: 18,
+    marginRight: 16,
+    backgroundColor: '#EBF4EE',
   },
-  providerInfo: {
+  providerHeaderInfo: {
     flex: 1,
-    justifyContent: 'space-between',
+    justifyContent: 'center',
   },
-  cardTopRow: {
+  nameRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 4,
   },
   providerName: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '800',
     color: colors.textPrimary,
+    flex: 1,
+    marginRight: 6,
   },
   ratingBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FEF3C7',
-    paddingHorizontal: 7,
+    paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 8,
   },
@@ -529,53 +564,96 @@ const styles = StyleSheet.create({
     color: '#92400E',
     marginLeft: 3,
   },
-  providerSpec: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.forestGreen,
-    marginTop: 3,
-    marginBottom: 2,
-  },
-  detailRow: {
+  categoryBadgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
+    gap: 8,
+    marginBottom: 6,
   },
-  cityText: {
+  categoryPill: {
+    backgroundColor: '#EBF5EE',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  categoryPillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.forestGreen,
+  },
+  verifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  verifiedText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: colors.emerald,
+  },
+  providerSpec: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 18,
+  },
+  cardMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAF9',
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginTop: 14,
+    marginBottom: 14,
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  metaText: {
     fontSize: 12,
     color: colors.textSecondary,
-    marginLeft: 3,
-    maxWidth: 100,
+    marginLeft: 5,
+    fontWeight: '500',
   },
-  dot: {
-    marginHorizontal: 5,
-    color: colors.textMuted,
+  metaDivider: {
+    width: 1,
+    height: 14,
+    backgroundColor: '#E2E8F0',
+    marginHorizontal: 8,
   },
-  expText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-  },
-  cardBottomRow: {
+  cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+    paddingTop: 12,
+  },
+  rateCaption: {
+    fontSize: 11,
+    color: colors.textMuted,
+    fontWeight: '500',
   },
   priceTag: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '800',
-    color: colors.emerald,
+    color: colors.forestGreen,
+    marginTop: 1,
   },
   perHour: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '500',
     color: colors.textSecondary,
   },
   bookNowBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: colors.emerald,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 10,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 12,
     shadowColor: colors.emerald,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
@@ -584,7 +662,7 @@ const styles = StyleSheet.create({
   },
   bookNowBtnText: {
     color: colors.white,
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: '700',
   },
 });
