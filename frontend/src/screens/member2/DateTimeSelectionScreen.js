@@ -75,8 +75,9 @@ export default function DateTimeSelectionScreen({ navigation, route }) {
   const category = provider?.category || 'Electrician';
 
   const defaultAddOns = DOMAIN_ADDONS[category] || DOMAIN_ADDONS['Electrician'];
+  const todayDate = new Date().getDate();
   const [monthIdx, setMonthIdx] = useState(0);
-  const [selectedDay, setSelectedDay] = useState(2); // Today: October 2, 2026
+  const [selectedDay, setSelectedDay] = useState(todayDate);
   const [period, setPeriod] = useState('Afternoon');
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('04:30 PM');
   const [addOns, setAddOns] = useState(defaultAddOns);
@@ -88,7 +89,7 @@ export default function DateTimeSelectionScreen({ navigation, route }) {
   const totalPrice = Math.round(basePrice + addOnsTotal);
 
   const currentMonth = MONTH_DATA[monthIdx];
-  const TODAY_DAY = 2; // Current active simulation date: Oct 2
+  const TODAY_DAY = todayDate; // Freeze all previous days dynamically
 
   const toggleAddOn = (id) => {
     setAddOns(
@@ -430,7 +431,7 @@ const styles = StyleSheet.create({
   },
   scrollBody: {
     padding: 16,
-    paddingBottom: 24,
+    paddingBottom: 110,
   },
   // Single Clean Calendar Surface Card
   calendarCard: {
@@ -731,9 +732,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 14,
-    paddingBottom: Platform.OS === 'ios' ? 24 : 14,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === 'ios' ? 28 : 16,
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
     shadowColor: '#000',
@@ -743,12 +745,14 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   totalEstimatedLabel: {
-    fontSize: 11,
+    fontSize: 10.5,
     color: colors.textSecondary,
-    fontWeight: '600',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   totalEstimatedAmount: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: '800',
     color: colors.forestGreen,
   },
