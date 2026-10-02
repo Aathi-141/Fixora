@@ -76,12 +76,16 @@ export default function CustomerSignUpScreen({ navigation }) {
     setIsSubmitting(false);
 
     if (res.success) {
-      Alert.alert('Account Created!', 'Welcome to Fixora! Please log in with your email and password.', [
-        {
-          text: 'Go to Login',
-          onPress: () => navigation.navigate('Login'),
-        },
-      ]);
+      Alert.alert(
+        'Account Created!',
+        `Welcome to Fixora, ${res.user?.name || name.trim()}! Your account has been registered in MongoDB Atlas. Please log in.`,
+        [
+          {
+            text: 'Go to Login',
+            onPress: () => navigation.navigate('Login'),
+          },
+        ]
+      );
     } else {
       Alert.alert('Registration Failed', res.message || 'Could not complete registration.');
     }

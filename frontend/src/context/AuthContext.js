@@ -154,32 +154,12 @@ export const AuthProvider = ({ children }) => {
         return { success: true, user: res.user };
       }
 
-      // If backend network error, create local authenticated account
-      if (
-        !res.success &&
-        (res.message?.includes('failed') ||
-          res.message?.includes('Network') ||
-          res.message?.includes('aborted') ||
-          res.message?.includes('ConnectException'))
-      ) {
-        const demoUser = {
-          id: 'demo_' + Date.now(),
-          name: userData.name || 'New Member',
-          email: userData.email,
-          phone: userData.phone || '+94 77 123 4567',
-          role: userData.role || 'customer',
-          category: userData.category || (userData.role === 'provider' ? 'Electrician' : undefined),
-          address: userData.city ? `${userData.city}, Sri Lanka` : 'Colombo, Sri Lanka',
-          avatar: null, // Allow user to add their own photo
-        };
-        const demoToken = 'demo_jwt_token_' + Date.now();
-        setToken(demoToken);
-        setUser(demoUser);
-        await AsyncStorage.setItem('fixora_token', demoToken);
-        await AsyncStorage.setItem('fixora_user', JSON.stringify(demoUser));
-        return { success: true, isDemo: true, user: demoUser };
-      }
-      return { success: false, message: res.message || 'Registration failed' };
+      return {
+        success: false,
+        message:
+          res.message ||
+          'Could not connect to MongoDB Atlas backend. Please verify your connection.',
+      };
     } catch (error) {
       return { success: false, message: error.message };
     }

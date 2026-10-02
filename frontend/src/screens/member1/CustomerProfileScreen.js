@@ -69,12 +69,6 @@ export default function CustomerProfileScreen({ navigation }) {
     return fullName.slice(0, 2).toUpperCase();
   };
 
-  const PRESET_AVATARS = [
-    { id: '1', label: 'Classic Pro', uri: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop' },
-    { id: '2', label: 'Executive', uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop' },
-    { id: '3', label: 'Modern', uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop' },
-  ];
-
   const handleSelectAvatar = (uri) => {
     if (updateUser) {
       updateUser({ avatar: uri });
@@ -88,7 +82,7 @@ export default function CustomerProfileScreen({ navigation }) {
       updateUser({ avatar: null });
     }
     setShowPhotoModal(false);
-    Alert.alert('Default Initials Set', 'Your profile will now show your custom initials badge.');
+    Alert.alert('Default Initials Set', 'Your profile will now show your personal initials badge.');
   };
 
   const handleSaveCustomPhotoUrl = () => {
@@ -303,25 +297,10 @@ export default function CustomerProfileScreen({ navigation }) {
               </TouchableOpacity>
             </View>
             <Text style={styles.modalSub}>
-              Choose a curated profile style or paste an image URL to customize your account.
+              Enter a photo image URL or keep your personalized initials badge.
             </Text>
 
-            <Text style={styles.inputLabel}>Choose Professional Style</Text>
-            <View style={styles.presetGrid}>
-              {PRESET_AVATARS.map((p) => (
-                <TouchableOpacity
-                  key={p.id}
-                  style={styles.presetItem}
-                  onPress={() => handleSelectAvatar(p.uri)}
-                  activeOpacity={0.8}
-                >
-                  <Image source={{ uri: p.uri }} style={styles.presetImg} />
-                  <Text style={styles.presetLabel}>{p.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <Text style={[styles.inputLabel, { marginTop: 10 }]}>Or Enter Custom Image URL</Text>
+            <Text style={styles.inputLabel}>Profile Photo Image URL</Text>
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
               <TextInput
                 style={[styles.textInput, { flex: 1 }]}

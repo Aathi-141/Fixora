@@ -280,12 +280,12 @@ export default function HomeScreen({ navigation, route }) {
             <Text style={styles.heroHeading}>AC not cooling?{'\n'}We'll fix it fast.</Text>
 
             <View style={styles.heroBulletRow}>
-              <Ionicons name="flash" size={13} color="#FBBF24" style={{ marginRight: 6 }} />
+              <Ionicons name="flash" size={12} color="#FBBF24" style={{ marginRight: 5 }} />
               <Text style={styles.heroBulletText}>Instant service in 30 mins</Text>
             </View>
 
             <View style={styles.heroBulletRow}>
-              <Ionicons name="shield-checkmark" size={13} color="#A7F3D0" style={{ marginRight: 6 }} />
+              <Ionicons name="shield-checkmark" size={12} color="#A7F3D0" style={{ marginRight: 5 }} />
               <Text style={styles.heroBulletText}>Expert technicians • Genuine parts</Text>
             </View>
 
@@ -296,7 +296,7 @@ export default function HomeScreen({ navigation, route }) {
                 onPress={() => handleSelectPopularService('AC Technician')}
                 activeOpacity={0.85}
               >
-                <Ionicons name="flash" size={14} color={colors.forestGreen} style={{ marginRight: 4 }} />
+                <Ionicons name="flash" size={12} color="#1E4D2B" style={{ marginRight: 3 }} />
                 <Text style={styles.instantPillText}>Instant Service</Text>
               </TouchableOpacity>
 
@@ -309,7 +309,7 @@ export default function HomeScreen({ navigation, route }) {
                 }}
                 activeOpacity={0.85}
               >
-                <Ionicons name="calendar-outline" size={14} color={colors.white} style={{ marginRight: 4 }} />
+                <Ionicons name="calendar-outline" size={12} color="#FFFFFF" style={{ marginRight: 3 }} />
                 <Text style={styles.schedulePillText}>Schedule</Text>
               </TouchableOpacity>
             </View>
@@ -317,6 +317,9 @@ export default function HomeScreen({ navigation, route }) {
 
           {/* Banner Graphic Technician */}
           <View style={styles.heroGraphicBox}>
+            <View style={styles.heroIconBackdrop}>
+              <Ionicons name="construct" size={48} color="rgba(255,255,255,0.2)" />
+            </View>
             <Image
               source={{ uri: 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=400&auto=format&fit=crop' }}
               style={styles.heroTechnicianImg}
@@ -610,10 +613,11 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
 
-  // 3. Hero Promo Banner
+  // 3. Hero Promo Banner (Strict 160px height to prevent Yoga flex overflow)
   heroBanner: {
+    height: 160,
     backgroundColor: '#1E4D2B',
-    borderRadius: 20,
+    borderRadius: 18,
     flexDirection: 'row',
     overflow: 'hidden',
     shadowColor: '#1E4D2B',
@@ -621,45 +625,47 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 10,
     elevation: 4,
+    marginBottom: 6,
   },
   heroContentLeft: {
-    flex: 1.15,
-    padding: 18,
-    justifyContent: 'center',
+    flex: 1,
+    paddingVertical: 14,
+    paddingLeft: 14,
+    paddingRight: 6,
+    justifyContent: 'space-between',
   },
   heroHeading: {
-    fontSize: 19,
+    fontSize: 17,
     fontWeight: '800',
     color: colors.white,
-    lineHeight: 24,
-    marginBottom: 8,
+    lineHeight: 22,
   },
   heroBulletRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   heroBulletText: {
-    fontSize: 11,
+    fontSize: 10.5,
     color: '#E2E8F0',
     fontWeight: '500',
   },
   heroBtnRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginTop: 14,
+    gap: 6,
+    marginTop: 4,
   },
   instantPillBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.white,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 18,
   },
   instantPillText: {
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: '800',
     color: colors.forestGreen,
   },
@@ -667,25 +673,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.6)',
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    borderRadius: 20,
+    borderColor: 'rgba(255,255,255,0.7)',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 18,
   },
   schedulePillText: {
-    fontSize: 11,
+    fontSize: 10.5,
     fontWeight: '700',
     color: colors.white,
   },
   heroGraphicBox: {
-    flex: 0.85,
-    justifyContent: 'flex-end',
+    width: 125,
+    height: 160,
+    backgroundColor: '#163820',
+    justifyContent: 'center',
     alignItems: 'center',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  heroIconBackdrop: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   heroTechnicianImg: {
-    width: '100%',
-    height: '100%',
-    minHeight: 140,
+    width: 125,
+    height: 160,
     resizeMode: 'cover',
   },
 
