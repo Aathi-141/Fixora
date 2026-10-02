@@ -4,11 +4,13 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   Image,
   StatusBar,
+  Linking,
+  Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 
@@ -53,6 +55,28 @@ export default function RequestStatusTrackingScreen({ navigation, route }) {
     booking?.provider?.specialization || 'Master Plumber • 12 Yrs Exp';
   const etaTime = booking?.etaTime || '10:00 AM';
   const etaMinutes = booking?.etaMinutes || 15;
+
+  const handleCallSpecialist = () => {
+    Alert.alert(
+      `Call ${providerName}`,
+      'Choose communication method:',
+      [
+        {
+          text: 'Direct Phone (+94 77 990 1122)',
+          onPress: () => {
+            Linking.openURL('tel:+94779901122').catch(() => {
+              Alert.alert('Calling', `Dialing ${providerName} at +94 77 990 1122`);
+            });
+          },
+        },
+        {
+          text: 'In-App Internet Call',
+          onPress: () => navigation.navigate('Call', { booking, providerName }),
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ]
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -114,7 +138,7 @@ export default function RequestStatusTrackingScreen({ navigation, route }) {
 
             <TouchableOpacity
               style={styles.callBtn}
-              onPress={() => navigation.navigate('Call', { booking, providerName })}
+              onPress={handleCallSpecialist}
               activeOpacity={0.8}
             >
               <Ionicons name="call" size={18} color={colors.white} style={{ marginRight: 6 }} />
