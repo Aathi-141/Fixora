@@ -140,7 +140,6 @@ export default function HomeScreen({ navigation, route }) {
     if (res.success && res.data && res.data.length > 0) {
       setProviders(res.data);
     } else {
-      // Filter mock data locally if backend not yet seeded with all 6
       let filtered = [...SRI_LANKAN_PROVIDERS];
       if (selectedCategory && selectedCategory !== 'All') {
         filtered = filtered.filter((p) => p.category.toLowerCase() === selectedCategory.toLowerCase());
@@ -252,7 +251,7 @@ export default function HomeScreen({ navigation, route }) {
         </ScrollView>
 
         {/* Top Rated Providers Header */}
-        <View style={[styles.sectionHeader, { marginTop: 24 }]}>
+        <View style={[styles.sectionHeader, { marginTop: 26 }]}>
           <Text style={styles.sectionTitle}>Top Rated Sri Lankan Professionals</Text>
           <Text style={styles.countBadge}>{providers.length} Available</Text>
         </View>
@@ -284,16 +283,20 @@ export default function HomeScreen({ navigation, route }) {
                   <View style={styles.cardTopRow}>
                     <Text style={styles.providerName}>{providerName}</Text>
                     <View style={styles.ratingBadge}>
-                      <Ionicons name="star" size={14} color="#F59E0B" />
+                      <Ionicons name="star" size={13} color="#F59E0B" />
                       <Text style={styles.ratingText}>{p.rating?.toFixed(1) || '4.8'}</Text>
                     </View>
                   </View>
 
-                  <Text style={styles.providerSpec}>{p.specialization || p.category}</Text>
+                  <Text style={styles.providerSpec} numberOfLines={1}>
+                    {p.specialization || p.category}
+                  </Text>
 
                   <View style={styles.detailRow}>
                     <Ionicons name="location-outline" size={14} color={colors.textSecondary} />
-                    <Text style={styles.cityText}>{p.user?.address || p.city || 'Colombo'}</Text>
+                    <Text style={styles.cityText} numberOfLines={1}>
+                      {p.user?.address || p.city || 'Colombo'}
+                    </Text>
                     <Text style={styles.dot}>•</Text>
                     <Text style={styles.expText}>{p.experienceYears || 5}+ yrs exp</Text>
                   </View>
@@ -306,6 +309,7 @@ export default function HomeScreen({ navigation, route }) {
                     <TouchableOpacity
                       style={styles.bookNowBtn}
                       onPress={() => navigation.navigate('DateTimeSelection', { provider: p })}
+                      activeOpacity={0.85}
                     >
                       <Text style={styles.bookNowBtnText}>Book Now</Text>
                     </TouchableOpacity>
@@ -323,7 +327,7 @@ export default function HomeScreen({ navigation, route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#F8FAF9',
   },
   topBar: {
     flexDirection: 'row',
@@ -362,19 +366,19 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     backgroundColor: colors.white,
     borderBottomWidth: 1,
-    borderBottomColor: colors.cardBorder,
+    borderBottomColor: '#E5E7EB',
   },
   searchBar: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: '#F3F4F6',
     borderRadius: 12,
     paddingHorizontal: 12,
     height: 46,
     marginRight: 10,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: '#E5E7EB',
   },
   searchInput: {
     flex: 1,
@@ -393,8 +397,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.emerald,
   },
   scrollBody: {
-    paddingHorizontal: 20,
-    paddingBottom: 90, // Plenty of room for elevated bottom tab bar
+    paddingHorizontal: 18,
+    paddingTop: 10,
+    paddingBottom: 110, // Generous spacing so bottom tab bar never covers items
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -414,44 +419,48 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   categoryScroll: {
-    paddingRight: 20,
+    paddingRight: 10,
     gap: 12,
   },
   categoryCard: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     backgroundColor: colors.white,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
-    minWidth: 84,
+    borderColor: '#E5E7EB',
+    minWidth: 86,
+    shadowColor: '#1E4D2B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 1,
   },
   categoryCardActive: {
     backgroundColor: colors.forestGreen,
     borderColor: colors.forestGreen,
   },
   catIconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     backgroundColor: '#EBF4EE',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: 8,
   },
   catIconCircleActive: {
     backgroundColor: colors.emerald,
   },
   catName: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
     color: colors.textPrimary,
   },
   catNameActive: {
     color: colors.white,
-    fontWeight: '700',
   },
   countBadge: {
     fontSize: 12,
@@ -475,22 +484,22 @@ const styles = StyleSheet.create({
   providerCard: {
     flexDirection: 'row',
     backgroundColor: colors.white,
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 14,
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: '#E2E8F0',
     shadowColor: '#1E4D2B',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.05,
-    shadowRadius: 6,
+    shadowRadius: 8,
     elevation: 2,
   },
   providerImg: {
-    width: 82,
-    height: 82,
-    borderRadius: 14,
-    marginRight: 12,
+    width: 86,
+    height: 86,
+    borderRadius: 16,
+    marginRight: 14,
   },
   providerInfo: {
     flex: 1,
@@ -502,7 +511,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   providerName: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '800',
     color: colors.textPrimary,
   },
@@ -510,9 +519,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FEF3C7',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 8,
   },
   ratingText: {
     fontSize: 12,
@@ -521,10 +530,11 @@ const styles = StyleSheet.create({
     marginLeft: 3,
   },
   providerSpec: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     color: colors.forestGreen,
-    marginTop: 2,
+    marginTop: 3,
+    marginBottom: 2,
   },
   detailRow: {
     flexDirection: 'row',
@@ -535,6 +545,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
     marginLeft: 3,
+    maxWidth: 100,
   },
   dot: {
     marginHorizontal: 5,
@@ -548,10 +559,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 8,
+    marginTop: 10,
   },
   priceTag: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '800',
     color: colors.emerald,
   },
@@ -562,13 +573,18 @@ const styles = StyleSheet.create({
   },
   bookNowBtn: {
     backgroundColor: colors.emerald,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 10,
+    shadowColor: colors.emerald,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
   },
   bookNowBtnText: {
     color: colors.white,
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
 });

@@ -10,6 +10,8 @@ import {
   ActivityIndicator,
   Alert,
   StatusBar,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -36,7 +38,6 @@ export default function RateReviewScreen({ navigation, route }) {
     booking?.provider?.specialization || 'Master Plumber • 12 Yrs Exp';
   const providerId = booking?.provider?._id || '66fa_prov_id';
 
-  // Per HCI recommendation in report: start with 0 stars to avoid bias!
   const [rating, setRating] = useState(5);
   const [selectedTags, setSelectedTags] = useState(['Punctual & On Time', 'Clean Work Area']);
   const [selectedTip, setSelectedTip] = useState(200);
@@ -68,6 +69,14 @@ export default function RateReviewScreen({ navigation, route }) {
     }
   };
 
+  const handleDismiss = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate('MainTabs');
+    }
+  };
+
   const handleSubmit = async () => {
     if (rating === 0) {
       Alert.alert('Rating Required', 'Please select a star rating for the specialist.');
@@ -87,12 +96,14 @@ export default function RateReviewScreen({ navigation, route }) {
     setIsSubmitting(false);
 
     Alert.alert(
-      'Review Submitted!',
-      `Thank you for helping verify quality for the Fixora community. Your ${selectedTip > 0 ? `LKR ${selectedTip} tip & ` : ''}rating have been recorded.`,
+      'Review Added!',
+      `Thank you for helping verify quality for the Fixora community. Your feedback and ${
+        selectedTip > 0 ? `LKR ${selectedTip} tip` : 'rating'
+      } have been recorded.`,
       [
         {
-          text: 'View History',
-          onPress: () => navigation.navigate('HistoryTab'),
+          text: 'Done',
+          onPress: handleDismiss,
         },
       ]
     );
@@ -103,142 +114,139 @@ export default function RateReviewScreen({ navigation, route }) {
       <StatusBar barStyle="dark-content" />
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.closeBtn} onPress={() => navigation.goBack()}>
+        <TouchableOpacity style={styles.closeBtn} onPress={handleDismiss}>
           <Ionicons name="close" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Rate & Review</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('HistoryTab')}>
+        <TouchableOpacity onPress={handleDismiss}>
           <Text style={styles.skipBtnText}>Skip</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollBody} showsVerticalScrollIndicator={false}>
-        {/* Provider Summary Card */}
-        <View style={styles.providerCard}>
-          <Image
-            source={{
-              uri:
-                booking?.provider?.avatar ||
-                'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200',
-            }}
-            style={styles.providerAvatar}
-          />
-          <View style={{ flex: 1, marginLeft: 12 }}>
-            <Text style={styles.providerName}>{providerName}</Text>
-            <Text style={styles.providerSpec}>{providerSpec}</Text>
-            <View style={styles.completedBadge}>
-              <Ionicons name="checkmark-done" size={14} color={colors.forestGreen} style={{ marginRight: 4 }} />
-              <Text style={styles.completedText}>Job Completed Today</Text>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollBody}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Provider Summary Card */}
+          <View style={styles.providerCard}>
+            <Image
+              source={{
+                uri:
+                  booking?.provider?.avatar ||
+                  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200',
+              }}
+              style={styles.providerAvatar}
+            />
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={styles.providerName}>{providerName}</Text>
+              <Text style={styles.providerSpec}>{providerSpec}</Text>
+              <View style={styles.completedBadge}>
+                <Ionicons name="checkmark-done" size={14} color={colors.forestGreen} style={{ marginRight: 4 }} />
+                <Text style={styles.completedText}>Job Completed Today</Text>
+              </View>
             </View>
           </View>
-        </View>
 
-        {/* Star Rating Section */}
-        <View style={styles.ratingCard}>
-          <Text style={styles.ratingPrompt}>How was your overall service experience?</Text>
-          <View style={styles.starsRow}>
-            {[1, 2, 3, 4, 5].map((star) => (
-              <TouchableOpacity key={star} onPress={() => setRating(star)} activeOpacity={0.7}>
-                <Ionicons
-                  name={star <= rating ? 'star' : 'star-outline'}
-                  size={36}
-                  color="#F59E0B"
-                  style={{ marginHorizontal: 6 }}
-                />
-              </TouchableOpacity>
-            ))}
-          </View>
-          <Text style={styles.ratingLabel}>{getRatingLabel()}</Text>
-        </View>
-
-        {/* 1-Tap Praise Tags */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>What did you like most?</Text>
-          <Text style={styles.sectionSub}>Tap compliments to highlight provider strengths</Text>
-          <View style={styles.tagsGrid}>
-            {PRAISE_TAGS.map((tag) => {
-              const isSelected = selectedTags.includes(tag);
-              return (
-                <TouchableOpacity
-                  key={tag}
-                  style={[styles.tagPill, isSelected && styles.tagPillActive]}
-                  onPress={() => toggleTag(tag)}
-                >
+          {/* Star Rating Section */}
+          <View style={styles.ratingCard}>
+            <Text style={styles.ratingPrompt}>How was your overall service experience?</Text>
+            <View style={styles.starsRow}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <TouchableOpacity key={star} onPress={() => setRating(star)} activeOpacity={0.7}>
                   <Ionicons
-                    name={isSelected ? 'checkmark' : 'add'}
-                    size={16}
-                    color={isSelected ? colors.white : colors.forestGreen}
-                    style={{ marginRight: 4 }}
+                    name={star <= rating ? 'star' : 'star-outline'}
+                    size={36}
+                    color="#F59E0B"
+                    style={{ marginHorizontal: 6 }}
                   />
-                  <Text style={[styles.tagText, isSelected && styles.tagTextActive]}>{tag}</Text>
                 </TouchableOpacity>
-              );
-            })}
+              ))}
+            </View>
+            <Text style={styles.ratingLabel}>{getRatingLabel()}</Text>
           </View>
-        </View>
 
-        {/* Photo Proof Upload */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Photo Proof (Optional)</Text>
-          <Text style={styles.sectionSub}>Attach images for 30-day warranty verification</Text>
-          <View style={styles.photoUploadRow}>
-            <TouchableOpacity style={styles.addPhotoBox}>
-              <Ionicons name="camera-outline" size={24} color={colors.forestGreen} />
-              <Text style={styles.addPhotoText}>Add Photo</Text>
-            </TouchableOpacity>
+          {/* 1-Tap Praise Tags */}
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>What did you like most?</Text>
+            <Text style={styles.sectionSub}>Tap compliments to highlight provider strengths</Text>
+            <View style={styles.tagsGrid}>
+              {PRAISE_TAGS.map((tag) => {
+                const isSelected = selectedTags.includes(tag);
+                return (
+                  <TouchableOpacity
+                    key={tag}
+                    style={[styles.tagPill, isSelected && styles.tagPillActive]}
+                    onPress={() => toggleTag(tag)}
+                  >
+                    <Ionicons
+                      name={isSelected ? 'checkmark' : 'add'}
+                      size={16}
+                      color={isSelected ? colors.white : colors.forestGreen}
+                      style={{ marginRight: 4 }}
+                    />
+                    <Text style={[styles.tagText, isSelected && styles.tagTextActive]}>{tag}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </View>
-        </View>
 
-        {/* Tip Specialist in LKR */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Add Tip for Specialist</Text>
-          <Text style={styles.sectionSub}>100% of tip goes directly to the professional</Text>
-          <View style={styles.tipRow}>
-            {TIP_OPTIONS.map((tip) => {
-              const isSelected = selectedTip === tip;
-              return (
-                <TouchableOpacity
-                  key={tip}
-                  style={[styles.tipChip, isSelected && styles.tipChipActive]}
-                  onPress={() => setSelectedTip(tip)}
-                >
-                  <Text style={[styles.tipText, isSelected && styles.tipTextActive]}>
-                    {tip === 0 ? 'No Tip' : `LKR ${tip}`}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
+          {/* Tip Specialist in LKR */}
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>Add Tip for Specialist</Text>
+            <Text style={styles.sectionSub}>100% of tip goes directly to the professional</Text>
+            <View style={styles.tipRow}>
+              {TIP_OPTIONS.map((tip) => {
+                const isSelected = selectedTip === tip;
+                return (
+                  <TouchableOpacity
+                    key={tip}
+                    style={[styles.tipChip, isSelected && styles.tipChipActive]}
+                    onPress={() => setSelectedTip(tip)}
+                  >
+                    <Text style={[styles.tipText, isSelected && styles.tipTextActive]}>
+                      {tip === 0 ? 'No Tip' : `LKR ${tip}`}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </View>
-        </View>
 
-        {/* Comments Input */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Write a Review</Text>
-          <TextInput
-            style={styles.commentInput}
-            multiline
-            numberOfLines={4}
-            placeholder="Share feedback to help other Sri Lankan homeowners..."
-            placeholderTextColor={colors.textMuted}
-            value={comment}
-            onChangeText={setComment}
-          />
-        </View>
+          {/* Comments Input (Scrollable and keyboard safe) */}
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>Write a Review</Text>
+            <TextInput
+              style={styles.commentInput}
+              multiline
+              numberOfLines={4}
+              placeholder="Share feedback to help other Sri Lankan homeowners..."
+              placeholderTextColor={colors.textMuted}
+              value={comment}
+              onChangeText={setComment}
+            />
+          </View>
 
-        {/* Submit Review Button */}
-        <TouchableOpacity
-          style={styles.submitBtn}
-          onPress={handleSubmit}
-          disabled={isSubmitting}
-          activeOpacity={0.85}
-        >
-          {isSubmitting ? (
-            <ActivityIndicator color={colors.white} />
-          ) : (
-            <Text style={styles.submitBtnText}>Submit Review &gt;</Text>
-          )}
-        </TouchableOpacity>
-      </ScrollView>
+          {/* Submit Review Button */}
+          <TouchableOpacity
+            style={styles.submitBtn}
+            onPress={handleSubmit}
+            disabled={isSubmitting}
+            activeOpacity={0.85}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator color={colors.white} />
+            ) : (
+              <Text style={styles.submitBtnText}>Submit Review &gt;</Text>
+            )}
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -246,7 +254,7 @@ export default function RateReviewScreen({ navigation, route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#F8FAF9',
   },
   header: {
     flexDirection: 'row',
@@ -255,7 +263,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.cardBorder,
+    borderBottomColor: '#E2E8F0',
     backgroundColor: colors.white,
   },
   closeBtn: {
@@ -273,16 +281,16 @@ const styles = StyleSheet.create({
   },
   scrollBody: {
     padding: 16,
-    paddingBottom: 32,
+    paddingBottom: 160, // Generous padding to prevent keyboard covering input
   },
   providerCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.white,
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 16,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: '#E2E8F0',
     marginBottom: 14,
   },
   providerAvatar: {
@@ -298,7 +306,7 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   providerSpec: {
-    fontSize: 13,
+    fontSize: 12,
     color: colors.textSecondary,
     marginTop: 2,
   },
@@ -308,24 +316,25 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   completedText: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 11,
     color: colors.forestGreen,
+    fontWeight: '600',
   },
   ratingCard: {
     backgroundColor: colors.white,
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 20,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
     marginBottom: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   ratingPrompt: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
     color: colors.textPrimary,
     marginBottom: 14,
+    textAlign: 'center',
   },
   starsRow: {
     flexDirection: 'row',
@@ -338,20 +347,20 @@ const styles = StyleSheet.create({
   },
   sectionCard: {
     backgroundColor: colors.white,
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 16,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
     marginBottom: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   sectionTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.forestGreen,
+    fontSize: 14,
+    fontWeight: '800',
+    color: colors.textPrimary,
     marginBottom: 2,
   },
   sectionSub: {
-    fontSize: 12,
+    fontSize: 11,
     color: colors.textSecondary,
     marginBottom: 12,
   },
@@ -363,11 +372,11 @@ const styles = StyleSheet.create({
   tagPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: '#F8FAF9',
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: '#E2E8F0',
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 7,
     borderRadius: 20,
   },
   tagPillActive: {
@@ -382,72 +391,53 @@ const styles = StyleSheet.create({
   tagTextActive: {
     color: colors.white,
   },
-  photoUploadRow: {
-    flexDirection: 'row',
-  },
-  addPhotoBox: {
-    width: 80,
-    height: 80,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: colors.cardBorder,
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-  },
-  addPhotoText: {
-    fontSize: 10,
-    color: colors.forestGreen,
-    fontWeight: '700',
-    marginTop: 4,
-  },
   tipRow: {
     flexDirection: 'row',
     gap: 8,
   },
   tipChip: {
     flex: 1,
-    alignItems: 'center',
     paddingVertical: 10,
-    borderRadius: 10,
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
+    backgroundColor: '#F8FAF9',
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
   },
   tipChipActive: {
-    backgroundColor: colors.emerald,
-    borderColor: colors.emerald,
+    backgroundColor: colors.forestGreen,
+    borderColor: colors.forestGreen,
   },
   tipText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
-    color: colors.textSecondary,
+    color: colors.textPrimary,
   },
   tipTextActive: {
     color: colors.white,
   },
   commentInput: {
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
+    backgroundColor: '#F8FAF9',
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     padding: 12,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textPrimary,
-    backgroundColor: colors.background,
+    height: 90,
     textAlignVertical: 'top',
   },
   submitBtn: {
-    backgroundColor: colors.emerald,
-    height: 52,
-    borderRadius: 12,
-    justifyContent: 'center',
+    backgroundColor: colors.forestGreen,
+    paddingVertical: 15,
+    borderRadius: 14,
     alignItems: 'center',
-    shadowColor: colors.emerald,
-    shadowOffset: { width: 0, height: 4 },
+    shadowColor: colors.forestGreen,
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.25,
-    shadowRadius: 8,
+    shadowRadius: 6,
     elevation: 3,
+    marginTop: 6,
   },
   submitBtnText: {
     color: colors.white,

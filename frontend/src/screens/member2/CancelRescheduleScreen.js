@@ -16,13 +16,27 @@ import { colors } from '../../theme/colors';
 import { rescheduleBooking, cancelBooking } from '../../services/api';
 
 const DATES = [
-  { day: 25, label: 'Fri, Oct 25' },
-  { day: 26, label: 'Sat, Oct 26' },
-  { day: 27, label: 'Sun, Oct 27' },
-  { day: 28, label: 'Mon, Oct 28' },
+  { day: 24, weekday: 'Thu', label: 'Thu, Oct 24' },
+  { day: 25, weekday: 'Fri', label: 'Fri, Oct 25' },
+  { day: 26, weekday: 'Sat', label: 'Sat, Oct 26' },
+  { day: 27, weekday: 'Sun', label: 'Sun, Oct 27' },
+  { day: 28, weekday: 'Mon', label: 'Mon, Oct 28' },
+  { day: 29, weekday: 'Tue', label: 'Tue, Oct 29' },
+  { day: 30, weekday: 'Wed', label: 'Wed, Oct 30' },
+  { day: 31, weekday: 'Thu', label: 'Thu, Oct 31' },
+  { day: 1, weekday: 'Fri', label: 'Fri, Nov 01' },
+  { day: 2, weekday: 'Sat', label: 'Sat, Nov 02' },
 ];
 
-const TIME_SLOTS = ['09:00 AM', '11:30 AM', '02:30 PM', '05:00 PM'];
+const TIME_SLOTS = [
+  '08:30 AM',
+  '10:00 AM',
+  '11:30 AM',
+  '01:30 PM',
+  '03:00 PM',
+  '04:30 PM',
+  '06:00 PM',
+];
 
 export default function CancelRescheduleScreen({ navigation, route }) {
   const { booking } = route.params || {};
@@ -30,19 +44,19 @@ export default function CancelRescheduleScreen({ navigation, route }) {
   const bookingId = booking?._id || 'bk_default';
   const bookingRef = booking?.bookingRef || '#FX-88431';
   const serviceTitle =
-    booking?.serviceTitle || booking?.provider?.specialization || 'Botanical Care Clean';
+    booking?.serviceTitle || booking?.provider?.specialization || 'On-Demand Home Service';
   const providerName =
-    booking?.provider?.user?.name || booking?.provider?.name || 'Kasun Perera / Chaminda';
+    booking?.provider?.user?.name || booking?.provider?.name || 'Selected Specialist';
 
-  const [selectedDay, setSelectedDay] = useState(27);
-  const [selectedTime, setSelectedTime] = useState('02:30 PM');
+  const [selectedDay, setSelectedDay] = useState(26);
+  const [selectedTime, setSelectedTime] = useState('10:00 AM');
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleReschedule = async () => {
     setIsSubmitting(true);
     const newDate = `2026-10-${selectedDay}`;
-    const res = await rescheduleBooking(bookingId, newDate, selectedTime);
+    await rescheduleBooking(bookingId, newDate, selectedTime);
     setIsSubmitting(false);
 
     Alert.alert(
@@ -51,7 +65,13 @@ export default function CancelRescheduleScreen({ navigation, route }) {
       [
         {
           text: 'OK',
-          onPress: () => navigation.navigate('HistoryTab'),
+          onPress: () => {
+            if (navigation.canGoBack()) {
+              navigation.goBack();
+            } else {
+              navigation.navigate('HistoryTab');
+            }
+          },
         },
       ]
     );
@@ -65,11 +85,17 @@ export default function CancelRescheduleScreen({ navigation, route }) {
 
     Alert.alert(
       'Booking Cancelled',
-      'Your service request has been cancelled. Any pre-authorization or payment refund has been processed.',
+      'Your service request has been cancelled. Any payment refund has been processed.',
       [
         {
           text: 'Back to Bookings',
-          onPress: () => navigation.navigate('HistoryTab'),
+          onPress: () => {
+            if (navigation.canGoBack()) {
+              navigation.goBack();
+            } else {
+              navigation.navigate('HistoryTab');
+            }
+          },
         },
       ]
     );
@@ -101,7 +127,7 @@ export default function CancelRescheduleScreen({ navigation, route }) {
           <View style={styles.currentSlotRow}>
             <Ionicons name="time" size={16} color={colors.forestGreen} style={{ marginRight: 6 }} />
             <Text style={styles.currentSlotText}>
-              Current: {booking?.scheduledDate || 'Thu, Oct 15'} • {booking?.timeSlot || '11:00 AM'}
+              Current: {booking?.scheduledDate || 'Thu, Oct 24'} • {booking?.timeSlot || '08:30 AM'}
             </Text>
           </View>
         </View>
@@ -120,8 +146,13 @@ export default function CancelRescheduleScreen({ navigation, route }) {
         {/* Reschedule Section */}
         <View style={styles.card}>
           <Text style={styles.sectionHeader}>Reschedule Appointment</Text>
-          <Text style={styles.subPrompt}>Select a new preferred date:</Text>
-          <View style={styles.dateRow}>
+          <Text style={styles.subPrompt}>Swipe to select a new preferred date:</Text>
+          
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.dateSliderRow}
+          >
             {DATES.map((item) => {
               const isSelected = selectedDay === item.day;
               return (
@@ -129,17 +160,18 @@ export default function CancelRescheduleScreen({ navigation, route }) {
                   key={item.day}
                   style={[styles.dateChip, isSelected && styles.dateChipActive]}
                   onPress={() => setSelectedDay(item.day)}
+                  activeOpacity={0.8}
                 >
+                  <Text style={[styles.dateDayName, isSelected && styles.textWhite]}>
+                    {item.weekday}
+                  </Text>
                   <Text style={[styles.dateDayNumber, isSelected && styles.textWhite]}>
                     {item.day}
-                  </Text>
-                  <Text style={[styles.dateDayName, isSelected && styles.textWhite]}>
-                    {item.label.split(',')[0]}
                   </Text>
                 </TouchableOpacity>
               );
             })}
-          </View>
+          </ScrollView>
 
           <Text style={[styles.subPrompt, { marginTop: 18 }]}>Select new time slot:</Text>
           <View style={styles.timeGrid}>
@@ -150,6 +182,7 @@ export default function CancelRescheduleScreen({ navigation, route }) {
                   key={slot}
                   style={[styles.timeChip, isSelected && styles.timeChipActive]}
                   onPress={() => setSelectedTime(slot)}
+                  activeOpacity={0.8}
                 >
                   <Text style={[styles.timeChipText, isSelected && styles.textWhite]}>
                     {slot}
@@ -177,6 +210,7 @@ export default function CancelRescheduleScreen({ navigation, route }) {
         <TouchableOpacity
           style={styles.cancelActionBtn}
           onPress={() => setShowCancelModal(true)}
+          activeOpacity={0.85}
         >
           <Ionicons name="trash-outline" size={18} color={colors.danger} style={{ marginRight: 6 }} />
           <Text style={styles.cancelActionText}>Cancel Booking</Text>
@@ -221,7 +255,7 @@ export default function CancelRescheduleScreen({ navigation, route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#F8FAF9',
   },
   topHeader: {
     flexDirection: 'row',
@@ -245,24 +279,29 @@ const styles = StyleSheet.create({
   },
   scrollBody: {
     padding: 16,
-    paddingBottom: 32,
+    paddingBottom: 110,
   },
   card: {
     backgroundColor: colors.white,
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 18,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: '#E2E8F0',
+    shadowColor: '#1E4D2B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
   },
   refRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   refTag: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '800',
     color: colors.forestGreen,
   },
@@ -270,45 +309,43 @@ const styles = StyleSheet.create({
     backgroundColor: '#EBF4EE',
     paddingHorizontal: 10,
     paddingVertical: 3,
-    borderRadius: 12,
+    borderRadius: 10,
   },
   statusText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '700',
     color: colors.forestGreen,
   },
   serviceName: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '800',
     color: colors.textPrimary,
     marginBottom: 4,
   },
   providerName: {
-    fontSize: 14,
+    fontSize: 13,
     color: colors.textSecondary,
     marginBottom: 10,
   },
   currentSlotRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.background,
+    backgroundColor: '#F8FAF9',
     padding: 10,
-    borderRadius: 8,
+    borderRadius: 10,
   },
   currentSlotText: {
     fontSize: 13,
     fontWeight: '600',
-    color: colors.forestGreen,
+    color: colors.textPrimary,
   },
   policyCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#EBF4EE',
-    borderRadius: 14,
     padding: 14,
+    borderRadius: 14,
     marginBottom: 14,
-    borderWidth: 1,
-    borderColor: '#D2E7D8',
   },
   policyTitle: {
     fontSize: 13,
@@ -319,12 +356,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
     marginTop: 2,
-    lineHeight: 16,
   },
   sectionHeader: {
     fontSize: 16,
     fontWeight: '800',
-    color: colors.forestGreen,
+    color: colors.textPrimary,
     marginBottom: 6,
   },
   subPrompt: {
@@ -332,37 +368,34 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginBottom: 10,
   },
-  dateRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 8,
+  dateSliderRow: {
+    paddingVertical: 6,
+    gap: 10,
   },
   dateChip: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: colors.background,
+    width: 58,
+    height: 68,
+    borderRadius: 14,
+    backgroundColor: '#F8FAF9',
     borderWidth: 1.5,
-    borderColor: colors.cardBorder,
+    borderColor: '#E2E8F0',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   dateChipActive: {
     backgroundColor: colors.forestGreen,
     borderColor: colors.forestGreen,
   },
-  dateDayNumber: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: colors.textPrimary,
-  },
   dateDayName: {
     fontSize: 11,
     fontWeight: '600',
     color: colors.textSecondary,
-    marginTop: 2,
   },
-  textWhite: {
-    color: colors.white,
+  dateDayNumber: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: colors.textPrimary,
+    marginTop: 2,
   },
   timeGrid: {
     flexDirection: 'row',
@@ -371,29 +404,35 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   timeChip: {
-    width: '48%',
-    alignItems: 'center',
+    backgroundColor: '#F8FAF9',
+    paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: colors.background,
     borderWidth: 1.5,
-    borderColor: colors.cardBorder,
+    borderColor: '#E2E8F0',
   },
   timeChipActive: {
-    backgroundColor: colors.emerald,
-    borderColor: colors.emerald,
+    backgroundColor: colors.forestGreen,
+    borderColor: colors.forestGreen,
   },
   timeChipText: {
     fontSize: 13,
     fontWeight: '700',
     color: colors.textPrimary,
   },
+  textWhite: {
+    color: colors.white,
+  },
   rescheduleBtn: {
-    backgroundColor: colors.emerald,
-    height: 48,
-    borderRadius: 10,
-    justifyContent: 'center',
+    backgroundColor: colors.forestGreen,
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: 'center',
+    shadowColor: colors.forestGreen,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
   },
   rescheduleBtnText: {
     color: colors.white,
@@ -407,12 +446,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     borderWidth: 1.5,
     borderColor: colors.danger,
-    borderRadius: 12,
-    height: 48,
-    marginTop: 6,
+    paddingVertical: 14,
+    borderRadius: 14,
   },
   cancelActionText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: colors.danger,
   },
@@ -421,26 +459,26 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 24,
+    padding: 20,
   },
   modalContent: {
-    width: '100%',
     backgroundColor: colors.white,
     borderRadius: 20,
-    padding: 24,
+    padding: 22,
     alignItems: 'center',
+    width: '100%',
   },
   warningCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     backgroundColor: '#FEE2E2',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 14,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '800',
     color: colors.textPrimary,
     marginBottom: 8,
@@ -449,15 +487,14 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 19,
-    marginBottom: 24,
+    lineHeight: 18,
+    marginBottom: 20,
   },
   yesCancelBtn: {
     width: '100%',
     backgroundColor: colors.danger,
-    height: 48,
-    borderRadius: 10,
-    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: 'center',
     marginBottom: 10,
   },
@@ -468,8 +505,7 @@ const styles = StyleSheet.create({
   },
   keepBookingBtn: {
     width: '100%',
-    height: 44,
-    justifyContent: 'center',
+    paddingVertical: 12,
     alignItems: 'center',
   },
   keepBookingBtnText: {

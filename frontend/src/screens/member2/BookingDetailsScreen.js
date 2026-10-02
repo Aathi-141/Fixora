@@ -20,7 +20,7 @@ export default function BookingDetailsScreen({ navigation, route }) {
   const { provider, bookingData } = route.params || {};
   const { user } = useContext(AuthContext);
 
-  const [address, setAddress] = useState(user?.address || 'No 42, New Kandy Road, Malabe');
+  const currentAddress = user?.address || 'No 42, New Kandy Road, Malabe, Colombo';
   const [phone, setPhone] = useState(user?.phone || '+94 77 123 4567');
   const [notes, setNotes] = useState('Standard residential service with front gate entrance.');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,7 +43,7 @@ export default function BookingDetailsScreen({ navigation, route }) {
       serviceTitle: provider?.specialization || 'Deep Home Botanical Cleaning',
       scheduledDate: bookingData?.scheduledDate || '2026-10-15',
       timeSlot: bookingData?.timeSlot || '11:00 AM',
-      serviceAddress: address,
+      serviceAddress: currentAddress,
       customerPhone: phone,
       notes,
       addOns: bookingData?.addOns || [],
@@ -67,7 +67,7 @@ export default function BookingDetailsScreen({ navigation, route }) {
         },
         scheduledDate: bookingData?.scheduledDate || '2026-10-15',
         timeSlot: bookingData?.timeSlot || '11:00 AM',
-        serviceAddress: address,
+        serviceAddress: currentAddress,
         pricing,
         status: 'pending',
       };
@@ -83,7 +83,7 @@ export default function BookingDetailsScreen({ navigation, route }) {
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color={colors.white} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Booking Details</Text>
+        <Text style={styles.headerTitle}>Review & Confirm</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -99,7 +99,7 @@ export default function BookingDetailsScreen({ navigation, route }) {
                 {provider?.specialization || 'Deep Home Botanical Cleaning'}
               </Text>
               <Text style={styles.providerName}>
-                Provider: {provider?.user?.name || provider?.name || 'Chaminda W.'}
+                Specialist: {provider?.user?.name || provider?.name || 'Chaminda W.'}
               </Text>
             </View>
           </View>
@@ -124,21 +124,25 @@ export default function BookingDetailsScreen({ navigation, route }) {
           </View>
         </View>
 
-        {/* Service Address Card */}
+        {/* Service Address Card with Edit redirection to Profile */}
         <View style={styles.card}>
           <View style={styles.cardHeaderRow}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Ionicons name="location-outline" size={20} color={colors.forestGreen} style={{ marginRight: 8 }} />
               <Text style={styles.cardSectionTitle}>Service Address</Text>
             </View>
+            <TouchableOpacity onPress={() => navigation.navigate('ProfileTab')}>
+              <Text style={styles.editText}>Edit</Text>
+            </TouchableOpacity>
           </View>
 
-          <TextInput
-            style={styles.addressInput}
-            value={address}
-            onChangeText={setAddress}
-            placeholder="Enter full address"
-          />
+          <View style={styles.addressDisplayBox}>
+            <Ionicons name="home-outline" size={20} color={colors.forestGreen} style={{ marginRight: 10 }} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.addressDisplayText}>{currentAddress}</Text>
+              <Text style={styles.addressDisplaySub}>Saved Customer Address • Tap Edit to update</Text>
+            </View>
+          </View>
 
           <View style={styles.phoneInputRow}>
             <Ionicons name="call-outline" size={16} color={colors.textSecondary} style={{ marginRight: 8 }} />
@@ -159,41 +163,50 @@ export default function BookingDetailsScreen({ navigation, route }) {
             selectedAddons.map((item, idx) => (
               <View key={idx} style={styles.addonRow}>
                 <Text style={styles.addonText}>• {item.name}</Text>
-                <Text style={styles.addonPriceText}>+ LKR {item.price.toLocaleString()}</Text>
+                <Text style={styles.addonPriceText}>+LKR {item.price.toLocaleString()}</Text>
               </View>
             ))
           ) : (
-            <Text style={styles.noAddons}>No optional add-ons selected</Text>
+            <Text style={styles.noAddons}>No additional services selected</Text>
           )}
+        </View>
+
+        {/* Special Instructions */}
+        <View style={styles.card}>
+          <Text style={styles.cardSectionTitle}>Special Instructions / Gate Access</Text>
+          <TextInput
+            style={styles.notesInput}
+            value={notes}
+            onChangeText={setNotes}
+            placeholder="e.g. Please call before arrival, gate access code..."
+            multiline
+            numberOfLines={3}
+          />
         </View>
 
         {/* Payment Summary */}
         <View style={styles.card}>
-          <Text style={styles.cardSectionTitle}>Payment Summary</Text>
+          <Text style={styles.cardSectionTitle}>Payment Breakdown</Text>
           <View style={styles.payRow}>
-            <Text style={styles.payLabel}>Base Service Inspection</Text>
+            <Text style={styles.payLabel}>Standard Service Labor</Text>
             <Text style={styles.payVal}>LKR {pricing.basePrice.toLocaleString()}</Text>
           </View>
           <View style={styles.payRow}>
-            <Text style={styles.payLabel}>Selected Add-Ons</Text>
+            <Text style={styles.payLabel}>Add-Ons Total</Text>
             <Text style={styles.payVal}>LKR {pricing.addOnsTotal.toLocaleString()}</Text>
-          </View>
-          <View style={styles.payRow}>
-            <Text style={styles.payLabel}>Platform Guarantee Fee</Text>
-            <Text style={styles.payVal}>LKR {pricing.serviceFee.toLocaleString()}</Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Total Confirmed</Text>
+            <Text style={styles.totalLabel}>Estimated Total</Text>
             <Text style={styles.totalVal}>LKR {pricing.totalAmount.toLocaleString()}</Text>
           </View>
         </View>
       </ScrollView>
 
-      {/* Sticky Bottom Bar */}
+      {/* Sticky Bottom Footer */}
       <View style={styles.stickyFooter}>
         <View>
-          <Text style={styles.footerLabel}>Total Amount</Text>
+          <Text style={styles.footerLabel}>Total to Pay</Text>
           <Text style={styles.footerAmount}>LKR {pricing.totalAmount.toLocaleString()}</Text>
         </View>
 
@@ -207,8 +220,8 @@ export default function BookingDetailsScreen({ navigation, route }) {
             <ActivityIndicator color={colors.white} />
           ) : (
             <>
-              <Text style={styles.confirmBtnText}>Confirm & Schedule Clean</Text>
-              <Ionicons name="checkmark-circle" size={18} color={colors.white} style={{ marginLeft: 6 }} />
+              <Text style={styles.confirmBtnText}>Confirm Booking</Text>
+              <Ionicons name="arrow-forward" size={18} color={colors.white} style={{ marginLeft: 6 }} />
             </>
           )}
         </TouchableOpacity>
@@ -220,7 +233,7 @@ export default function BookingDetailsScreen({ navigation, route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#F8FAF9',
   },
   topHeader: {
     flexDirection: 'row',
@@ -244,15 +257,20 @@ const styles = StyleSheet.create({
   },
   scrollBody: {
     padding: 16,
-    paddingBottom: 24,
+    paddingBottom: 110,
   },
   card: {
     backgroundColor: colors.white,
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 16,
     marginBottom: 14,
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: '#E2E8F0',
+    shadowColor: '#1E4D2B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
   },
   serviceHeaderRow: {
     flexDirection: 'row',
@@ -280,7 +298,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   cardSectionTitle: {
     fontSize: 15,
@@ -295,37 +313,59 @@ const styles = StyleSheet.create({
   dateTimeBadge: {
     backgroundColor: '#EBF4EE',
     padding: 12,
-    borderRadius: 10,
+    borderRadius: 12,
   },
   dateTimeText: {
     fontSize: 14,
     fontWeight: '700',
     color: colors.forestGreen,
   },
-  addressInput: {
-    borderWidth: 1.5,
-    borderColor: colors.cardBorder,
-    borderRadius: 10,
-    padding: 12,
+  addressDisplayBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAF9',
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 12,
+  },
+  addressDisplayText: {
     fontSize: 14,
+    fontWeight: '700',
     color: colors.textPrimary,
-    backgroundColor: colors.background,
-    marginBottom: 10,
+  },
+  addressDisplaySub: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    marginTop: 2,
   },
   phoneInputRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: colors.cardBorder,
-    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
     paddingHorizontal: 12,
-    height: 44,
-    backgroundColor: colors.background,
+    height: 46,
+    backgroundColor: '#F8FAF9',
   },
   phoneInput: {
     flex: 1,
     fontSize: 14,
     color: colors.textPrimary,
+  },
+  notesInput: {
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 14,
+    color: colors.textPrimary,
+    backgroundColor: '#F8FAF9',
+    height: 70,
+    textAlignVertical: 'top',
+    marginTop: 8,
   },
   addonRow: {
     flexDirection: 'row',
@@ -364,7 +404,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: colors.cardBorder,
+    backgroundColor: '#E2E8F0',
     marginVertical: 10,
   },
   totalRow: {
@@ -390,7 +430,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 14,
     borderTopWidth: 1,
-    borderTopColor: colors.cardBorder,
+    borderTopColor: '#E2E8F0',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.05,

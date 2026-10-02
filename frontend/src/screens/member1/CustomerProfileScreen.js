@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   ScrollView,
   Image,
   Alert,
+  Modal,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,7 +16,17 @@ import { colors } from '../../theme/colors';
 import { AuthContext } from '../../context/AuthContext';
 
 export default function CustomerProfileScreen({ navigation }) {
-  const { user, logout } = useContext(AuthContext);
+  const { user, logout, updateUser } = useContext(AuthContext);
+
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [streetAddress, setStreetAddress] = useState(
+    user?.address ? user.address.split(',')[0] : 'No 42, New Kandy Road'
+  );
+  const [cityRegion, setCityRegion] = useState(
+    user?.address && user.address.includes(',')
+      ? user.address.split(',').slice(1).join(',').trim()
+      : 'Malabe, Colombo'
+  );
 
   const handleLogout = async () => {
     Alert.alert('Log Out', 'Are you sure you want to log out of Fixora?', [
@@ -28,6 +40,21 @@ export default function CustomerProfileScreen({ navigation }) {
         },
       },
     ]);
+  };
+
+  const handleSaveAddress = () => {
+    if (!streetAddress.trim()) {
+      Alert.alert('Required', 'Please enter your street address.');
+      return;
+    }
+
+    const fullAddress = `${streetAddress.trim()}, ${cityRegion.trim()}`;
+    if (updateUser) {
+      updateUser({ address: fullAddress });
+    }
+
+    setShowAddressModal(false);
+    Alert.alert('Address Updated', 'Your default service address has been updated successfully.');
   };
 
   const isAdmin = user?.role === 'admin';
@@ -81,23 +108,33 @@ export default function CustomerProfileScreen({ navigation }) {
             </TouchableOpacity>
           </View>
         ) : (
-          /* Saved Addresses for Customers */
+          /* Saved Addresses for Customers with Click to Edit */
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Saved Service Address</Text>
-            <View style={styles.addressRow}>
+            <View style={styles.addressSectionHeader}>
+              <Text style={styles.sectionTitle}>Saved Service Address</Text>
+              <TouchableOpacity onPress={() => setShowAddressModal(true)}>
+                <Text style={styles.editLinkText}>Change</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={styles.addressRow}
+              onPress={() => setShowAddressModal(true)}
+              activeOpacity={0.8}
+            >
               <View style={styles.addressIconBox}>
                 <Ionicons name="location" size={20} color={colors.forestGreen} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.addressTitle}>Home</Text>
+                <Text style={styles.addressTitle}>Home / Residence</Text>
                 <Text style={styles.addressText}>
                   {user?.address || 'No 42, New Kandy Road, Malabe, Colombo'}
                 </Text>
               </View>
-              <TouchableOpacity>
-                <Ionicons name="ellipsis-vertical" size={18} color={colors.textMuted} />
-              </TouchableOpacity>
-            </View>
+              <View style={styles.editPencilBtn}>
+                <Ionicons name="pencil" size={16} color={colors.forestGreen} />
+              </View>
+            </TouchableOpacity>
           </View>
         )}
 
@@ -145,6 +182,55 @@ export default function CustomerProfileScreen({ navigation }) {
 
         <Text style={styles.versionText}>Fixora v1.0.0 • Licensed by Fixora Lanka (Pvt) Ltd</Text>
       </ScrollView>
+
+      {/* Address Edit Bottom Modal */}
+      <Modal visible={showAddressModal} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Service Address</Text>
+              <TouchableOpacity onPress={() => setShowAddressModal(false)}>
+                <Ionicons name="close" size={24} color={colors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.modalSub}>
+              Update your primary address for on-demand home service arrivals in Sri Lanka.
+            </Text>
+
+            <Text style={styles.inputLabel}>Street Address & House No</Text>
+            <TextInput
+              style={styles.textInput}
+              value={streetAddress}
+              onChangeText={setStreetAddress}
+              placeholder="e.g. No 42, New Kandy Road"
+              placeholderTextColor={colors.textMuted}
+            />
+
+            <Text style={[styles.inputLabel, { marginTop: 12 }]}>City & District</Text>
+            <TextInput
+              style={styles.textInput}
+              value={cityRegion}
+              onChangeText={setCityRegion}
+              placeholder="e.g. Malabe, Colombo"
+              placeholderTextColor={colors.textMuted}
+            />
+
+            <View style={styles.modalActionRow}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => setShowAddressModal(false)}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.modalSaveBtn} onPress={handleSaveAddress}>
+                <Text style={styles.modalSaveText}>Save Address</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -156,7 +242,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 20,
-    paddingBottom: 90,
+    paddingBottom: 110,
   },
   profileCard: {
     flexDirection: 'row',
@@ -218,11 +304,21 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 1,
   },
+  addressSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   sectionTitle: {
     fontSize: 15,
     fontWeight: '800',
     color: colors.textPrimary,
-    marginBottom: 4,
+  },
+  editLinkText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.emerald,
   },
   sectionSubtitle: {
     fontSize: 13,
@@ -248,7 +344,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#F8FAF9',
     padding: 14,
-    borderRadius: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   addressIconBox: {
     width: 38,
@@ -268,6 +366,15 @@ const styles = StyleSheet.create({
   addressText: {
     fontSize: 12,
     color: colors.textSecondary,
+  },
+  editPencilBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#EBF4EE',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 10,
   },
   menuCard: {
     backgroundColor: colors.white,
@@ -318,5 +425,76 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textMuted,
     marginBottom: 10,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: colors.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: 40,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: colors.textPrimary,
+  },
+  modalSub: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginBottom: 16,
+    lineHeight: 18,
+  },
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginBottom: 6,
+  },
+  textInput: {
+    backgroundColor: '#F8FAF9',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
+  modalActionRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+    marginTop: 24,
+  },
+  modalCancelBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  modalCancelText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+  modalSaveBtn: {
+    backgroundColor: colors.forestGreen,
+    paddingHorizontal: 22,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  modalSaveText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.white,
   },
 });

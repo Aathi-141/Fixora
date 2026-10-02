@@ -38,39 +38,73 @@ import ProviderAccountScreen from '../screens/member4/ProviderAccountScreen';
 import AdminDashboardScreen from '../screens/member4/AdminDashboardScreen';
 import FinalBillPaymentScreen from '../screens/member4/FinalBillPaymentScreen';
 
-const Stack = createNativeStackNavigator();
+const RootStack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
+const HomeStack = createNativeStackNavigator();
+const BookingsStack = createNativeStackNavigator();
 
+// Breathable, non-clipping tab bar options for Android and iOS
 const commonTabScreenOptions = {
   headerShown: false,
   tabBarActiveTintColor: colors.forestGreen,
   tabBarInactiveTintColor: '#8A9A8E',
   tabBarStyle: {
     backgroundColor: colors.white,
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
-    height: Platform.OS === 'ios' ? 78 : 66,
-    paddingBottom: Platform.OS === 'ios' ? 20 : 10,
+    height: Platform.OS === 'ios' ? 84 : 70,
+    paddingBottom: Platform.OS === 'ios' ? 24 : 12,
     paddingTop: 8,
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderWidth: 0,
-    shadowColor: '#1E4D2B',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
   },
   tabBarLabelStyle: {
     fontSize: 11,
     fontWeight: '700',
     marginTop: 2,
+    marginBottom: Platform.OS === 'android' ? 2 : 0,
   },
 };
 
-// 1. Customer Portal (Explore, Bookings, Messages, Profile)
+// 1. Home / Explore Stack (Keeps bottom tab bar visible across the entire booking journey)
+function HomeStackNavigator() {
+  return (
+    <HomeStack.Navigator screenOptions={{ headerShown: false }}>
+      <HomeStack.Screen name="Home" component={HomeScreen} />
+      <HomeStack.Screen
+        name="Filters"
+        component={FiltersScreen}
+        options={{ presentation: 'modal' }}
+      />
+      <HomeStack.Screen name="ProviderProfile" component={ProviderProfileScreen} />
+      <HomeStack.Screen name="DateTimeSelection" component={DateTimeSelectionScreen} />
+      <HomeStack.Screen name="BookingDetails" component={BookingDetailsScreen} />
+      <HomeStack.Screen name="BookingSuccessful" component={BookingSuccessfulScreen} />
+      <HomeStack.Screen name="CancelReschedule" component={CancelRescheduleScreen} />
+      <HomeStack.Screen name="RequestStatusTracking" component={RequestStatusTrackingScreen} />
+      <HomeStack.Screen name="RateReview" component={RateReviewScreen} />
+      <HomeStack.Screen name="FinalBillPayment" component={FinalBillPaymentScreen} />
+    </HomeStack.Navigator>
+  );
+}
+
+// 2. Bookings & History Stack (Keeps bottom tab bar visible during management & tracking)
+function BookingsStackNavigator() {
+  return (
+    <BookingsStack.Navigator screenOptions={{ headerShown: false }}>
+      <BookingsStack.Screen name="ServiceHistory" component={ServiceHistoryScreen} />
+      <BookingsStack.Screen name="RequestStatusTracking" component={RequestStatusTrackingScreen} />
+      <BookingsStack.Screen name="CancelReschedule" component={CancelRescheduleScreen} />
+      <BookingsStack.Screen name="RateReview" component={RateReviewScreen} />
+      <BookingsStack.Screen name="FinalBillPayment" component={FinalBillPaymentScreen} />
+    </BookingsStack.Navigator>
+  );
+}
+
+// Customer Portal (Explore, Bookings, Messages, Profile)
 function CustomerTabNavigator() {
   return (
     <Tab.Navigator
@@ -83,23 +117,19 @@ function CustomerTabNavigator() {
           else if (route.name === 'ChatTab') iconName = focused ? 'chatbubble-ellipses' : 'chatbubble-ellipses-outline';
           else if (route.name === 'ProfileTab') iconName = focused ? 'person' : 'person-outline';
 
-          return (
-            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
-              <Ionicons name={iconName} size={22} color={color} />
-            </View>
-          );
+          return <Ionicons name={iconName} size={24} color={color} />;
         },
       })}
     >
-      <Tab.Screen name="HomeTab" component={HomeScreen} options={{ title: 'Explore' }} />
-      <Tab.Screen name="HistoryTab" component={ServiceHistoryScreen} options={{ title: 'Bookings' }} />
+      <Tab.Screen name="HomeTab" component={HomeStackNavigator} options={{ title: 'Explore' }} />
+      <Tab.Screen name="HistoryTab" component={BookingsStackNavigator} options={{ title: 'Bookings' }} />
       <Tab.Screen name="ChatTab" component={ChatScreen} options={{ title: 'Messages' }} />
       <Tab.Screen name="ProfileTab" component={CustomerProfileScreen} options={{ title: 'Profile' }} />
     </Tab.Navigator>
   );
 }
 
-// 2. Provider Portal (Requests, Schedule, My Jobs, Profile)
+// Provider Portal (Requests, Schedule, My Jobs, Profile)
 function ProviderTabNavigator() {
   return (
     <Tab.Navigator
@@ -112,11 +142,7 @@ function ProviderTabNavigator() {
           else if (route.name === 'ProviderJobsTab') iconName = focused ? 'briefcase' : 'briefcase-outline';
           else if (route.name === 'ProviderProfileTab') iconName = focused ? 'person-circle' : 'person-circle-outline';
 
-          return (
-            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
-              <Ionicons name={iconName} size={22} color={color} />
-            </View>
-          );
+          return <Ionicons name={iconName} size={24} color={color} />;
         },
       })}
     >
@@ -128,7 +154,7 @@ function ProviderTabNavigator() {
   );
 }
 
-// 3. Admin Management Portal (KPIs, Verifications & Disputes)
+// Admin Management Portal (KPIs, Verifications & Disputes)
 function AdminTabNavigator() {
   return (
     <Tab.Navigator
@@ -140,11 +166,7 @@ function AdminTabNavigator() {
           else if (route.name === 'AdminBookingsTab') iconName = focused ? 'clipboard' : 'clipboard-outline';
           else if (route.name === 'AdminProfileTab') iconName = focused ? 'settings' : 'settings-outline';
 
-          return (
-            <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
-              <Ionicons name={iconName} size={22} color={color} />
-            </View>
-          );
+          return <Ionicons name={iconName} size={24} color={color} />;
         },
       })}
     >
@@ -169,67 +191,30 @@ function MainTabNavigator() {
 export default function AppNavigator() {
   return (
     <NavigationContainer>
-      <Stack.Navigator
+      <RootStack.Navigator
         initialRouteName="Splash"
         screenOptions={{
           headerShown: false,
           cardStyle: { backgroundColor: colors.background },
         }}
       >
-        {/* Onboarding & Auth (Member 1) */}
-        <Stack.Screen name="Splash" component={SplashScreen} />
-        <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="AccountType" component={AccountTypeScreen} />
-        <Stack.Screen name="CustomerSignUp" component={CustomerSignUpScreen} />
-        <Stack.Screen name="ProviderSignUp" component={ProviderSignUpScreen} />
+        {/* Onboarding & Auth */}
+        <RootStack.Screen name="Splash" component={SplashScreen} />
+        <RootStack.Screen name="Login" component={LoginScreen} />
+        <RootStack.Screen name="AccountType" component={AccountTypeScreen} />
+        <RootStack.Screen name="CustomerSignUp" component={CustomerSignUpScreen} />
+        <RootStack.Screen name="ProviderSignUp" component={ProviderSignUpScreen} />
 
         {/* Role-Based Tab Navigator */}
-        <Stack.Screen name="MainTabs" component={MainTabNavigator} />
+        <RootStack.Screen name="MainTabs" component={MainTabNavigator} />
 
-        {/* Service Discovery (Member 1) */}
-        <Stack.Screen
-          name="Filters"
-          component={FiltersScreen}
-          options={{ presentation: 'modal' }}
-        />
-        <Stack.Screen name="ProviderProfile" component={ProviderProfileScreen} />
-
-        {/* Booking Flow (Member 2) */}
-        <Stack.Screen name="DateTimeSelection" component={DateTimeSelectionScreen} />
-        <Stack.Screen name="BookingDetails" component={BookingDetailsScreen} />
-        <Stack.Screen name="BookingSuccessful" component={BookingSuccessfulScreen} />
-        <Stack.Screen name="CancelReschedule" component={CancelRescheduleScreen} />
-
-        {/* Status, Chat & Reviews (Member 3) */}
-        <Stack.Screen name="RequestStatusTracking" component={RequestStatusTrackingScreen} />
-        <Stack.Screen name="Chat" component={ChatScreen} />
-        <Stack.Screen
+        {/* VoIP Call Screen (Full Screen Modal) */}
+        <RootStack.Screen
           name="Call"
           component={CallScreen}
           options={{ presentation: 'fullScreenModal' }}
         />
-        <Stack.Screen name="RateReview" component={RateReviewScreen} />
-
-        {/* Provider & Admin Management (Member 4) */}
-        <Stack.Screen name="ProviderRequests" component={ProviderRequestsScreen} />
-        <Stack.Screen name="ProviderAvailability" component={ProviderAvailabilityScreen} />
-        <Stack.Screen name="ProviderAccount" component={ProviderAccountScreen} />
-        <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} />
-        <Stack.Screen name="FinalBillPayment" component={FinalBillPaymentScreen} />
-      </Stack.Navigator>
+      </RootStack.Navigator>
     </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  iconContainer: {
-    paddingHorizontal: 12,
-    paddingVertical: 3,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconContainerActive: {
-    backgroundColor: '#EBF5EE',
-  },
-});

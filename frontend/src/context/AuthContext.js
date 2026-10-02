@@ -46,16 +46,37 @@ export const AuthProvider = ({ children }) => {
         return { success: true };
       }
       // If backend network error or offline, allow seamless fallback with correct role
-      if (!res.success && (res.message?.includes('failed') || res.message?.includes('Network') || res.message?.includes('aborted') || res.message?.includes('ConnectException'))) {
+      if (
+        !res.success &&
+        (res.message?.includes('failed') ||
+          res.message?.includes('Network') ||
+          res.message?.includes('aborted') ||
+          res.message?.includes('ConnectException'))
+      ) {
         const isAdmin = email.toLowerCase().includes('admin');
-        const isProvider = email.toLowerCase().includes('provider') || email.toLowerCase().includes('ramesh') || email.toLowerCase().includes('sunil');
-        
+        const isProvider =
+          email.toLowerCase().includes('provider') ||
+          email.toLowerCase().includes('ramesh') ||
+          email.toLowerCase().includes('sunil');
+
         const demoUser = {
-          id: isAdmin ? 'admin_shibly_01' : isProvider ? 'provider_ramesh_01' : 'customer_kasun_01',
-          name: isAdmin ? 'M. Shibly (Admin Coordinator)' : isProvider ? 'Ramesh Mendis' : 'Kasun Perera',
+          id: isAdmin
+            ? 'admin_shibly_01'
+            : isProvider
+            ? 'provider_ramesh_01'
+            : 'customer_kasun_01',
+          name: isAdmin
+            ? 'M. Shibly (Admin Coordinator)'
+            : isProvider
+            ? 'Ramesh Mendis'
+            : 'Kasun Perera',
           email,
           role: isAdmin ? 'admin' : isProvider ? 'provider' : 'customer',
-          address: isAdmin ? 'Headquarters, Colombo 03' : isProvider ? 'Colombo, Sri Lanka' : 'No 42, New Kandy Road, Malabe',
+          address: isAdmin
+            ? 'Headquarters, Colombo 03'
+            : isProvider
+            ? 'Colombo, Sri Lanka'
+            : 'No 42, New Kandy Road, Malabe',
           avatar: isAdmin
             ? 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200'
             : isProvider
@@ -86,7 +107,13 @@ export const AuthProvider = ({ children }) => {
         return { success: true };
       }
       // If backend network error, create local demo account
-      if (!res.success && (res.message?.includes('failed') || res.message?.includes('Network') || res.message?.includes('aborted') || res.message?.includes('ConnectException'))) {
+      if (
+        !res.success &&
+        (res.message?.includes('failed') ||
+          res.message?.includes('Network') ||
+          res.message?.includes('aborted') ||
+          res.message?.includes('ConnectException'))
+      ) {
         const demoUser = {
           id: 'demo_' + Date.now(),
           name: userData.name || 'New Member',
@@ -109,14 +136,16 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const googleLogin = async (role = 'customer') => {
+  const googleLogin = async (role = 'customer', customAccount = null) => {
     try {
       const googleData = {
-        email: 'kasun.google@gmail.com',
-        name: 'Kasun Perera',
-        googleId: 'g_user_883192',
+        email: customAccount?.email || 'kasun.google@gmail.com',
+        name: customAccount?.name || 'Kasun Perera',
+        googleId: customAccount?.googleId || 'g_user_883192',
         role,
-        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop',
+        avatar:
+          customAccount?.avatar ||
+          'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop',
       };
       const res = await googleAuthUser(googleData);
       if (res.success && res.token) {
@@ -128,12 +157,12 @@ export const AuthProvider = ({ children }) => {
       }
       // Resilient fallback for Google Sign-in so user is never blocked
       const demoGoogleUser = {
-        id: 'google_user_883192',
-        name: 'Kasun Perera',
-        email: 'kasun.google@gmail.com',
-        role: 'customer',
+        id: googleData.googleId,
+        name: googleData.name,
+        email: googleData.email,
+        role,
         address: 'No 42, New Kandy Road, Malabe',
-        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop',
+        avatar: googleData.avatar,
       };
       const demoToken = 'demo_google_jwt_token';
       setToken(demoToken);
@@ -142,19 +171,28 @@ export const AuthProvider = ({ children }) => {
       await AsyncStorage.setItem('fixora_user', JSON.stringify(demoGoogleUser));
       return { success: true, isDemo: true };
     } catch (error) {
-      // In case of any unhandled error, provide demo session
       const fallbackUser = {
         id: 'google_user_fallback',
-        name: 'Kasun Perera',
-        email: 'kasun.google@gmail.com',
-        role: 'customer',
+        name: customAccount?.name || 'Kasun Perera',
+        email: customAccount?.email || 'kasun.google@gmail.com',
+        role,
         address: 'Colombo, Sri Lanka',
-        avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200',
+        avatar:
+          customAccount?.avatar ||
+          'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200',
       };
       setToken('demo_token');
       setUser(fallbackUser);
       return { success: true, isDemo: true };
     }
+  };
+
+  const updateUser = async (updatedFields) => {
+    setUser((prev) => {
+      const updated = { ...prev, ...updatedFields };
+      AsyncStorage.setItem('fixora_user', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const logout = async () => {
@@ -186,6 +224,7 @@ export const AuthProvider = ({ children }) => {
         login,
         register,
         googleLogin,
+        updateUser,
         logout,
         switchRole,
       }}
