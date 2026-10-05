@@ -38,10 +38,10 @@ export default function RateReviewScreen({ navigation, route }) {
     booking?.provider?.specialization || 'Master Plumber • 12 Yrs Exp';
   const providerId = booking?.provider?._id || '66fa_prov_id';
 
-  const [rating, setRating] = useState(5);
-  const [selectedTags, setSelectedTags] = useState(['Punctual & On Time', 'Clean Work Area']);
-  const [selectedTip, setSelectedTip] = useState(200);
-  const [comment, setComment] = useState('Excellent work, prompt arrival, and very fair pricing.');
+  const [rating, setRating] = useState(0);
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [selectedTip, setSelectedTip] = useState(0);
+  const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const toggleTag = (tag) => {
@@ -59,11 +59,11 @@ export default function RateReviewScreen({ navigation, route }) {
       case 4:
         return 'Very Good (4.0)';
       case 3:
-        return 'Average (3.0)';
+        return 'Good (3.0)';
       case 2:
-        return 'Below Expectations (2.0)';
+        return 'Fair (2.0)';
       case 1:
-        return 'Unsatisfactory (1.0)';
+        return 'Poor (1.0)';
       default:
         return 'Tap a star to rate';
     }
@@ -79,7 +79,7 @@ export default function RateReviewScreen({ navigation, route }) {
 
   const handleSubmit = async () => {
     if (rating === 0) {
-      Alert.alert('Rating Required', 'Please select a star rating for the specialist.');
+      Alert.alert('Rating Required', 'Please select a star rating before submitting.');
       return;
     }
 
@@ -156,16 +156,19 @@ export default function RateReviewScreen({ navigation, route }) {
           <View style={styles.ratingCard}>
             <Text style={styles.ratingPrompt}>How was your overall service experience?</Text>
             <View style={styles.starsRow}>
-              {[1, 2, 3, 4, 5].map((star) => (
-                <TouchableOpacity key={star} onPress={() => setRating(star)} activeOpacity={0.7}>
-                  <Ionicons
-                    name={star <= rating ? 'star' : 'star-outline'}
-                    size={36}
-                    color="#F59E0B"
-                    style={{ marginHorizontal: 6 }}
-                  />
-                </TouchableOpacity>
-              ))}
+              {[1, 2, 3, 4, 5].map((star) => {
+                const isSelected = rating > 0 && star <= rating;
+                return (
+                  <TouchableOpacity key={star} onPress={() => setRating(star)} activeOpacity={0.7}>
+                    <Ionicons
+                      name={isSelected ? 'star' : 'star-outline'}
+                      size={36}
+                      color={isSelected ? '#F59E0B' : '#CBD5E1'}
+                      style={{ marginHorizontal: 6 }}
+                    />
+                  </TouchableOpacity>
+                );
+              })}
             </View>
             <Text style={styles.ratingLabel}>{getRatingLabel()}</Text>
           </View>
@@ -234,15 +237,22 @@ export default function RateReviewScreen({ navigation, route }) {
 
           {/* Submit Review Button */}
           <TouchableOpacity
-            style={styles.submitBtn}
+            style={[styles.submitBtn, rating === 0 && styles.submitBtnDisabled]}
             onPress={handleSubmit}
             disabled={isSubmitting}
-            activeOpacity={0.85}
+            activeOpacity={rating === 0 ? 0.9 : 0.85}
           >
             {isSubmitting ? (
               <ActivityIndicator color={colors.white} />
             ) : (
-              <Text style={styles.submitBtnText}>Submit Review &gt;</Text>
+              <Text
+                style={[
+                  styles.submitBtnText,
+                  rating === 0 && styles.submitBtnTextDisabled,
+                ]}
+              >
+                Submit Review &gt;
+              </Text>
             )}
           </TouchableOpacity>
         </ScrollView>
@@ -439,9 +449,17 @@ const styles = StyleSheet.create({
     elevation: 3,
     marginTop: 6,
   },
+  submitBtnDisabled: {
+    backgroundColor: '#E2E8F0',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
   submitBtnText: {
     color: colors.white,
     fontSize: 16,
     fontWeight: '700',
+  },
+  submitBtnTextDisabled: {
+    color: '#94A3B8',
   },
 });

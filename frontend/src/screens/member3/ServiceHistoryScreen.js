@@ -8,9 +8,13 @@ import {
   Image,
   Alert,
   StatusBar,
+  Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 import { colors } from '../../theme/colors';
 import { AuthContext } from '../../context/AuthContext';
 
@@ -18,6 +22,7 @@ export default function ServiceHistoryScreen({ navigation }) {
   const { user } = useContext(AuthContext);
   const [activeTab, setActiveTab] = useState('ongoing');
   const [expandedReceiptId, setExpandedReceiptId] = useState('b_comp_1');
+  const [downloadingId, setDownloadingId] = useState(null);
 
   // Customer seed data
   const customerOngoing = [
@@ -97,12 +102,227 @@ export default function ServiceHistoryScreen({ navigation }) {
 
   const currentList = activeTab === 'ongoing' ? ongoingBookings : completedBookings;
 
-  const handleDownloadReceipt = (bookingRef) => {
-    Alert.alert(
-      'Receipt Downloaded',
-      `Official Fixora Tax Invoice #${bookingRef} has been saved to your downloads as PDF.`,
-      [{ text: 'OK' }]
-    );
+  const canDownloadInvoice = (item) => {
+    if (!user) return false;
+    // Admins can download any invoice
+    if (user.role === 'admin') return true;
+    // Providers can download invoices for their own jobs
+    if (user.role === 'provider') {
+      const pName = (user.name || '').toLowerCase();
+      const itemPName = (item.provider?.name || item.provider?.user?.name || '').toLowerCase();
+      return itemPName.includes(pName) || pName.includes(itemPName);
+    }
+    // Customers can download invoices for their own bookings
+    return user.role === 'customer';
+  };
+
+  const handleDownloadReceipt = async (item) => {
+    if (!canDownloadInvoice(item)) {
+      Alert.alert(
+        'Access Restricted',
+        'Only the booking customer or an authorized administrator can download this official tax invoice.'
+      );
+      return;
+    }
+
+    setDownloadingId(item._id);
+    try {
+      const invoiceNumber = `INV-${item.bookingRef || 'FX-88431'}-${item.transactionId ? item.transactionId.slice(-4) : '9021'}`;
+      const invoiceDate = new Date().toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      });
+      const customerName = user?.name || item.customer?.name || item.customerName || 'Kasun Perera';
+      const customerPhone = user?.phone || item.customer?.phone || '+94 77 123 4567';
+      const customerAddress = item.serviceAddress || user?.address || 'No 42, New Kandy Road, Malabe, Sri Lanka';
+      const providerName = item.provider?.name || item.provider?.user?.name || 'Chaminda Wickramasinghe';
+      const providerSpec = item.provider?.specialization || `${item.category || 'Service'} Specialist`;
+      const totalAmount = item.pricing?.totalAmount || 3750;
+      const baseRate = Math.round(totalAmount * 0.65);
+      const laborRate = Math.round(totalAmount * 0.28);
+      const platformFee = totalAmount - baseRate - laborRate;
+      const paymentMethod = item.paymentMethod || 'Visa ending in 4892';
+      const transactionId = item.transactionId || 'TXN-98432100';
+
+      const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Fixora Tax Invoice - ${item.bookingRef}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1F2937; padding: 40px; margin: 0; background: #ffffff; }
+    .header { display: flex; justify-content: space-between; border-bottom: 2px solid #1E4D2B; padding-bottom: 20px; }
+    .brand-title { font-size: 26px; font-weight: 800; color: #1E4D2B; letter-spacing: 2px; }
+    .brand-tagline { font-size: 10px; font-weight: 700; color: #059669; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+    .company-meta { font-size: 11px; color: #6B7280; margin-top: 6px; line-height: 1.4; }
+    .inv-header { text-align: right; }
+    .inv-title { font-size: 20px; font-weight: 800; color: #111827; }
+    .inv-meta { font-size: 12px; color: #4B5563; margin-top: 4px; }
+    .status-badge { display: inline-block; background: #DCFCE7; color: #15803D; font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 10px; margin-top: 8px; border: 1px solid #86EFAC; }
+    .grid { display: flex; justify-content: space-between; margin-top: 28px; margin-bottom: 28px; }
+    .col { width: 48%; }
+    .col-title { font-size: 12px; font-weight: 700; text-transform: uppercase; color: #1E4D2B; margin-bottom: 8px; border-bottom: 1px solid #E5E7EB; padding-bottom: 4px; letter-spacing: 0.5px; }
+    .col p { font-size: 13px; line-height: 1.5; margin: 3px 0; color: #374151; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th { background: #EBF4EE; color: #1E4D2B; text-align: left; padding: 10px 12px; font-size: 12px; font-weight: 700; text-transform: uppercase; }
+    td { padding: 12px; border-bottom: 1px solid #E5E7EB; font-size: 13px; color: #374151; }
+    .text-right { text-align: right; }
+    .summary-wrap { display: flex; justify-content: flex-end; margin-top: 20px; }
+    .summary-box { width: 280px; }
+    .summary-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 13px; color: #4B5563; }
+    .grand-total { border-top: 2px solid #1E4D2B; padding-top: 8px; margin-top: 6px; font-size: 16px; font-weight: 800; color: #1E4D2B; }
+    .footer { margin-top: 45px; text-align: center; border-top: 1px solid #E5E7EB; padding-top: 16px; font-size: 11px; color: #9CA3AF; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <div class="brand-title">FIXORA</div>
+      <div class="brand-tagline">YOUR HOME, OUR SERVICES</div>
+      <div class="company-meta">
+        Fixora Platform Technologies (Pvt) Ltd<br/>
+        Level 12, West Tower, World Trade Center, Colombo 01, Sri Lanka<br/>
+        VAT / Tax Reg No: LK-VAT-8849201
+      </div>
+    </div>
+    <div class="inv-header">
+      <div class="inv-title">OFFICIAL TAX INVOICE</div>
+      <div class="inv-meta"><strong>Invoice No:</strong> ${invoiceNumber}</div>
+      <div class="inv-meta"><strong>Date:</strong> ${invoiceDate}</div>
+      <div class="status-badge">&#10003; PAYMENT CONFIRMED (PAID)</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="col">
+      <div class="col-title">Billed To (Customer)</div>
+      <p><strong>Name:</strong> ${customerName}</p>
+      <p><strong>Phone:</strong> ${customerPhone}</p>
+      <p><strong>Service Location:</strong> ${customerAddress}</p>
+    </div>
+    <div class="col">
+      <div class="col-title">Booking & Transaction Summary</div>
+      <p><strong>Booking Ref:</strong> #${item.bookingRef}</p>
+      <p><strong>Transaction ID:</strong> ${transactionId}</p>
+      <p><strong>Service Title:</strong> ${item.serviceTitle}</p>
+      <p><strong>Specialist:</strong> ${providerName} (${providerSpec})</p>
+      <p><strong>Completed On:</strong> ${item.scheduledDate} at ${item.timeSlot}</p>
+      <p><strong>Payment Method:</strong> ${paymentMethod}</p>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Description</th>
+        <th>Category</th>
+        <th class="text-right">Amount (LKR)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Base Professional Service</strong><br/><span style="font-size: 11px; color: #6B7280;">Certified specialist on-site repair and diagnostics</span></td>
+        <td>${item.category}</td>
+        <td class="text-right">Rs. ${baseRate.toLocaleString()}</td>
+      </tr>
+      <tr>
+        <td><strong>Diagnostic Labor & Field Inspection</strong><br/><span style="font-size: 11px; color: #6B7280;">Field testing, material preparation and system overhaul</span></td>
+        <td>Labor</td>
+        <td class="text-right">Rs. ${laborRate.toLocaleString()}</td>
+      </tr>
+      <tr>
+        <td><strong>Fixora Safety Guarantee & Platform Fee</strong><br/><span style="font-size: 11px; color: #6B7280;">Service warranty, homeowner protection and 24/7 priority support</span></td>
+        <td>Platform</td>
+        <td class="text-right">Rs. ${platformFee.toLocaleString()}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="summary-wrap">
+    <div class="summary-box">
+      <div class="summary-row">
+        <span>Subtotal:</span>
+        <span>Rs. ${totalAmount.toLocaleString()}</span>
+      </div>
+      <div class="summary-row">
+        <span>VAT / Tax (0% Residential Exemption):</span>
+        <span>Rs. 0</span>
+      </div>
+      <div class="summary-row grand-total">
+        <span>Total Paid in LKR:</span>
+        <span>Rs. ${totalAmount.toLocaleString()}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    This document is a computer-generated tax invoice issued by Fixora Platform Technologies (Pvt) Ltd.<br/>
+    For inquiries or support regarding this booking, contact <strong>billing@fixora.lk</strong> or call <strong>+94 11 234 5678</strong>.
+  </div>
+</body>
+</html>
+      `;
+
+      if (Platform.OS === 'web') {
+        // On web browser: trigger browser print/download dialog
+        await Print.printAsync({ html: htmlContent });
+      } else {
+        // On mobile phone: generate real PDF file and trigger native share/save sheet
+        const { uri } = await Print.printToFileAsync({ html: htmlContent });
+        const canShare = await Sharing.isAvailableAsync();
+        if (canShare) {
+          await Sharing.shareAsync(uri, {
+            mimeType: 'application/pdf',
+            dialogTitle: `Save Tax Invoice #${item.bookingRef}`,
+            UTI: 'com.adobe.pdf',
+          });
+        } else {
+          Alert.alert('Invoice Downloaded', `PDF tax invoice generated at: ${uri}`);
+        }
+      }
+    } catch (err) {
+      console.warn('PDF generation error:', err);
+      Alert.alert('Download Error', 'Could not generate tax invoice PDF.');
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  const handleBookAgain = (item) => {
+    const provider = item.provider;
+    // 1. Check if provider is currently available
+    if (provider && provider.isAvailable === false) {
+      Alert.alert(
+        'Specialist Currently Unavailable',
+        `${provider.name || 'This service specialist'} is currently not accepting new service appointments. Please check back later or choose another specialist.`,
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+
+    // 2. Pre-fill provider and service details for a brand new booking
+    const providerObj = {
+      _id: provider?._id || 'p_book_again',
+      name: provider?.name || provider?.user?.name || 'Chaminda Wickramasinghe',
+      category: item.category || provider?.category || 'Cleaner',
+      specialization: provider?.specialization || 'Cleaning Specialist',
+      avatar: provider?.avatar || provider?.user?.avatar,
+      hourlyRate: provider?.hourlyRate || 500,
+      isAvailable: true,
+      user: {
+        name: provider?.name || provider?.user?.name || 'Chaminda Wickramasinghe',
+        avatar: provider?.avatar || provider?.user?.avatar,
+      },
+    };
+
+    // 3. Take user to the existing booking flow with pre-filled details
+    // Confirming in DateTimeSelection -> BookingDetails creates a brand NEW booking with a fresh ID and never modifies the old one
+    navigation.navigate('DateTimeSelection', {
+      provider: providerObj,
+      prefilledService: item.serviceTitle,
+    });
   };
 
   return (
@@ -258,7 +478,7 @@ export default function ServiceHistoryScreen({ navigation }) {
 
                       <TouchableOpacity
                         style={styles.bookAgainBtn}
-                        onPress={() => navigation.navigate('DateTimeSelection', { provider: item.provider })}
+                        onPress={() => handleBookAgain(item)}
                       >
                         <Ionicons name="repeat" size={16} color={colors.white} style={{ marginRight: 4 }} />
                         <Text style={styles.bookAgainBtnText}>Book Again</Text>
@@ -321,11 +541,18 @@ export default function ServiceHistoryScreen({ navigation }) {
                       {/* Download Receipt Button */}
                       <TouchableOpacity
                         style={styles.downloadPdfBtn}
-                        onPress={() => handleDownloadReceipt(item.bookingRef)}
+                        onPress={() => handleDownloadReceipt(item)}
                         activeOpacity={0.85}
+                        disabled={downloadingId === item._id}
                       >
-                        <Ionicons name="download-outline" size={16} color={colors.white} style={{ marginRight: 6 }} />
-                        <Text style={styles.downloadPdfText}>Download Tax Invoice (PDF)</Text>
+                        {downloadingId === item._id ? (
+                          <ActivityIndicator color={colors.white} size="small" style={{ marginRight: 6 }} />
+                        ) : (
+                          <Ionicons name="download-outline" size={16} color={colors.white} style={{ marginRight: 6 }} />
+                        )}
+                        <Text style={styles.downloadPdfText}>
+                          {downloadingId === item._id ? 'Generating Tax Invoice...' : 'Download Tax Invoice (PDF)'}
+                        </Text>
                       </TouchableOpacity>
                     </View>
                   </View>
