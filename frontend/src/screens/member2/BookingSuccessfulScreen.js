@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,12 +8,35 @@ import {
   StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 
 export default function BookingSuccessfulScreen({ navigation, route }) {
-  const { booking } = route.params || {};
+  const [booking, setBooking] = useState(route.params?.booking || null);
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (route.params?.booking) {
+      setBooking(route.params.booking);
+    }
+  }, [route.params?.booking]);
+
+  useFocusEffect(
+    useCallback(() => {
+      AsyncStorage.getItem('fixora_latest_booking').then((stored) => {
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            if (parsed) {
+              setBooking(parsed);
+            }
+          } catch (e) {}
+        }
+      });
+    }, [])
+  );
 
   const bookingRef = booking?.bookingRef || '#FX-88431';
   const providerName =

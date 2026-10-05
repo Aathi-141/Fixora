@@ -144,7 +144,7 @@ exports.getMyBookings = async (req, res) => {
 // @access  Private
 exports.rescheduleBooking = async (req, res) => {
   try {
-    const { scheduledDate, timeSlot } = req.body;
+    const { scheduledDate, timeSlot, notes } = req.body;
 
     if (!scheduledDate || !timeSlot) {
       return res.status(400).json({
@@ -167,6 +167,9 @@ exports.rescheduleBooking = async (req, res) => {
 
     booking.scheduledDate = scheduledDate;
     booking.timeSlot = timeSlot;
+    if (notes !== undefined) {
+      booking.notes = notes;
+    }
 
     await booking.save();
 

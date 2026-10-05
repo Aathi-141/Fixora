@@ -101,8 +101,8 @@ export const getProviderRequests = (providerId) =>
 export const createBooking = (bookingData) => apiRequest('/api/bookings', 'POST', bookingData);
 export const getBookingById = (id) => apiRequest(`/api/bookings/${id}`);
 export const getMyBookings = () => apiRequest('/api/bookings/my-history');
-export const rescheduleBooking = (id, scheduledDate, timeSlot) =>
-  apiRequest(`/api/bookings/${id}/reschedule`, 'PUT', { scheduledDate, timeSlot });
+export const rescheduleBooking = (id, scheduledDate, timeSlot, notes) =>
+  apiRequest(`/api/bookings/${id}/reschedule`, 'PUT', { scheduledDate, timeSlot, notes });
 export const cancelBooking = (id, cancellationReason) =>
   apiRequest(`/api/bookings/${id}/cancel`, 'PUT', { cancellationReason });
 export const updateBookingStatus = (id, status, etaMinutes, rejectionReason) =>
