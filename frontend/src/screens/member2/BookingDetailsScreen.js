@@ -20,8 +20,8 @@ export default function BookingDetailsScreen({ navigation, route }) {
   const { user } = useContext(AuthContext);
 
   const currentAddress = user?.address || 'No 42, New Kandy Road, Malabe, Colombo';
-  const [phone, setPhone] = useState(user?.phone || '+94 77 123 4567');
-  const [notes, setNotes] = useState('Standard residential service with front gate entrance.');
+  const phone = user?.phone || '+94 77 123 4567';
+  const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const pricing = bookingData?.pricing || {
@@ -44,7 +44,7 @@ export default function BookingDetailsScreen({ navigation, route }) {
       timeSlot: bookingData?.timeSlot || '11:00 AM',
       serviceAddress: currentAddress,
       customerPhone: phone,
-      notes,
+      notes: notes.trim() || 'Standard residential service with front gate entrance.',
       addOns: bookingData?.addOns || [],
       pricing,
     };
@@ -75,7 +75,7 @@ export default function BookingDetailsScreen({ navigation, route }) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>
       <StatusBar barStyle="light-content" />
       {/* Top Header */}
       <View style={styles.topHeader}>
@@ -140,39 +140,56 @@ export default function BookingDetailsScreen({ navigation, route }) {
           <View style={styles.cardHeaderRow}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Ionicons name="location" size={18} color={colors.forestGreen} style={{ marginRight: 8 }} />
-              <Text style={styles.cardSectionTitle}>Service Address</Text>
+              <Text style={styles.cardSectionTitle}>Service Address & Contact</Text>
             </View>
             <TouchableOpacity onPress={() => navigation.navigate('ProfileTab')}>
-              <Text style={styles.editText}>Edit Profile</Text>
+              <Text style={styles.editText}>Edit in Profile</Text>
             </TouchableOpacity>
           </View>
 
-          <View style={styles.addressBox}>
+          {/* Service Address Box */}
+          <TouchableOpacity
+            style={styles.addressBox}
+            onPress={() => navigation.navigate('ProfileTab')}
+            activeOpacity={0.8}
+          >
             <Ionicons name="home-outline" size={18} color={colors.forestGreen} style={{ marginRight: 10, marginTop: 2 }} />
             <View style={{ flex: 1 }}>
               <Text style={styles.addressText}>{currentAddress}</Text>
               <Text style={styles.addressSub}>Saved Primary Customer Address</Text>
             </View>
+            <Ionicons name="chevron-forward" size={16} color={colors.textMuted} style={{ marginTop: 4 }} />
+          </TouchableOpacity>
+
+          {/* Contact Phone (Read-only, edited via Profile) */}
+          <View style={styles.fieldHeaderRow}>
+            <Text style={styles.fieldLabel}>Contact Phone</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('ProfileTab')}>
+              <Text style={styles.fieldEditLink}>Change</Text>
+            </TouchableOpacity>
           </View>
 
-          <Text style={styles.fieldLabel}>Contact Phone</Text>
-          <View style={styles.inputRow}>
-            <Ionicons name="call-outline" size={16} color={colors.textSecondary} style={{ marginRight: 8 }} />
-            <TextInput
-              style={styles.textInput}
-              value={phone}
-              onChangeText={setPhone}
-              placeholder="Contact phone"
-              keyboardType="phone-pad"
-            />
-          </View>
+          <TouchableOpacity
+            style={styles.readOnlyContactBox}
+            onPress={() => navigation.navigate('ProfileTab')}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="call-outline" size={17} color={colors.forestGreen} style={{ marginRight: 10 }} />
+            <Text style={styles.readOnlyContactText}>{phone}</Text>
+            <View style={styles.savedBadge}>
+              <Ionicons name="shield-checkmark" size={12} color={colors.forestGreen} style={{ marginRight: 3 }} />
+              <Text style={styles.savedBadgeText}>Profile Default</Text>
+            </View>
+          </TouchableOpacity>
 
+          {/* Special Instructions / Gate Access with Hint */}
           <Text style={styles.fieldLabel}>Special Instructions / Gate Access</Text>
           <TextInput
             style={styles.notesInput}
             value={notes}
             onChangeText={setNotes}
-            placeholder="e.g. Please call before arrival, gate access code..."
+            placeholder="e.g. Ring bell at front gate, dog is inside, gate code #1234..."
+            placeholderTextColor="#9CA3AF"
             multiline
             numberOfLines={2}
           />
@@ -251,7 +268,7 @@ const styles = StyleSheet.create({
   },
   scrollBody: {
     padding: 16,
-    paddingBottom: 120,
+    paddingBottom: 24,
   },
   card: {
     backgroundColor: colors.white,
@@ -391,21 +408,47 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     marginTop: 4,
   },
-  inputRow: {
+  fieldHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+    marginTop: 4,
+  },
+  fieldEditLink: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.emerald,
+  },
+  readOnlyContactBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 12,
+    backgroundColor: '#F8FAF9',
     paddingHorizontal: 12,
     height: 44,
-    backgroundColor: '#F8FAF9',
-    marginBottom: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 12,
   },
-  textInput: {
+  readOnlyContactText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 13.5,
+    fontWeight: '700',
     color: colors.textPrimary,
+  },
+  savedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EBF4EE',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  savedBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.forestGreen,
   },
   notesInput: {
     borderWidth: 1,
@@ -453,7 +496,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.white,
     paddingHorizontal: 20,
-    paddingVertical: 14,
+    paddingTop: 10,
+    paddingBottom: 10,
     borderTopWidth: 1,
     borderTopColor: '#E2E8F0',
     shadowColor: '#000',

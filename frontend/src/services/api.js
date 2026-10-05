@@ -79,6 +79,7 @@ export const loginUser = (email, password) => apiRequest('/api/auth/login', 'POS
 export const registerUser = (userData) => apiRequest('/api/auth/register', 'POST', userData);
 export const googleAuthUser = (googleData) => apiRequest('/api/auth/google', 'POST', googleData);
 export const getMyProfile = () => apiRequest('/api/auth/me');
+export const updateUserProfile = (profileData) => apiRequest('/api/auth/profile', 'PUT', profileData);
 
 // ----------------- Providers API (Member 1 & 4) -----------------
 export const getProviders = (params = {}) => {

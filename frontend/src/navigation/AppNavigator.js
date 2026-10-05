@@ -16,13 +16,13 @@ import ProviderSignUpScreen from '../screens/member1/ProviderSignUpScreen';
 import HomeScreen from '../screens/member1/HomeScreen';
 import FiltersScreen from '../screens/member1/FiltersScreen';
 import ProviderProfileScreen from '../screens/member1/ProviderProfileScreen';
-import CustomerProfileScreen from '../screens/member1/CustomerProfileScreen';
 
-// Member 2 Screens
+// Member 2 Screens (Aathika: Booking Flow & Customer Profile)
 import DateTimeSelectionScreen from '../screens/member2/DateTimeSelectionScreen';
 import BookingDetailsScreen from '../screens/member2/BookingDetailsScreen';
 import BookingSuccessfulScreen from '../screens/member2/BookingSuccessfulScreen';
 import CancelRescheduleScreen from '../screens/member2/CancelRescheduleScreen';
+import CustomerProfileScreen from '../screens/member2/CustomerProfileScreen';
 
 // Member 3 Screens
 import RequestStatusTrackingScreen from '../screens/member3/RequestStatusTrackingScreen';

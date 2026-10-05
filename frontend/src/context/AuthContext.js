@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { loginUser, registerUser } from '../services/api';
+import { loginUser, registerUser, updateUserProfile } from '../services/api';
 
 export const AuthContext = createContext();
 
@@ -166,11 +166,33 @@ export const AuthProvider = ({ children }) => {
   };
 
   const updateUser = async (updatedFields) => {
+    let updatedUserObj = null;
     setUser((prev) => {
       const updated = { ...prev, ...updatedFields };
+      updatedUserObj = updated;
       AsyncStorage.setItem('fixora_user', JSON.stringify(updated));
       return updated;
     });
+
+    try {
+      const regAccountsStr = await AsyncStorage.getItem('fixora_registered_accounts');
+      if (regAccountsStr && updatedUserObj?.email) {
+        const regAccounts = JSON.parse(regAccountsStr);
+        const idx = regAccounts.findIndex((a) => a.email.toLowerCase() === updatedUserObj.email.toLowerCase());
+        if (idx !== -1) {
+          regAccounts[idx] = { ...regAccounts[idx], ...updatedFields };
+          await AsyncStorage.setItem('fixora_registered_accounts', JSON.stringify(regAccounts));
+        }
+      }
+    } catch (err) {
+      console.log('Error syncing local registered accounts:', err.message);
+    }
+
+    try {
+      await updateUserProfile(updatedFields);
+    } catch (err) {
+      console.log('Online profile sync skipped:', err.message);
+    }
   };
 
   const logout = async () => {

@@ -28,6 +28,23 @@ export default function CustomerProfileScreen({ navigation }) {
       : 'Malabe, Colombo'
   );
 
+  const [showPhoneModal, setShowPhoneModal] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState(user?.phone || '+94 77 123 4567');
+
+  const handleSavePhone = async () => {
+    if (!phoneNumber.trim()) {
+      Alert.alert('Required', 'Please enter your contact phone number.');
+      return;
+    }
+
+    if (updateUser) {
+      await updateUser({ phone: phoneNumber.trim() });
+    }
+
+    setShowPhoneModal(false);
+    Alert.alert('Contact Number Updated', 'Your contact phone number has been updated successfully.');
+  };
+
   const handleLogout = async () => {
     Alert.alert('Log Out', 'Are you sure you want to log out of Fixora?', [
       { text: 'Cancel', style: 'cancel' },
@@ -162,25 +179,48 @@ export default function CustomerProfileScreen({ navigation }) {
             </TouchableOpacity>
           </View>
         ) : (
-          /* Saved Addresses for Customers with Click to Edit */
+          /* Saved Contact & Service Details for Customers with Click to Edit */
           <View style={styles.sectionCard}>
             <View style={styles.addressSectionHeader}>
-              <Text style={styles.sectionTitle}>Saved Service Address</Text>
-              <TouchableOpacity onPress={() => setShowAddressModal(true)}>
-                <Text style={styles.editLinkText}>Change</Text>
-              </TouchableOpacity>
+              <Text style={styles.sectionTitle}>Contact & Service Details</Text>
             </View>
 
+            {/* Saved Contact Phone */}
+            <TouchableOpacity
+              style={styles.addressRow}
+              onPress={() => {
+                setPhoneNumber(user?.phone || '+94 77 123 4567');
+                setShowPhoneModal(true);
+              }}
+              activeOpacity={0.8}
+            >
+              <View style={styles.addressIconBox}>
+                <Ionicons name="call" size={18} color={colors.forestGreen} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.addressTitle}>Contact Phone Number</Text>
+                <Text style={styles.addressText}>
+                  {user?.phone || '+94 77 123 4567'}
+                </Text>
+              </View>
+              <View style={styles.editPencilBtn}>
+                <Ionicons name="pencil" size={16} color={colors.forestGreen} />
+              </View>
+            </TouchableOpacity>
+
+            <View style={styles.fieldDivider} />
+
+            {/* Saved Service Address */}
             <TouchableOpacity
               style={styles.addressRow}
               onPress={() => setShowAddressModal(true)}
               activeOpacity={0.8}
             >
               <View style={styles.addressIconBox}>
-                <Ionicons name="location" size={20} color={colors.forestGreen} />
+                <Ionicons name="location" size={18} color={colors.forestGreen} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.addressTitle}>Home / Residence</Text>
+                <Text style={styles.addressTitle}>Home / Service Address</Text>
                 <Text style={styles.addressText}>
                   {user?.address || 'No 42, New Kandy Road, Malabe, Colombo'}
                 </Text>
@@ -236,6 +276,47 @@ export default function CustomerProfileScreen({ navigation }) {
 
         <Text style={styles.versionText}>Fixora v1.0.0 • Licensed by Fixora Lanka (Pvt) Ltd</Text>
       </ScrollView>
+
+      {/* Contact Phone Edit Bottom Modal */}
+      <Modal visible={showPhoneModal} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Contact Number</Text>
+              <TouchableOpacity onPress={() => setShowPhoneModal(false)}>
+                <Ionicons name="close" size={24} color={colors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.modalSub}>
+              Update your mobile or contact phone number for home service coordination and booking notifications.
+            </Text>
+
+            <Text style={styles.inputLabel}>Mobile / Contact Phone</Text>
+            <TextInput
+              style={styles.textInput}
+              value={phoneNumber}
+              onChangeText={setPhoneNumber}
+              placeholder="e.g. +94 77 123 4567"
+              placeholderTextColor={colors.textMuted}
+              keyboardType="phone-pad"
+            />
+
+            <View style={styles.modalActionRow}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => setShowPhoneModal(false)}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.modalSaveBtn} onPress={handleSavePhone}>
+                <Text style={styles.modalSaveText}>Save Number</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       {/* Address Edit Bottom Modal */}
       <Modal visible={showAddressModal} transparent animationType="slide">
@@ -511,6 +592,11 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontWeight: '700',
     fontSize: 14,
+  },
+  fieldDivider: {
+    height: 1,
+    backgroundColor: '#EDF2EE',
+    marginVertical: 10,
   },
   addressRow: {
     flexDirection: 'row',

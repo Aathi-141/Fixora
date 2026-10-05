@@ -101,10 +101,10 @@ hci assignment 3/
 │   │   ├── context/            # AuthContext (JWT session, registered account persistence)
 │   │   ├── navigation/         # NativeStack & BottomTab AppNavigator
 │   │   ├── screens/
-│   │   │   ├── member1/        # Splash, Login, AccountType, SignUps, Home, Filters, ProviderProfile
-│   │   │   ├── member2/        # DateTimeSelection, BookingDetails, BookingSuccessful, CancelReschedule
-│   │   │   ├── member3/        # RequestStatusTracking, Chat, Call, RateReview, ServiceHistory
-│   │   │   └── member4/        # ProviderRequests, ProviderAvailability, AdminDashboard, FinalBillPayment
+│   │   │   ├── member1/        # Splash, Login, AccountType, SignUps, Home, Filters, ProviderProfile (Manusha)
+│   │   │   ├── member2/        # DateTimeSelection, BookingDetails, BookingSuccessful, CancelReschedule, CustomerProfile (Aathika)
+│   │   │   ├── member3/        # RequestStatusTracking, Chat, Call, RateReview, ServiceHistory (Shakya)
+│   │   │   └── member4/        # ProviderRequests, ProviderAvailability, AdminDashboard, FinalBillPayment (Dasuni)
 │   │   ├── services/           # REST API client connecting to backend
 │   │   └── theme/              # Color system (Forest Green, Sage Green, Emerald, LKR currency)
 │   ├── App.js                  # Main React Native root component
