@@ -210,6 +210,15 @@ export default function ServiceHistoryScreen({ navigation }) {
                   </Text>
                 </View>
 
+                {item.notes ? (
+                  <View style={[styles.slotRow, { marginTop: 4 }]}>
+                    <Ionicons name="document-text-outline" size={15} color={colors.forestGreen} style={{ marginRight: 6 }} />
+                    <Text style={[styles.dateSlotText, { flex: 1, color: colors.textPrimary }]} numberOfLines={2}>
+                      Special Instructions: {item.notes}
+                    </Text>
+                  </View>
+                ) : null}
+
                 {/* Card Actions */}
                 <View style={styles.cardActionsRow}>
                   {activeTab === 'ongoing' ? (
