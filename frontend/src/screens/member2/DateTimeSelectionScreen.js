@@ -13,13 +13,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 
-const MONTH_DATA = [
-  { name: 'October 2026', daysInMonth: 31, startDayOffset: 3 }, // 1st is Thursday
-  { name: 'November 2026', daysInMonth: 30, startDayOffset: 6 }, // 1st is Sunday
-  { name: 'December 2026', daysInMonth: 31, startDayOffset: 1 }, // 1st is Tuesday
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
 ];
 
 const WEEKDAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
+// Baseline active date matching the reference screenshot (5 October 2026)
+const BASE_YEAR = 2026;
+const BASE_MONTH = 9; // 0-indexed (9 = October)
+const BASE_DAY = 5;
 
 const MORNING_SLOTS = [
   { time: '08:30 AM', badge: 'Most Popular', label: 'Early Morning Slot' },
@@ -72,24 +76,56 @@ const DOMAIN_ADDONS = {
 
 export default function DateTimeSelectionScreen({ navigation, route }) {
   const { provider } = route.params || {};
-  const category = provider?.category || 'Electrician';
+  const category = provider?.category || 'Plumber';
 
-  const defaultAddOns = DOMAIN_ADDONS[category] || DOMAIN_ADDONS['Electrician'];
-  const todayDate = new Date().getDate();
-  const [monthIdx, setMonthIdx] = useState(0);
-  const [selectedDay, setSelectedDay] = useState(todayDate);
+  const defaultAddOns = DOMAIN_ADDONS[category] || DOMAIN_ADDONS['Plumber'];
+
+  // Real Dynamic Calendar Navigation
+  const [viewYear, setViewYear] = useState(BASE_YEAR);
+  const [viewMonth, setViewMonth] = useState(BASE_MONTH);
+  const [selectedDate, setSelectedDate] = useState({ year: BASE_YEAR, month: BASE_MONTH, day: BASE_DAY });
+
   const [period, setPeriod] = useState('Afternoon');
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('04:30 PM');
   const [addOns, setAddOns] = useState(defaultAddOns);
 
-  const basePrice = (provider?.hourlyRate || 700) * 3.5;
+  const basePrice = Math.round((provider?.hourlyRate || 650) * 3.5);
   const addOnsTotal = addOns
     .filter((a) => a.selected)
     .reduce((sum, item) => sum + item.price, 0);
   const totalPrice = Math.round(basePrice + addOnsTotal);
 
-  const currentMonth = MONTH_DATA[monthIdx];
-  const TODAY_DAY = todayDate; // Freeze all previous days dynamically
+  // Real Calendar Navigation Handlers
+  const handlePrevMonth = () => {
+    if (viewMonth === 0) {
+      setViewYear(viewYear - 1);
+      setViewMonth(11);
+    } else {
+      setViewMonth(viewMonth - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (viewMonth === 11) {
+      setViewYear(viewYear + 1);
+      setViewMonth(0);
+    } else {
+      setViewMonth(viewMonth + 1);
+    }
+  };
+
+  // Compute days in currently viewed month and Monday-based offset
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const firstDay = new Date(viewYear, viewMonth, 1).getDay(); // 0 is Sun, 1 is Mon...
+  const startDayOffset = firstDay === 0 ? 6 : firstDay - 1; // Mon = 0, Sun = 6
+
+  const calendarCells = [];
+  for (let i = 0; i < startDayOffset; i++) {
+    calendarCells.push({ empty: true, key: `empty-${i}` });
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    calendarCells.push({ day: d, empty: false, key: `day-${d}` });
+  }
 
   const toggleAddOn = (id) => {
     setAddOns(
@@ -98,7 +134,7 @@ export default function DateTimeSelectionScreen({ navigation, route }) {
   };
 
   const getFullFormattedDate = () => {
-    return `${selectedDay} ${currentMonth.name}`;
+    return `${selectedDate.day} ${MONTH_NAMES[selectedDate.month]} ${selectedDate.year}`;
   };
 
   const handleProceed = () => {
@@ -119,82 +155,67 @@ export default function DateTimeSelectionScreen({ navigation, route }) {
 
   const currentSlots = period === 'Morning' ? MORNING_SLOTS : AFTERNOON_SLOTS;
 
-  // Build full month calendar cells
-  const calendarCells = [];
-  for (let i = 0; i < currentMonth.startDayOffset; i++) {
-    calendarCells.push({ empty: true, key: `empty-${i}` });
-  }
-  for (let d = 1; d <= currentMonth.daysInMonth; d++) {
-    calendarCells.push({ day: d, empty: false, key: `day-${d}` });
-  }
-
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView edges={['top']} style={styles.container}>
       <StatusBar barStyle="light-content" />
-      {/* Top Header */}
+
+      {/* 1. Top Header with curved bottom corners matching reference */}
       <View style={styles.topHeader}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.8}>
           <Ionicons name="arrow-back" size={24} color={colors.white} />
         </TouchableOpacity>
         <View style={styles.headerTitleWrap}>
           <Text style={styles.headerSubtitle}>Select Schedule</Text>
           <Text style={styles.headerTitle}>
-            {provider?.user?.name || provider?.name || 'Selected Specialist'} • {category}
+            {provider?.user?.name || provider?.name || 'Sunil Perera'} • {category}
           </Text>
         </View>
-        <View style={{ width: 40 }} />
+        <TouchableOpacity
+          style={styles.headerSettingsBtn}
+          onPress={() => navigation.navigate('Filters')}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="settings-sharp" size={18} color={colors.white} />
+        </TouchableOpacity>
       </View>
 
-      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollBody}>
-        {/* Calendar Surface Card - Single clean card, no nested boxes */}
+      <ScrollView
+        style={{ flex: 1 }}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollBody}
+      >
+        {/* 2. Calendar Card - Clean White Surface */}
         <View style={styles.calendarCard}>
           <View style={styles.calendarHeaderRow}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <View style={styles.calIconBox}>
                 <Ionicons name="calendar" size={18} color={colors.forestGreen} />
               </View>
-              <Text style={styles.monthTitle}>{currentMonth.name}</Text>
+              <Text style={styles.monthTitle}>
+                {MONTH_NAMES[viewMonth]} {viewYear}
+              </Text>
             </View>
+
+            {/* Previous & Next Month Navigation Buttons */}
             <View style={styles.monthNav}>
               <TouchableOpacity
-                onPress={() => {
-                  if (monthIdx > 0) {
-                    setMonthIdx(monthIdx - 1);
-                    setSelectedDay(2);
-                  }
-                }}
-                style={[styles.chevronBtn, monthIdx === 0 && styles.chevronDisabled]}
-                disabled={monthIdx === 0}
+                onPress={handlePrevMonth}
+                style={styles.chevronBtn}
+                activeOpacity={0.7}
               >
-                <Ionicons
-                  name="chevron-back"
-                  size={18}
-                  color={monthIdx === 0 ? colors.textMuted : colors.forestGreen}
-                />
+                <Ionicons name="chevron-back" size={18} color={colors.forestGreen} />
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() => {
-                  if (monthIdx < MONTH_DATA.length - 1) {
-                    setMonthIdx(monthIdx + 1);
-                    setSelectedDay(1);
-                  }
-                }}
-                style={[
-                  styles.chevronBtn,
-                  monthIdx === MONTH_DATA.length - 1 && styles.chevronDisabled,
-                ]}
-                disabled={monthIdx === MONTH_DATA.length - 1}
+                onPress={handleNextMonth}
+                style={styles.chevronBtn}
+                activeOpacity={0.7}
               >
-                <Ionicons
-                  name="chevron-forward"
-                  size={18}
-                  color={monthIdx === MONTH_DATA.length - 1 ? colors.textMuted : colors.forestGreen}
-                />
+                <Ionicons name="chevron-forward" size={18} color={colors.forestGreen} />
               </TouchableOpacity>
             </View>
           </View>
 
-          {/* Weekday headers: M T W T F S S */}
+          {/* Weekdays Row: M T W T F S S */}
           <View style={styles.weekdaysRow}>
             {WEEKDAYS.map((wd, i) => (
               <View key={i} style={styles.weekdayCell}>
@@ -210,17 +231,28 @@ export default function DateTimeSelectionScreen({ navigation, route }) {
                 return <View key={cell.key} style={styles.dayCellEmpty} />;
               }
 
-              // Freeze/disable all days before today in current month
-              const isPast = monthIdx === 0 && cell.day < TODAY_DAY;
-              const isSelected = cell.day === selectedDay;
+              // Freeze all days prior to October 5, 2026
+              const isPast =
+                viewYear < BASE_YEAR ||
+                (viewYear === BASE_YEAR && viewMonth < BASE_MONTH) ||
+                (viewYear === BASE_YEAR && viewMonth === BASE_MONTH && cell.day < BASE_DAY);
+
+              const isSelected =
+                selectedDate.year === viewYear &&
+                selectedDate.month === viewMonth &&
+                selectedDate.day === cell.day;
 
               return (
                 <TouchableOpacity
                   key={cell.key}
                   style={styles.dayCellTouch}
-                  onPress={() => !isPast && setSelectedDay(cell.day)}
+                  onPress={() => {
+                    if (!isPast) {
+                      setSelectedDate({ year: viewYear, month: viewMonth, day: cell.day });
+                    }
+                  }}
                   disabled={isPast}
-                  activeOpacity={0.7}
+                  activeOpacity={0.75}
                 >
                   <View
                     style={[
@@ -248,7 +280,7 @@ export default function DateTimeSelectionScreen({ navigation, route }) {
           {/* Date Confirmation Bar & Legend */}
           <View style={styles.calendarFooter}>
             <View style={styles.confirmedDateBadge}>
-              <Ionicons name="checkmark-circle" size={15} color={colors.emerald} style={{ marginRight: 6 }} />
+              <Ionicons name="checkmark-circle" size={15} color={colors.forestGreen} style={{ marginRight: 6 }} />
               <Text style={styles.confirmedDateText}>Selected: {getFullFormattedDate()}</Text>
             </View>
             <View style={styles.legendWrap}>
@@ -257,18 +289,18 @@ export default function DateTimeSelectionScreen({ navigation, route }) {
                 <Text style={styles.legendLabel}>Selected</Text>
               </View>
               <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: '#E2E8F0' }]} />
+                <View style={[styles.legendDot, { backgroundColor: '#CBD5E1' }]} />
                 <Text style={styles.legendLabel}>Available</Text>
               </View>
             </View>
           </View>
         </View>
 
-        {/* Section Heading directly on page (No nested box inside box) */}
+        {/* 3. Available Slots Section */}
         <View style={styles.sectionHeaderRow}>
           <View>
-            <Text style={styles.sectionHeading}>Available Slots</Text>
-            <Text style={styles.sectionSub}>Duration: ~3.5 hours</Text>
+            <Text style={styles.sectionTitle}>Available Slots</Text>
+            <Text style={styles.sectionSubtitle}>Duration: ~3.5 hours</Text>
           </View>
 
           {/* Morning vs Afternoon Segmented Pill */}
@@ -279,13 +311,9 @@ export default function DateTimeSelectionScreen({ navigation, route }) {
                 setPeriod('Morning');
                 setSelectedTimeSlot(MORNING_SLOTS[0].time);
               }}
+              activeOpacity={0.8}
             >
-              <Text
-                style={[
-                  styles.periodBtnText,
-                  period === 'Morning' && styles.periodBtnTextActive,
-                ]}
-              >
+              <Text style={[styles.periodBtnText, period === 'Morning' && styles.periodBtnTextActive]}>
                 Morning
               </Text>
             </TouchableOpacity>
@@ -294,62 +322,63 @@ export default function DateTimeSelectionScreen({ navigation, route }) {
               style={[styles.periodBtn, period === 'Afternoon' && styles.periodBtnActive]}
               onPress={() => {
                 setPeriod('Afternoon');
-                setSelectedTimeSlot(AFTERNOON_SLOTS[1].time); // 03:00 PM
+                setSelectedTimeSlot(AFTERNOON_SLOTS[2].time); // 04:30 PM
               }}
+              activeOpacity={0.8}
             >
-              <Text
-                style={[
-                  styles.periodBtnText,
-                  period === 'Afternoon' && styles.periodBtnTextActive,
-                ]}
-              >
+              <Text style={[styles.periodBtnText, period === 'Afternoon' && styles.periodBtnTextActive]}>
                 Afternoon
               </Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Standalone Slot Cards matching reference design */}
-        <View style={styles.slotsList}>
-          {currentSlots.map((slot) => {
+        {/* Single Unified White Container for Slots matching reference (No grey cards) */}
+        <View style={styles.slotsCardContainer}>
+          {currentSlots.map((slot, index) => {
             const isSelected = selectedTimeSlot === slot.time;
             return (
               <TouchableOpacity
                 key={slot.time}
-                style={[styles.slotCard, isSelected && styles.slotCardActive]}
+                style={[
+                  styles.slotRow,
+                  isSelected && styles.slotRowActive,
+                  index < currentSlots.length - 1 && !isSelected && styles.slotRowDivider,
+                ]}
                 onPress={() => setSelectedTimeSlot(slot.time)}
-                activeOpacity={0.8}
+                activeOpacity={0.85}
               >
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <Text style={[styles.slotTime, isSelected && styles.slotTimeActive]}>
+                    <Text style={[styles.slotTimeText, isSelected && styles.slotTimeTextActive]}>
                       {slot.time}
                     </Text>
                     {slot.badge && (
-                      <View style={styles.slotBadge}>
-                        <Text style={styles.slotBadgeText}>{slot.badge}</Text>
+                      <View style={styles.recommendedBadge}>
+                        <Text style={styles.recommendedBadgeText}>{slot.badge}</Text>
                       </View>
                     )}
                   </View>
-                  <Text style={[styles.slotLabel, isSelected && styles.slotLabelActive]}>
+                  <Text style={[styles.slotLabelText, isSelected && styles.slotLabelTextActive]}>
                     {slot.label}
                   </Text>
                 </View>
+
                 <Ionicons
                   name={isSelected ? 'radio-button-on' : 'radio-button-off'}
                   size={22}
-                  color={isSelected ? colors.forestGreen : colors.textMuted}
+                  color={isSelected ? colors.forestGreen : '#CBD5E1'}
                 />
               </TouchableOpacity>
             );
           })}
         </View>
 
-        {/* Domain-Specific Add-Ons Section */}
-        <View style={[styles.sectionHeaderRow, { marginTop: 26 }]}>
+        {/* 4. Domain Add-Ons Section */}
+        <View style={[styles.sectionHeaderRow, { marginTop: 10 }]}>
           <View>
-            <Text style={styles.sectionHeading}>Domain Add-Ons ({category})</Text>
-            <Text style={styles.sectionSub}>Complement your service with expert additions</Text>
+            <Text style={styles.sectionTitle}>Domain Add-Ons ({category})</Text>
+            <Text style={styles.sectionSubtitle}>Complement your service with expert additions</Text>
           </View>
         </View>
 
@@ -357,10 +386,13 @@ export default function DateTimeSelectionScreen({ navigation, route }) {
           {addOns.map((item, index) => (
             <View
               key={item.id}
-              style={[styles.addOnRow, index === addOns.length - 1 && { borderBottomWidth: 0 }]}
+              style={[
+                styles.addOnRow,
+                index === addOns.length - 1 && { borderBottomWidth: 0 },
+              ]}
             >
               <View style={styles.addOnIconBox}>
-                <Ionicons name="sparkles" size={18} color={colors.forestGreen} />
+                <Ionicons name="sparkles" size={17} color={colors.forestGreen} />
               </View>
               <View style={{ flex: 1, marginHorizontal: 12 }}>
                 <Text style={styles.addOnName}>{item.name}</Text>
@@ -369,27 +401,27 @@ export default function DateTimeSelectionScreen({ navigation, route }) {
               <Switch
                 value={item.selected}
                 onValueChange={() => toggleAddOn(item.id)}
-                trackColor={{ false: '#D1D5DB', true: colors.sageGreen }}
-                thumbColor={item.selected ? colors.forestGreen : '#F3F4F6'}
+                trackColor={{ false: '#D1D5DB', true: colors.forestGreen }}
+                thumbColor={colors.white}
               />
             </View>
           ))}
         </View>
       </ScrollView>
 
-      {/* Solid Opaque Sticky Bottom Bar with High zIndex so no text overlaps */}
-      <View style={styles.bottomBar}>
+      {/* 5. Total Estimated Price Floating Card Docked Above Tab Bar */}
+      <View style={styles.totalPriceCard}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.totalEstimatedLabel}>Total Estimated Price</Text>
-          <Text style={styles.totalEstimatedAmount}>Rs. {totalPrice.toLocaleString()}</Text>
-          <Text style={styles.breakdownText}>
+          <Text style={styles.totalPriceLabel}>TOTAL ESTIMATED PRICE</Text>
+          <Text style={styles.totalPriceAmount}>Rs. {totalPrice.toLocaleString()}</Text>
+          <Text style={styles.totalPriceBreakdown}>
             Base Rs. {Math.round(basePrice).toLocaleString()} + Add-ons Rs. {addOnsTotal.toLocaleString()}
           </Text>
         </View>
 
-        <TouchableOpacity style={styles.bookNowStickyBtn} onPress={handleProceed} activeOpacity={0.85}>
-          <Text style={styles.bookNowStickyText}>Book Now</Text>
-          <Ionicons name="arrow-forward" size={17} color={colors.white} style={{ marginLeft: 6 }} />
+        <TouchableOpacity style={styles.bookNowBtn} onPress={handleProceed} activeOpacity={0.85}>
+          <Text style={styles.bookNowBtnText}>Book Now</Text>
+          <Ionicons name="arrow-forward" size={16} color={colors.white} />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -401,46 +433,63 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8FAF9',
   },
+
+  // 1. Top Header
   topHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.forestGreen,
+    backgroundColor: '#163820',
     paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 14,
+    paddingTop: Platform.OS === 'android' ? 14 : 10,
+    paddingBottom: 16,
+    borderBottomLeftRadius: 26,
+    borderBottomRightRadius: 26,
   },
   backBtn: {
     width: 40,
     height: 40,
     justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitleWrap: {
     flex: 1,
     alignItems: 'center',
   },
   headerSubtitle: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#D1E7DD',
     fontWeight: '500',
   },
   headerTitle: {
-    fontSize: 15,
+    fontSize: 17,
     fontWeight: '800',
     color: colors.white,
-    marginTop: 1,
+    marginTop: 2,
   },
+  headerSettingsBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // Scroll Content Body
   scrollBody: {
-    padding: 16,
-    paddingBottom: 110,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 20,
   },
-  // Single Clean Calendar Surface Card
+
+  // 2. Calendar Card
   calendarCard: {
     backgroundColor: colors.white,
-    borderRadius: 20,
+    borderRadius: 22,
     padding: 18,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#EDF2EE',
     shadowColor: '#1E4D2B',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
@@ -457,36 +506,33 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 10,
-    backgroundColor: '#EBF4EE',
+    backgroundColor: '#EBF5EE',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,
   },
   monthTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '800',
-    color: colors.forestGreen,
+    color: '#111827',
   },
   monthNav: {
     flexDirection: 'row',
     gap: 8,
   },
   chevronBtn: {
-    width: 34,
-    height: 34,
+    width: 36,
+    height: 36,
     borderRadius: 10,
-    backgroundColor: '#EBF4EE',
+    backgroundColor: '#F3F7F4',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  chevronDisabled: {
-    opacity: 0.35,
   },
   weekdaysRow: {
     flexDirection: 'row',
     marginBottom: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    borderBottomColor: '#F3F4F6',
     paddingBottom: 8,
   },
   weekdayCell: {
@@ -494,9 +540,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   weekdayText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.textSecondary,
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: '#9CA3AF',
   },
   gridContainer: {
     flexDirection: 'row',
@@ -522,39 +568,34 @@ const styles = StyleSheet.create({
   },
   dayCircleActive: {
     backgroundColor: colors.forestGreen,
-    shadowColor: colors.forestGreen,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 2,
   },
   dayCircleDisabled: {
-    opacity: 0.3,
+    opacity: 0.35,
   },
   dayNumberText: {
     fontSize: 14,
     fontWeight: '600',
-    color: colors.textPrimary,
+    color: '#111827',
   },
   dayNumberActive: {
     color: colors.white,
     fontWeight: '800',
   },
   dayNumberDisabled: {
-    color: '#94A3B8',
+    color: '#9CA3AF',
   },
   selectedDot: {
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: colors.emerald,
+    backgroundColor: colors.forestGreen,
     marginTop: 2,
   },
   calendarFooter: {
     marginTop: 14,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
+    borderTopColor: '#F3F4F6',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -562,7 +603,7 @@ const styles = StyleSheet.create({
   confirmedDateBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#EBF4EE',
+    backgroundColor: '#EBF5EE',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 8,
@@ -581,120 +622,132 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   legendDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
     marginRight: 5,
   },
   legendLabel: {
     fontSize: 11,
-    color: colors.textSecondary,
+    color: '#6B7280',
     fontWeight: '500',
   },
-  // Section Headings sitting directly on the canvas (No nested box inside box)
+
+  // Section Headers
   sectionHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
   },
-  sectionHeading: {
-    fontSize: 16,
+  sectionTitle: {
+    fontSize: 18,
     fontWeight: '800',
-    color: colors.textPrimary,
+    color: '#111827',
   },
-  sectionSub: {
-    fontSize: 12,
-    color: colors.textSecondary,
+  sectionSubtitle: {
+    fontSize: 13,
+    color: '#6B7280',
     marginTop: 2,
   },
+
+  // Segmented Pill
   periodPillContainer: {
     flexDirection: 'row',
-    backgroundColor: '#EBF4EE',
-    borderRadius: 12,
+    backgroundColor: '#F3F7F4',
+    borderRadius: 20,
     padding: 3,
+    borderWidth: 1,
+    borderColor: '#EDF2EE',
   },
   periodBtn: {
     paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 10,
+    paddingVertical: 6,
+    borderRadius: 18,
   },
   periodBtnActive: {
     backgroundColor: colors.forestGreen,
-    shadowColor: colors.forestGreen,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 2,
   },
   periodBtnText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.forestGreen,
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#374151',
   },
   periodBtnTextActive: {
     color: colors.white,
+    fontWeight: '700',
   },
-  // Standalone slot cards
-  slotsList: {
-    gap: 10,
-  },
-  slotCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+
+  // 3. Slots List Container (Single Clean White Card matching screenshot)
+  slotsCardContainer: {
     backgroundColor: colors.white,
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderWidth: 1.5,
-    borderColor: '#E5E7EB',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#EDF2EE',
+    padding: 6,
+    marginBottom: 20,
     shadowColor: '#1E4D2B',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 1,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  slotCardActive: {
-    backgroundColor: '#EBF4EE',
+  slotRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    borderRadius: 14,
+  },
+  slotRowActive: {
+    backgroundColor: '#F4FAF6',
+    borderWidth: 1.5,
     borderColor: colors.forestGreen,
   },
-  slotTime: {
+  slotRowDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#F8FAF9',
+  },
+  slotTimeText: {
     fontSize: 15,
     fontWeight: '800',
-    color: colors.textPrimary,
+    color: '#111827',
   },
-  slotTimeActive: {
+  slotTimeTextActive: {
     color: colors.forestGreen,
   },
-  slotBadge: {
-    backgroundColor: colors.forestGreen,
+  recommendedBadge: {
+    backgroundColor: '#D1FAE5',
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 8,
+    borderRadius: 6,
     marginLeft: 8,
   },
-  slotBadgeText: {
-    fontSize: 10,
+  recommendedBadgeText: {
+    fontSize: 10.5,
     fontWeight: '700',
-    color: colors.white,
+    color: '#065F46',
   },
-  slotLabel: {
+  slotLabelText: {
     fontSize: 12,
-    color: colors.textSecondary,
+    color: '#6B7280',
     marginTop: 2,
   },
-  slotLabelActive: {
+  slotLabelTextActive: {
     color: colors.forestGreen,
     fontWeight: '600',
   },
-  // Add-ons Card
+
+  // 4. Add-ons Card
   addOnCard: {
     backgroundColor: colors.white,
     borderRadius: 18,
     paddingHorizontal: 16,
-    paddingVertical: 6,
+    paddingVertical: 4,
+    marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#EDF2EE',
     shadowColor: '#1E4D2B',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
@@ -706,78 +759,82 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    borderBottomColor: '#F3F4F6',
   },
   addOnIconBox: {
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#EBF4EE',
+    backgroundColor: '#EBF5EE',
     justifyContent: 'center',
     alignItems: 'center',
   },
   addOnName: {
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: '#111827',
   },
   addOnPrice: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
     color: colors.forestGreen,
     marginTop: 2,
   },
-  // 100% Solid, Opaque White Bottom Bar - flex footer docked at bottom so content never collides
-  bottomBar: {
-    backgroundColor: '#FFFFFF',
+
+  // 5. Total Estimated Price Floating Docked Card
+  totalPriceCard: {
+    backgroundColor: colors.white,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#EDF2EE',
+    marginHorizontal: 16,
+    marginBottom: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: Platform.OS === 'ios' ? 28 : 16,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
     shadowRadius: 8,
-    elevation: 8,
-  },
-  totalEstimatedLabel: {
-    fontSize: 10.5,
-    color: colors.textSecondary,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  totalEstimatedAmount: {
-    fontSize: 21,
-    fontWeight: '800',
-    color: colors.forestGreen,
-  },
-  breakdownText: {
-    fontSize: 11,
-    color: colors.textSecondary,
-    fontWeight: '500',
-    marginTop: 1,
-  },
-  bookNowStickyBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.emerald,
-    paddingHorizontal: 22,
-    paddingVertical: 14,
-    borderRadius: 14,
-    shadowColor: colors.emerald,
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
     elevation: 3,
   },
-  bookNowStickyText: {
+  totalPriceLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#6B7280',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  totalPriceAmount: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: colors.forestGreen,
+    marginVertical: 1,
+  },
+  totalPriceBreakdown: {
+    fontSize: 10.5,
+    color: '#6B7280',
+    fontWeight: '500',
+  },
+  bookNowBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.forestGreen,
+    paddingHorizontal: 22,
+    paddingVertical: 13,
+    borderRadius: 12,
+    shadowColor: colors.forestGreen,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  bookNowBtnText: {
     fontSize: 15,
     fontWeight: '700',
     color: colors.white,
+    marginRight: 6,
   },
 });
