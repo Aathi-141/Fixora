@@ -32,7 +32,7 @@ export const getApiBaseUrl = () => {
   }
 
   // Active Wi-Fi IP address
-  return 'http://10.197.222.145:5000';
+  return 'http://192.168.8.176:5000';
 };
 
 export let API_BASE_URL = getApiBaseUrl();
