@@ -49,7 +49,7 @@ const commonTabScreenOptions = {
   tabBarActiveTintColor: colors.forestGreen,
   tabBarInactiveTintColor: '#8A9A8E',
   tabBarStyle: {
-    backgroundColor: colors.white,
+    backgroundColor: '#FFFFFF',
     height: Platform.OS === 'ios' ? 84 : 70,
     paddingBottom: Platform.OS === 'ios' ? 24 : 12,
     paddingTop: 8,

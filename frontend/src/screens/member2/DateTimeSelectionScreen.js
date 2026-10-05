@@ -162,7 +162,7 @@ export default function DateTimeSelectionScreen({ navigation, route }) {
       {/* 1. Top Header with curved bottom corners matching reference */}
       <View style={styles.topHeader}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()} activeOpacity={0.8}>
-          <Ionicons name="arrow-back" size={24} color={colors.white} />
+          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         <View style={styles.headerTitleWrap}>
           <Text style={styles.headerSubtitle}>Select Schedule</Text>
@@ -175,7 +175,7 @@ export default function DateTimeSelectionScreen({ navigation, route }) {
           onPress={() => navigation.navigate('Filters')}
           activeOpacity={0.8}
         >
-          <Ionicons name="settings-sharp" size={18} color={colors.white} />
+          <Ionicons name="settings-sharp" size={18} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
 
@@ -189,7 +189,7 @@ export default function DateTimeSelectionScreen({ navigation, route }) {
           <View style={styles.calendarHeaderRow}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <View style={styles.calIconBox}>
-                <Ionicons name="calendar" size={18} color={colors.forestGreen} />
+                <Ionicons name="calendar" size={18} color="#1E4D2B" />
               </View>
               <Text style={styles.monthTitle}>
                 {MONTH_NAMES[viewMonth]} {viewYear}
@@ -203,14 +203,14 @@ export default function DateTimeSelectionScreen({ navigation, route }) {
                 style={styles.chevronBtn}
                 activeOpacity={0.7}
               >
-                <Ionicons name="chevron-back" size={18} color={colors.forestGreen} />
+                <Ionicons name="chevron-back" size={18} color="#1E4D2B" />
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleNextMonth}
                 style={styles.chevronBtn}
                 activeOpacity={0.7}
               >
-                <Ionicons name="chevron-forward" size={18} color={colors.forestGreen} />
+                <Ionicons name="chevron-forward" size={18} color="#1E4D2B" />
               </TouchableOpacity>
             </View>
           </View>
@@ -280,12 +280,12 @@ export default function DateTimeSelectionScreen({ navigation, route }) {
           {/* Date Confirmation Bar & Legend */}
           <View style={styles.calendarFooter}>
             <View style={styles.confirmedDateBadge}>
-              <Ionicons name="checkmark-circle" size={15} color={colors.forestGreen} style={{ marginRight: 6 }} />
+              <Ionicons name="checkmark-circle" size={15} color="#1E4D2B" style={{ marginRight: 6 }} />
               <Text style={styles.confirmedDateText}>Selected: {getFullFormattedDate()}</Text>
             </View>
             <View style={styles.legendWrap}>
               <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: colors.forestGreen }]} />
+                <View style={[styles.legendDot, { backgroundColor: '#1E4D2B' }]} />
                 <Text style={styles.legendLabel}>Selected</Text>
               </View>
               <View style={styles.legendItem}>
@@ -335,18 +335,17 @@ export default function DateTimeSelectionScreen({ navigation, route }) {
 
         {/* Single Unified White Container for Slots matching reference (No grey cards) */}
         <View style={styles.slotsCardContainer}>
-          {currentSlots.map((slot, index) => {
+          {currentSlots.map((slot) => {
             const isSelected = selectedTimeSlot === slot.time;
             return (
               <TouchableOpacity
                 key={slot.time}
                 style={[
                   styles.slotRow,
-                  isSelected && styles.slotRowActive,
-                  index < currentSlots.length - 1 && !isSelected && styles.slotRowDivider,
+                  isSelected ? styles.slotRowActive : styles.slotRowInactive,
                 ]}
                 onPress={() => setSelectedTimeSlot(slot.time)}
-                activeOpacity={0.85}
+                activeOpacity={0.7}
               >
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -367,7 +366,7 @@ export default function DateTimeSelectionScreen({ navigation, route }) {
                 <Ionicons
                   name={isSelected ? 'radio-button-on' : 'radio-button-off'}
                   size={22}
-                  color={isSelected ? colors.forestGreen : '#CBD5E1'}
+                  color={isSelected ? '#1E4D2B' : '#CBD5E1'}
                 />
               </TouchableOpacity>
             );
@@ -392,7 +391,7 @@ export default function DateTimeSelectionScreen({ navigation, route }) {
               ]}
             >
               <View style={styles.addOnIconBox}>
-                <Ionicons name="sparkles" size={17} color={colors.forestGreen} />
+                <Ionicons name="sparkles" size={17} color="#1E4D2B" />
               </View>
               <View style={{ flex: 1, marginHorizontal: 12 }}>
                 <Text style={styles.addOnName}>{item.name}</Text>
@@ -401,16 +400,16 @@ export default function DateTimeSelectionScreen({ navigation, route }) {
               <Switch
                 value={item.selected}
                 onValueChange={() => toggleAddOn(item.id)}
-                trackColor={{ false: '#D1D5DB', true: colors.forestGreen }}
-                thumbColor={colors.white}
+                trackColor={{ false: '#D1D5DB', true: '#1E4D2B' }}
+                thumbColor="#FFFFFF"
               />
             </View>
           ))}
         </View>
       </ScrollView>
 
-      {/* 5. Total Estimated Price Floating Card Docked Above Tab Bar */}
-      <View style={styles.totalPriceCard}>
+      {/* 5. Total Estimated Price Full-Width Docked Bar (Spacious and Sitting Above Nav Bar) */}
+      <View style={styles.bottomBarContainer}>
         <View style={{ flex: 1 }}>
           <Text style={styles.totalPriceLabel}>TOTAL ESTIMATED PRICE</Text>
           <Text style={styles.totalPriceAmount}>Rs. {totalPrice.toLocaleString()}</Text>
@@ -421,7 +420,7 @@ export default function DateTimeSelectionScreen({ navigation, route }) {
 
         <TouchableOpacity style={styles.bookNowBtn} onPress={handleProceed} activeOpacity={0.85}>
           <Text style={styles.bookNowBtnText}>Book Now</Text>
-          <Ionicons name="arrow-forward" size={16} color={colors.white} />
+          <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -463,7 +462,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 17,
     fontWeight: '800',
-    color: colors.white,
+    color: '#FFFFFF',
     marginTop: 2,
   },
   headerSettingsBtn: {
@@ -475,16 +474,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  // Scroll Content Body
+  // Scroll Content Body with ample padding so content never gets covered by the bottom bar
   scrollBody: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 20,
+    paddingBottom: 130,
   },
 
   // 2. Calendar Card
   calendarCard: {
-    backgroundColor: colors.white,
+    backgroundColor: '#FFFFFF',
     borderRadius: 22,
     padding: 18,
     marginBottom: 20,
@@ -567,7 +566,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   dayCircleActive: {
-    backgroundColor: colors.forestGreen,
+    backgroundColor: '#1E4D2B',
   },
   dayCircleDisabled: {
     opacity: 0.35,
@@ -578,7 +577,7 @@ const styles = StyleSheet.create({
     color: '#111827',
   },
   dayNumberActive: {
-    color: colors.white,
+    color: '#FFFFFF',
     fontWeight: '800',
   },
   dayNumberDisabled: {
@@ -588,7 +587,7 @@ const styles = StyleSheet.create({
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: colors.forestGreen,
+    backgroundColor: '#1E4D2B',
     marginTop: 2,
   },
   calendarFooter: {
@@ -611,7 +610,7 @@ const styles = StyleSheet.create({
   confirmedDateText: {
     fontSize: 12,
     fontWeight: '700',
-    color: colors.forestGreen,
+    color: '#1E4D2B',
   },
   legendWrap: {
     flexDirection: 'row',
@@ -661,12 +660,12 @@ const styles = StyleSheet.create({
     borderColor: '#EDF2EE',
   },
   periodBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 7,
     borderRadius: 18,
   },
   periodBtnActive: {
-    backgroundColor: colors.forestGreen,
+    backgroundColor: '#1E4D2B',
   },
   periodBtnText: {
     fontSize: 13,
@@ -674,17 +673,17 @@ const styles = StyleSheet.create({
     color: '#374151',
   },
   periodBtnTextActive: {
-    color: colors.white,
+    color: '#FFFFFF',
     fontWeight: '700',
   },
 
   // 3. Slots List Container (Single Clean White Card matching screenshot)
   slotsCardContainer: {
-    backgroundColor: colors.white,
+    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     borderWidth: 1,
     borderColor: '#EDF2EE',
-    padding: 6,
+    padding: 8,
     marginBottom: 20,
     shadowColor: '#1E4D2B',
     shadowOffset: { width: 0, height: 2 },
@@ -697,17 +696,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 13,
+    paddingVertical: 14,
     borderRadius: 14,
+    marginVertical: 3,
   },
   slotRowActive: {
     backgroundColor: '#F4FAF6',
     borderWidth: 1.5,
-    borderColor: colors.forestGreen,
+    borderColor: '#1E4D2B',
   },
-  slotRowDivider: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#F8FAF9',
+  slotRowInactive: {
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: 'transparent',
   },
   slotTimeText: {
     fontSize: 15,
@@ -715,7 +716,7 @@ const styles = StyleSheet.create({
     color: '#111827',
   },
   slotTimeTextActive: {
-    color: colors.forestGreen,
+    color: '#1E4D2B',
   },
   recommendedBadge: {
     backgroundColor: '#D1FAE5',
@@ -735,13 +736,13 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   slotLabelTextActive: {
-    color: colors.forestGreen,
+    color: '#1E4D2B',
     fontWeight: '600',
   },
 
   // 4. Add-ons Card
   addOnCard: {
-    backgroundColor: colors.white,
+    backgroundColor: '#FFFFFF',
     borderRadius: 18,
     paddingHorizontal: 16,
     paddingVertical: 4,
@@ -777,28 +778,27 @@ const styles = StyleSheet.create({
   addOnPrice: {
     fontSize: 12,
     fontWeight: '700',
-    color: colors.forestGreen,
+    color: '#1E4D2B',
     marginTop: 2,
   },
 
-  // 5. Total Estimated Price Floating Docked Card
-  totalPriceCard: {
-    backgroundColor: colors.white,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: '#EDF2EE',
-    marginHorizontal: 16,
-    marginBottom: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+  // 5. Total Estimated Price Full-Width Docked Bar (Spacious and Sitting Above Nav Bar)
+  bottomBarContainer: {
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: Platform.OS === 'ios' ? 24 : 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.08,
     shadowRadius: 8,
-    elevation: 3,
+    elevation: 8,
+    minHeight: 88,
   },
   totalPriceLabel: {
     fontSize: 10,
@@ -810,7 +810,7 @@ const styles = StyleSheet.create({
   totalPriceAmount: {
     fontSize: 22,
     fontWeight: '800',
-    color: colors.forestGreen,
+    color: '#1E4D2B',
     marginVertical: 1,
   },
   totalPriceBreakdown: {
@@ -821,11 +821,11 @@ const styles = StyleSheet.create({
   bookNowBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.forestGreen,
+    backgroundColor: '#1E4D2B',
     paddingHorizontal: 22,
-    paddingVertical: 13,
+    paddingVertical: 14,
     borderRadius: 12,
-    shadowColor: colors.forestGreen,
+    shadowColor: '#1E4D2B',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -834,7 +834,7 @@ const styles = StyleSheet.create({
   bookNowBtnText: {
     fontSize: 15,
     fontWeight: '700',
-    color: colors.white,
+    color: '#FFFFFF',
     marginRight: 6,
   },
 });
