@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View,
   Text,
@@ -12,11 +12,12 @@ import {
   StatusBar,
   Linking,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { AuthContext } from '../../context/AuthContext';
-import { updateBookingStatus } from '../../services/api';
+import { updateBookingStatus, getProviderRequests } from '../../services/api';
 
 const TRADE_REQUEST_TEMPLATES = {
   Electrician: {
@@ -76,8 +77,8 @@ export default function ProviderRequestsScreen({ navigation }) {
     user?.name === 'Sunil Perera' ||
     user?.email?.toLowerCase().includes('sunil');
 
-  // If user is Sunil, show the initial plumbing ticket by default.
-  // For any other/newly registered provider (e.g. hibishi), start with empty state!
+  // If user is Sunil or there's a stored booking, show request.
+  const [activeBooking, setActiveBooking] = useState(null);
   const [hasActiveRequest, setHasActiveRequest] = useState(isSunil);
   const [ticketStatus, setTicketStatus] = useState('Pending Review');
   const [showRejectModal, setShowRejectModal] = useState(false);
@@ -89,21 +90,76 @@ export default function ProviderRequestsScreen({ navigation }) {
     TRADE_REQUEST_TEMPLATES[providerCategory] ||
     TRADE_REQUEST_TEMPLATES['Electrician'];
 
+  useEffect(() => {
+    loadRequests();
+  }, [user]);
+
+  const loadRequests = async () => {
+    try {
+      // 1. Try to load from API for this provider
+      const res = await getProviderRequests();
+      if (res.success && res.data && res.data.length > 0) {
+        const req = res.data[0];
+        setActiveBooking(req);
+        setHasActiveRequest(true);
+        setTicketStatus(req.status === 'accepted' ? 'Accepted - In Progress' : 'Pending Review');
+        return;
+      }
+
+      // 2. Check local latest booking in AsyncStorage
+      const stored = await AsyncStorage.getItem('fixora_latest_booking');
+      if (stored) {
+        const b = JSON.parse(stored);
+        setActiveBooking(b);
+        setHasActiveRequest(true);
+        if (b.status === 'accepted') {
+          setTicketStatus('Accepted - In Progress');
+        }
+        return;
+      }
+    } catch (e) {
+      console.log('Error loading provider requests:', e);
+    }
+  };
+
+  const customerName = activeBooking?.customer?.name || activeBooking?.customerName || (isSunil ? 'Kasun Perera' : 'Customer');
+  const customerPhone = activeBooking?.customerPhone || activeBooking?.customer?.phone || '+94 77 123 4567';
+  const customerAddress = activeBooking?.serviceAddress || 'No 42, New Kandy Road, Malabe';
+  const scheduledTimeText = activeBooking
+    ? `${activeBooking.scheduledDate || 'Today'} • ${activeBooking.timeSlot || '02:30 PM'}`
+    : 'Today • 02:30 PM - 04:00 PM';
+  const serviceTitle = activeBooking?.serviceTitle || requestTemplate.serviceTitle;
+  const ticketRef = activeBooking?.bookingRef || 'SR-88431';
+
+  // Special instructions given by customer
+  const specialInstructions =
+    activeBooking?.notes !== undefined
+      ? activeBooking.notes && activeBooking.notes.trim().length > 0
+        ? activeBooking.notes.trim()
+        : 'No special instructions given by customer.'
+      : requestTemplate.notes;
+
   const handleCallCustomer = () => {
-    const customerPhone = '+94771234567';
     Linking.openURL(`tel:${customerPhone}`).catch(() => {
       Alert.alert(
         'Customer Phone',
-        `Calling customer Kasun Perera at +94 77 123 4567`
+        `Calling customer ${customerName} at ${customerPhone}`
       );
     });
   };
 
   const handleAccept = async () => {
     setIsSubmitting(true);
-    await updateBookingStatus('66f000000000000000000003', 'accepted');
+    const bookingId = activeBooking?._id || '66f000000000000000000003';
+    await updateBookingStatus(bookingId, 'accepted');
     setIsSubmitting(false);
     setTicketStatus('Accepted - In Progress');
+
+    if (activeBooking) {
+      const updated = { ...activeBooking, status: 'accepted' };
+      setActiveBooking(updated);
+      AsyncStorage.setItem('fixora_latest_booking', JSON.stringify(updated));
+    }
 
     Alert.alert(
       'Service Accepted!',
@@ -120,10 +176,17 @@ export default function ProviderRequestsScreen({ navigation }) {
 
   const handleConfirmReject = async () => {
     setIsSubmitting(true);
-    await updateBookingStatus('66f000000000000000000003', 'rejected', null, rejectReason);
+    const bookingId = activeBooking?._id || '66f000000000000000000003';
+    await updateBookingStatus(bookingId, 'rejected', null, rejectReason);
     setIsSubmitting(false);
     setShowRejectModal(false);
     setTicketStatus('Rejected');
+
+    if (activeBooking) {
+      const updated = { ...activeBooking, status: 'rejected' };
+      setActiveBooking(updated);
+      AsyncStorage.setItem('fixora_latest_booking', JSON.stringify(updated));
+    }
 
     Alert.alert(
       'Request Declined',
@@ -185,7 +248,7 @@ export default function ProviderRequestsScreen({ navigation }) {
           <>
             {/* Ticket Bar */}
             <View style={styles.ticketBar}>
-              <Text style={styles.ticketId}>Ticket #SR-88431</Text>
+              <Text style={styles.ticketId}>Ticket #{ticketRef}</Text>
               <View
                 style={[
                   styles.statusBadge,
@@ -216,16 +279,16 @@ export default function ProviderRequestsScreen({ navigation }) {
               <Text style={styles.cardLabel}>CUSTOMER DETAILS</Text>
               <View style={styles.customerRow}>
                 <Image
-                  source={{ uri: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200' }}
+                  source={{ uri: activeBooking?.customer?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200' }}
                   style={styles.customerAvatar}
                 />
                 <View style={{ flex: 1, marginLeft: 12 }}>
-                  <Text style={styles.customerName}>Kasun Perera</Text>
+                  <Text style={styles.customerName}>{customerName}</Text>
                   <View style={styles.verifiedRow}>
                     <Ionicons name="shield-checkmark" size={13} color={colors.forestGreen} style={{ marginRight: 4 }} />
-                    <Text style={styles.verifiedText}>Verified Customer • 14 Bookings</Text>
+                    <Text style={styles.verifiedText}>Verified Customer</Text>
                   </View>
-                  <Text style={styles.customerPhone}>+94 77 123 4567</Text>
+                  <Text style={styles.customerPhone}>{customerPhone}</Text>
                 </View>
 
                 {/* Direct Phone Call Button */}
@@ -239,11 +302,29 @@ export default function ProviderRequestsScreen({ navigation }) {
               </View>
             </View>
 
-            {/* Service Requested - Dynamic based on provider's trade! */}
+            {/* Service Requested - Dynamic based on customer booking & special instructions! */}
             <View style={styles.card}>
-              <Text style={styles.cardLabel}>SERVICE TYPE & NOTES</Text>
-              <Text style={styles.serviceTitle}>{requestTemplate.serviceTitle}</Text>
-              <Text style={styles.issueNotes}>"{requestTemplate.notes}"</Text>
+              <Text style={styles.cardLabel}>SERVICE TYPE & SPECIAL INSTRUCTIONS</Text>
+              <Text style={styles.serviceTitle}>{serviceTitle}</Text>
+
+              {/* Customer Special Instructions Box */}
+              <View style={styles.instructionsContainer}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                  <Ionicons name="document-text" size={15} color={colors.forestGreen} style={{ marginRight: 6 }} />
+                  <Text style={styles.instructionsHeading}>Special Instructions / Gate Access:</Text>
+                </View>
+                <Text
+                  style={[
+                    styles.issueNotes,
+                    specialInstructions === 'No special instructions given by customer.' && {
+                      fontStyle: 'italic',
+                      color: colors.textMuted,
+                    },
+                  ]}
+                >
+                  {specialInstructions}
+                </Text>
+              </View>
 
               <View style={styles.divider} />
 
@@ -252,7 +333,7 @@ export default function ProviderRequestsScreen({ navigation }) {
                 <Ionicons name="location" size={18} color={colors.forestGreen} style={{ marginRight: 8 }} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.infoTitle}>Service Location</Text>
-                  <Text style={styles.infoSub}>No 42, New Kandy Road, Malabe</Text>
+                  <Text style={styles.infoSub}>{customerAddress}</Text>
                 </View>
               </View>
 
@@ -261,7 +342,7 @@ export default function ProviderRequestsScreen({ navigation }) {
                 <Ionicons name="time" size={18} color={colors.forestGreen} style={{ marginRight: 8 }} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.infoTitle}>Scheduled Window</Text>
-                  <Text style={styles.infoSub}>Today • 02:30 PM - 04:00 PM</Text>
+                  <Text style={styles.infoSub}>{scheduledTimeText}</Text>
                 </View>
               </View>
             </View>
@@ -270,11 +351,19 @@ export default function ProviderRequestsScreen({ navigation }) {
             <View style={styles.payoutCard}>
               <View>
                 <Text style={styles.payoutLabel}>Total Provider Payout</Text>
-                <Text style={styles.payoutAmount}>{requestTemplate.payout}</Text>
+                <Text style={styles.payoutAmount}>
+                  {activeBooking?.pricing?.totalAmount
+                    ? `LKR ${activeBooking.pricing.totalAmount.toLocaleString()}`
+                    : requestTemplate.payout}
+                </Text>
               </View>
               <View style={styles.feeBreakdown}>
-                <Text style={styles.feeItem}>Base: {requestTemplate.base}</Text>
-                <Text style={styles.feeItem}>Add-Ons: {requestTemplate.addons}</Text>
+                <Text style={styles.feeItem}>
+                  Base: {activeBooking?.pricing?.basePrice ? `LKR ${activeBooking.pricing.basePrice.toLocaleString()}` : requestTemplate.base}
+                </Text>
+                <Text style={styles.feeItem}>
+                  Add-Ons: {activeBooking?.pricing?.addOnsTotal ? `LKR ${activeBooking.pricing.addOnsTotal.toLocaleString()}` : requestTemplate.addons}
+                </Text>
               </View>
             </View>
 
@@ -571,6 +660,20 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: colors.textPrimary,
     marginBottom: 6,
+  },
+  instructionsContainer: {
+    backgroundColor: '#F8FAF9',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginTop: 6,
+    marginBottom: 4,
+  },
+  instructionsHeading: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.forestGreen,
   },
   issueNotes: {
     fontSize: 13,
