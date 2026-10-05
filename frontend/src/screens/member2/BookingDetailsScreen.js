@@ -10,6 +10,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { AuthContext } from '../../context/AuthContext';
@@ -35,6 +36,7 @@ export default function BookingDetailsScreen({ navigation, route }) {
 
   const handleConfirmBooking = async () => {
     setIsSubmitting(true);
+    const trimmedNotes = notes.trim();
     const payload = {
       customerId: user?.id || '66f000000000000000000001',
       providerId: provider?._id || '66f000000000000000000002',
@@ -44,7 +46,7 @@ export default function BookingDetailsScreen({ navigation, route }) {
       timeSlot: bookingData?.timeSlot || '11:00 AM',
       serviceAddress: currentAddress,
       customerPhone: phone,
-      notes: notes.trim() || 'Standard residential service with front gate entrance.',
+      notes: trimmedNotes,
       addOns: bookingData?.addOns || [],
       pricing,
     };
@@ -52,11 +54,18 @@ export default function BookingDetailsScreen({ navigation, route }) {
     const res = await createBooking(payload);
     setIsSubmitting(false);
 
+    let createdBooking = null;
     if (res.success && res.data) {
-      navigation.navigate('BookingSuccessful', { booking: res.data });
+      createdBooking = {
+        ...res.data,
+        notes: trimmedNotes || res.data.notes || '',
+        customerName: user?.name || 'Kasun Perera',
+        customerPhone: phone,
+        serviceAddress: currentAddress,
+      };
     } else {
       // Offline fallback: simulate successful booking creation
-      const mockCreated = {
+      createdBooking = {
         _id: 'bk_' + Date.now(),
         bookingRef: 'FX-' + Math.floor(10000 + Math.random() * 90000),
         provider: provider || {
@@ -64,14 +73,30 @@ export default function BookingDetailsScreen({ navigation, route }) {
           category: 'Cleaner',
           user: { name: 'Kasun Perera' },
         },
+        serviceTitle: provider?.specialization || 'Deep Home Botanical Cleaning',
+        serviceCategory: provider?.category || 'Cleaner',
         scheduledDate: bookingData?.scheduledDate || '2026-10-15',
         timeSlot: bookingData?.timeSlot || '11:00 AM',
         serviceAddress: currentAddress,
+        customerPhone: phone,
+        customerName: user?.name || 'Kasun Perera',
+        notes: trimmedNotes,
         pricing,
         status: 'pending',
       };
-      navigation.navigate('BookingSuccessful', { booking: mockCreated });
     }
+
+    try {
+      await AsyncStorage.setItem('fixora_latest_booking', JSON.stringify(createdBooking));
+      const existingStr = await AsyncStorage.getItem('fixora_all_bookings');
+      const allBookings = existingStr ? JSON.parse(existingStr) : [];
+      allBookings.unshift(createdBooking);
+      await AsyncStorage.setItem('fixora_all_bookings', JSON.stringify(allBookings));
+    } catch (e) {
+      console.log('Error saving booking to storage:', e);
+    }
+
+    navigation.navigate('BookingSuccessful', { booking: createdBooking });
   };
 
   return (

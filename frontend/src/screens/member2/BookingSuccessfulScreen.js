@@ -22,6 +22,11 @@ export default function BookingSuccessfulScreen({ navigation, route }) {
   const timeSlot = booking?.timeSlot || '08:30 AM';
   const totalAmount = booking?.pricing?.totalAmount || 3750;
 
+  const specialInstructions =
+    booking?.notes && booking.notes.trim().length > 0
+      ? booking.notes.trim()
+      : 'No special instructions given';
+
   const handleCopyRef = () => {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -34,7 +39,7 @@ export default function BookingSuccessfulScreen({ navigation, route }) {
       <View style={styles.topHeader}>
         <TouchableOpacity
           style={styles.backBtn}
-          onPress={() => navigation.navigate('Home')}
+          onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('BookingDetails'))}
         >
           <Ionicons name="arrow-back" size={24} color={colors.white} />
         </TouchableOpacity>
@@ -79,7 +84,7 @@ export default function BookingSuccessfulScreen({ navigation, route }) {
 
           <View style={styles.detailItem}>
             <Ionicons name="person-outline" size={18} color={colors.forestGreen} style={styles.iconStyle} />
-            <View>
+            <View style={{ flex: 1 }}>
               <Text style={styles.itemTitle}>Assigned Specialist</Text>
               <Text style={styles.itemSub}>{providerName}</Text>
             </View>
@@ -87,7 +92,7 @@ export default function BookingSuccessfulScreen({ navigation, route }) {
 
           <View style={styles.detailItem}>
             <Ionicons name="calendar-outline" size={18} color={colors.forestGreen} style={styles.iconStyle} />
-            <View>
+            <View style={{ flex: 1 }}>
               <Text style={styles.itemTitle}>Date & Time</Text>
               <Text style={styles.itemSub}>
                 {scheduledDate} at {timeSlot}
@@ -96,8 +101,36 @@ export default function BookingSuccessfulScreen({ navigation, route }) {
           </View>
 
           <View style={styles.detailItem}>
+            <Ionicons name="location-outline" size={18} color={colors.forestGreen} style={styles.iconStyle} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.itemTitle}>Service Address</Text>
+              <Text style={styles.itemSub}>
+                {booking?.serviceAddress || 'No 42, New Kandy Road, Malabe'}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.detailItem}>
+            <Ionicons name="document-text-outline" size={18} color={colors.forestGreen} style={styles.iconStyle} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.itemTitle}>Special Instructions</Text>
+              <Text
+                style={[
+                  styles.itemSub,
+                  (!booking?.notes || !booking.notes.trim()) && {
+                    fontStyle: 'italic',
+                    color: colors.textMuted,
+                  },
+                ]}
+              >
+                {specialInstructions}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.detailItem}>
             <Ionicons name="wallet-outline" size={18} color={colors.forestGreen} style={styles.iconStyle} />
-            <View>
+            <View style={{ flex: 1 }}>
               <Text style={styles.itemTitle}>Confirmed Total</Text>
               <Text style={styles.itemSub}>LKR {totalAmount.toLocaleString()} (Pay after service)</Text>
             </View>
@@ -260,13 +293,14 @@ const styles = StyleSheet.create({
   },
   detailItem: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#F1F5F9',
   },
   iconStyle: {
     marginRight: 14,
+    marginTop: 2,
   },
   itemTitle: {
     fontSize: 12,
