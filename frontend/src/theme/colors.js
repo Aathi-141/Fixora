@@ -15,6 +15,7 @@ export const colors = {
   textSecondary: '#6B7280',
   textMuted: '#9CA3AF',
   textWhite: '#FFFFFF',
+  white: '#FFFFFF',
   
   // System Status
   success: '#10B981',
