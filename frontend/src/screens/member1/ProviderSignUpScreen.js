@@ -10,9 +10,11 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { colors } from '../../theme/colors';
 import { AuthContext } from '../../context/AuthContext';
 
@@ -29,9 +31,37 @@ export default function ProviderSignUpScreen({ navigation }) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [avatarUri, setAvatarUri] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { register } = useContext(AuthContext);
+
+  const handlePickImage = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Required',
+          'Fixora needs photo library access to upload your business/profile photo.'
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setAvatarUri(result.assets[0].uri);
+      }
+    } catch (err) {
+      console.warn('Image picker error:', err);
+      Alert.alert('Image Selection Error', 'Could not open photo library.');
+    }
+  };
 
   const handleProviderSignUp = async () => {
     // 1. Name validation
@@ -79,13 +109,14 @@ export default function ProviderSignUpScreen({ navigation }) {
       category,
       city: city.trim() || 'Colombo',
       hourlyRate: Number(hourlyRate) || 700,
+      avatar: avatarUri,
     });
     setIsSubmitting(false);
 
     if (res.success) {
       Alert.alert(
         'Provider Account Created!',
-        `Welcome to Fixora Partner Network! Your ${category} profile has been registered and synced with MongoDB. Please log in to view your incoming jobs.`,
+        `Welcome to Fixora, ${res.user?.name || name.trim()}! Your account has been successfully created. Please log in.`,
         [{ text: 'Go to Login', onPress: () => navigation.navigate('Login') }]
       );
     } else {
@@ -119,12 +150,31 @@ export default function ProviderSignUpScreen({ navigation }) {
         >
           {/* Header Banner & Photo Placeholder */}
           <View style={styles.badgeSection}>
-            <View style={styles.badgeCircle}>
-              <Ionicons name="construct" size={38} color={colors.forestGreen} />
-              <TouchableOpacity style={styles.addPhotoBadge}>
-                <Ionicons name="camera" size={14} color={colors.white} />
+            <View style={styles.badgeWrapper}>
+              <TouchableOpacity
+                style={styles.badgeCircle}
+                onPress={handlePickImage}
+                activeOpacity={0.8}
+              >
+                {avatarUri ? (
+                  <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
+                ) : (
+                  <Ionicons name="construct" size={38} color={colors.forestGreen} />
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.addPhotoBadge, avatarUri && styles.photoSelectedBadge]}
+                onPress={handlePickImage}
+                activeOpacity={0.8}
+              >
+                <Ionicons name={avatarUri ? 'checkmark' : 'camera'} size={14} color={colors.white} />
               </TouchableOpacity>
             </View>
+            <TouchableOpacity onPress={handlePickImage} activeOpacity={0.7}>
+              <Text style={styles.photoHintText}>
+                {avatarUri ? 'Change Profile Photo' : 'Add Profile / Business Photo'}
+              </Text>
+            </TouchableOpacity>
             <Text style={styles.badgeTitle}>Service Provider Registration</Text>
             <Text style={styles.badgeSub}>Get discovered by verified customers in your area</Text>
           </View>
@@ -326,20 +376,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
+  badgeWrapper: {
+    width: 82,
+    height: 82,
+    marginBottom: 6,
+    position: 'relative',
+  },
   badgeCircle: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
+    width: 82,
+    height: 82,
+    borderRadius: 41,
     backgroundColor: '#EBF4EE',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 10,
-    position: 'relative',
+    borderWidth: 2,
+    borderColor: '#C7E2D0',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
   },
   addPhotoBadge: {
     position: 'absolute',
-    bottom: 0,
-    right: 0,
+    bottom: -2,
+    right: -2,
     backgroundColor: colors.emerald,
     width: 26,
     height: 26,
@@ -348,6 +409,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     borderColor: colors.white,
+    elevation: 3,
+  },
+  photoSelectedBadge: {
+    backgroundColor: colors.forestGreen,
+  },
+  photoHintText: {
+    fontSize: 13,
+    color: colors.forestGreen,
+    fontWeight: '600',
+    marginBottom: 8,
   },
   badgeTitle: {
     fontSize: 20,

@@ -158,7 +158,7 @@ export const AuthProvider = ({ children }) => {
         success: false,
         message:
           res.message ||
-          'Could not connect to MongoDB Atlas backend. Please verify your connection.',
+          'Could not connect to Fixora service. Please verify your internet connection.',
       };
     } catch (error) {
       return { success: false, message: error.message };

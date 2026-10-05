@@ -8,8 +8,8 @@ export default function SplashScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
       <View style={styles.content}>
-        {/* Brand Official Logo */}
-        <View style={styles.logoContainer}>
+        {/* Brand Official Seamless Logo */}
+        <View style={styles.logoWrap}>
           <Image
             source={require('../../../assets/logo.png')}
             style={styles.logoImage}
@@ -17,8 +17,6 @@ export default function SplashScreen({ navigation }) {
           />
         </View>
 
-        <Text style={styles.appName}>FIXORA</Text>
-        <Text style={styles.tagline}>YOUR HOME, OUR SERVICES</Text>
         <Text style={styles.subtext}>
           Reliable plumbers, electricians, cleaners, painters & AC technicians across Sri Lanka.
         </Text>
@@ -51,7 +49,7 @@ export default function SplashScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FAFAF8',
+    backgroundColor: '#F8FAF9',
     justifyContent: 'space-between',
     paddingHorizontal: 24,
     paddingVertical: 32,
@@ -60,47 +58,26 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingBottom: 20,
   },
-  logoContainer: {
-    width: 170,
-    height: 170,
-    borderRadius: 28,
-    backgroundColor: colors.white,
+  logoWrap: {
+    width: 250,
+    height: 310,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
-    shadowColor: '#1E4D2B',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 6,
-    padding: 12,
+    marginBottom: 24,
   },
   logoImage: {
     width: '100%',
     height: '100%',
-  },
-  appName: {
-    fontSize: 32,
-    fontWeight: '800',
-    color: colors.forestGreen,
-    letterSpacing: 2,
-    marginBottom: 6,
-  },
-  tagline: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.emerald,
-    letterSpacing: 1.5,
-    marginBottom: 12,
-    textTransform: 'uppercase',
   },
   subtext: {
     fontSize: 14,
     color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 22,
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
+    maxWidth: 320,
   },
   footer: {
     width: '100%',

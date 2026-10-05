@@ -263,9 +263,13 @@ export default function HomeScreen({ navigation, route }) {
         >
           <Ionicons
             name="options-outline"
-            size={20}
+            size={18}
             color={filterParams.applied ? colors.white : colors.forestGreen}
+            style={{ marginRight: 5 }}
           />
+          <Text style={[styles.filterBtnText, filterParams.applied && styles.filterBtnTextActive]}>
+            Filter
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -595,15 +599,24 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   filterBtn: {
-    width: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     height: 44,
+    paddingHorizontal: 12,
     borderRadius: 14,
     backgroundColor: '#EBF4EE',
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   filterBtnActive: {
     backgroundColor: colors.emerald,
+  },
+  filterBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.forestGreen,
+  },
+  filterBtnTextActive: {
+    color: colors.white,
   },
 
   // Main Scroll Body

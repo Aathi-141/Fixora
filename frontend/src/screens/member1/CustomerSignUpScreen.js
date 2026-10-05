@@ -10,9 +10,11 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { colors } from '../../theme/colors';
 import { AuthContext } from '../../context/AuthContext';
 
@@ -24,9 +26,37 @@ export default function CustomerSignUpScreen({ navigation }) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [avatarUri, setAvatarUri] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { register } = useContext(AuthContext);
+
+  const handlePickImage = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Required',
+          'Fixora needs photo library access to upload your profile photo.'
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setAvatarUri(result.assets[0].uri);
+      }
+    } catch (err) {
+      console.warn('Image picker error:', err);
+      Alert.alert('Image Selection Error', 'Could not open photo library.');
+    }
+  };
 
   const handleSignUp = async () => {
     // 1. Name validation
@@ -72,13 +102,14 @@ export default function CustomerSignUpScreen({ navigation }) {
       password,
       role: 'customer',
       city: 'Colombo',
+      avatar: avatarUri,
     });
     setIsSubmitting(false);
 
     if (res.success) {
       Alert.alert(
         'Account Created!',
-        `Welcome to Fixora, ${res.user?.name || name.trim()}! Your account has been registered in MongoDB Atlas. Please log in.`,
+        `Welcome to Fixora, ${res.user?.name || name.trim()}! Your account has been successfully created. Please log in.`,
         [
           {
             text: 'Go to Login',
@@ -112,15 +143,33 @@ export default function CustomerSignUpScreen({ navigation }) {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Avatar Placeholder */}
+          {/* Avatar Section */}
           <View style={styles.avatarSection}>
-            <View style={styles.avatarCircle}>
-              <Ionicons name="person" size={40} color={colors.forestGreen} />
-              <TouchableOpacity style={styles.addPhotoBadge}>
-                <Ionicons name="camera" size={16} color={colors.white} />
+            <View style={styles.avatarWrapper}>
+              <TouchableOpacity
+                style={styles.avatarCircle}
+                onPress={handlePickImage}
+                activeOpacity={0.8}
+              >
+                {avatarUri ? (
+                  <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
+                ) : (
+                  <Ionicons name="person" size={40} color={colors.forestGreen} />
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.addPhotoBadge, avatarUri && styles.photoSelectedBadge]}
+                onPress={handlePickImage}
+                activeOpacity={0.8}
+              >
+                <Ionicons name={avatarUri ? 'checkmark' : 'camera'} size={15} color={colors.white} />
               </TouchableOpacity>
             </View>
-            <Text style={styles.avatarHint}>Add Profile Photo</Text>
+            <TouchableOpacity onPress={handlePickImage} activeOpacity={0.7}>
+              <Text style={styles.avatarHint}>
+                {avatarUri ? 'Change Profile Photo' : 'Add Profile Photo'}
+              </Text>
+            </TouchableOpacity>
           </View>
 
           {/* Form Fields */}
@@ -276,20 +325,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
+  avatarWrapper: {
+    width: 86,
+    height: 86,
+    marginBottom: 8,
+    position: 'relative',
+  },
   avatarCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 86,
+    height: 86,
+    borderRadius: 43,
     backgroundColor: '#EBF4EE',
     justifyContent: 'center',
     alignItems: 'center',
-    position: 'relative',
-    marginBottom: 6,
+    borderWidth: 2,
+    borderColor: '#C7E2D0',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
   },
   addPhotoBadge: {
     position: 'absolute',
-    bottom: 0,
-    right: 0,
+    bottom: -2,
+    right: -2,
     backgroundColor: colors.emerald,
     width: 28,
     height: 28,
@@ -298,11 +358,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     borderColor: colors.white,
+    elevation: 3,
+  },
+  photoSelectedBadge: {
+    backgroundColor: colors.forestGreen,
   },
   avatarHint: {
     fontSize: 13,
-    color: colors.textSecondary,
-    fontWeight: '500',
+    color: colors.forestGreen,
+    fontWeight: '600',
   },
   form: {
     backgroundColor: colors.white,
