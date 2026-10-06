@@ -124,7 +124,9 @@ export const getProviderReviews = (providerId) => apiRequest(`/api/reviews/provi
 
 // ----------------- Admin API (Member 4) -----------------
 export const getAdminOverview = () => apiRequest('/api/admin/overview');
+export const getAdminUsers = () => apiRequest('/api/admin/users');
 export const getAdminProviders = () => apiRequest('/api/admin/providers');
 export const verifyProvider = (id, status) => apiRequest(`/api/admin/providers/${id}/verify`, 'PUT', { status });
+export const getAdminBookings = () => apiRequest('/api/admin/bookings');
 export const getAdminDisputes = () => apiRequest('/api/admin/disputes');
 export const resolveDispute = (id, resolutionNotes) => apiRequest(`/api/admin/disputes/${id}/resolve`, 'PUT', { resolutionNotes });
