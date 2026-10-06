@@ -72,9 +72,8 @@ export default function ProviderProfileScreen({ navigation, route }) {
       setIsPickingImage(true);
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.6,
+        allowsEditing: false,
+        quality: 0.7,
         base64: true,
       });
 
@@ -116,6 +115,12 @@ export default function ProviderProfileScreen({ navigation, route }) {
     provider?.about ||
     'Certified home service technician specializing in residential electrical setups, safety inspections, diagnostic repairs, and commercial maintenance.';
 
+  const isOwner =
+    user?.role === 'provider' &&
+    ((provider?._id && (user?.providerProfileId === provider._id || user?.providerProfile?._id === provider._id)) ||
+     (provider?.user?._id && (user?.id === provider.user._id || user?._id === provider.user._id)) ||
+     (provider?.user && (user?.id === provider.user || user?._id === provider.user)));
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
@@ -133,16 +138,22 @@ export default function ProviderProfileScreen({ navigation, route }) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollBody}>
         {/* Cover / Profile Card */}
         <View style={styles.profileHeaderCard}>
-          <TouchableOpacity
-            style={styles.avatarWrap}
-            onPress={() => setShowPhotoModal(true)}
-            activeOpacity={0.85}
-          >
-            <Image source={{ uri: avatarUrl }} style={styles.avatarLarge} />
-            <View style={styles.cameraBadge}>
-              <Ionicons name="camera" size={14} color={colors.white} />
+          {isOwner ? (
+            <TouchableOpacity
+              style={styles.avatarWrap}
+              onPress={() => setShowPhotoModal(true)}
+              activeOpacity={0.85}
+            >
+              <Image source={{ uri: avatarUrl }} style={styles.avatarLarge} />
+              <View style={styles.cameraBadge}>
+                <Ionicons name="camera" size={14} color={colors.white} />
+              </View>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.avatarWrap}>
+              <Image source={{ uri: avatarUrl }} style={styles.avatarLarge} />
             </View>
-          </TouchableOpacity>
+          )}
           <Text style={styles.providerNameText}>{name}</Text>
           <View style={styles.specBadge}>
             <Ionicons name="shield-checkmark" size={14} color={colors.forestGreen} style={{ marginRight: 4 }} />

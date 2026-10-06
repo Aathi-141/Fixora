@@ -31,9 +31,10 @@ export default function ProviderRequestsScreen({ navigation }) {
     user?.providerProfileId || user?.providerProfile?._id || null
   );
 
-  const [activeTab, setActiveTab] = useState('pending'); // 'pending' | 'active'
+  const [activeTab, setActiveTab] = useState('pending'); // 'pending' | 'active' | 'completed'
   const [pendingRequests, setPendingRequests] = useState([]);
   const [activeJobs, setActiveJobs] = useState([]);
+  const [completedJobs, setCompletedJobs] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -44,7 +45,16 @@ export default function ProviderRequestsScreen({ navigation }) {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectingBooking, setRejectingBooking] = useState(null);
   const [rejectReason, setRejectReason] = useState('Outside scheduled service zone');
-  const [submittingId, setSubmittingId] = useState(null);
+  const [submittingAction, setSubmittingAction] = useState(null); // { id: string, action: string } | null
+
+  const getInitials = (fullName) => {
+    if (!fullName) return 'CU';
+    const parts = fullName.trim().split(' ').filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return fullName.slice(0, 2).toUpperCase();
+  };
 
   // Automatically refresh when screen comes into focus
   useFocusEffect(
@@ -94,8 +104,10 @@ export default function ProviderRequestsScreen({ navigation }) {
         const active = res.data.filter(
           (b) => b.status === 'accepted' || b.status === 'on_the_way'
         );
+        const completed = res.data.filter((b) => b.status === 'completed');
         setPendingRequests(pending);
         setActiveJobs(active);
+        setCompletedJobs(completed);
       } else {
         // Backend reported an error or database issue
         setError(
@@ -124,9 +136,9 @@ export default function ProviderRequestsScreen({ navigation }) {
 
   // Accept booking by real MongoDB _id
   const handleAccept = async (booking) => {
-    setSubmittingId(booking._id);
+    setSubmittingAction({ id: booking._id, action: 'accept' });
     const res = await updateBookingStatus(booking._id, 'accepted');
-    setSubmittingId(null);
+    setSubmittingAction(null);
 
     if (res.success) {
       Alert.alert(
@@ -156,12 +168,12 @@ export default function ProviderRequestsScreen({ navigation }) {
   // Confirm rejection in backend
   const handleConfirmReject = async () => {
     if (!rejectingBooking) return;
-    setSubmittingId(rejectingBooking._id);
     const bookingId = rejectingBooking._id;
+    setSubmittingAction({ id: bookingId, action: 'reject' });
     const ref = rejectingBooking.bookingRef || bookingId.slice(-6);
 
     const res = await updateBookingStatus(bookingId, 'rejected', null, rejectReason);
-    setSubmittingId(null);
+    setSubmittingAction(null);
     setShowRejectModal(false);
     setRejectingBooking(null);
 
@@ -179,9 +191,9 @@ export default function ProviderRequestsScreen({ navigation }) {
 
   // Advance status to "On The Way"
   const handleSetOnTheWay = async (booking) => {
-    setSubmittingId(booking._id);
+    setSubmittingAction({ id: booking._id, action: 'on_the_way' });
     const res = await updateBookingStatus(booking._id, 'on_the_way', 15);
-    setSubmittingId(null);
+    setSubmittingAction(null);
 
     if (res.success) {
       Alert.alert(
@@ -197,15 +209,21 @@ export default function ProviderRequestsScreen({ navigation }) {
 
   // Advance status to "Completed"
   const handleSetCompleted = async (booking) => {
-    setSubmittingId(booking._id);
+    setSubmittingAction({ id: booking._id, action: 'completed' });
     const res = await updateBookingStatus(booking._id, 'completed');
-    setSubmittingId(null);
+    setSubmittingAction(null);
 
     if (res.success) {
       Alert.alert(
         'Service Completed!',
         'Job completed successfully. The final bill is now ready for customer payment and review.',
-        [{ text: 'OK' }]
+        [
+          {
+            text: 'View in Completed Jobs',
+            onPress: () => setActiveTab('completed'),
+          },
+          { text: 'OK' },
+        ]
       );
       await loadRequests();
     } else {
@@ -213,7 +231,12 @@ export default function ProviderRequestsScreen({ navigation }) {
     }
   };
 
-  const currentList = activeTab === 'pending' ? pendingRequests : activeJobs;
+  const currentList =
+    activeTab === 'pending'
+      ? pendingRequests
+      : activeTab === 'active'
+      ? activeJobs
+      : completedJobs;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -237,7 +260,7 @@ export default function ProviderRequestsScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Tab Segment: Pending Requests vs Active Jobs */}
+      {/* Tab Segment: Pending Requests vs Active Jobs vs Completed Jobs */}
       <View style={styles.tabBar}>
         <TouchableOpacity
           style={[styles.tabBtn, activeTab === 'pending' && styles.tabBtnActive]}
@@ -245,7 +268,7 @@ export default function ProviderRequestsScreen({ navigation }) {
           activeOpacity={0.8}
         >
           <Text style={[styles.tabBtnText, activeTab === 'pending' && styles.tabBtnTextActive]}>
-            Pending Requests
+            Pending
           </Text>
           {pendingRequests.length > 0 && (
             <View style={styles.tabBadge}>
@@ -260,11 +283,26 @@ export default function ProviderRequestsScreen({ navigation }) {
           activeOpacity={0.8}
         >
           <Text style={[styles.tabBtnText, activeTab === 'active' && styles.tabBtnTextActive]}>
-            Active Jobs
+            Active
           </Text>
           {activeJobs.length > 0 && (
             <View style={[styles.tabBadge, { backgroundColor: colors.forestGreen }]}>
               <Text style={styles.tabBadgeText}>{activeJobs.length}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.tabBtn, activeTab === 'completed' && styles.tabBtnActive]}
+          onPress={() => setActiveTab('completed')}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.tabBtnText, activeTab === 'completed' && styles.tabBtnTextActive]}>
+            Completed
+          </Text>
+          {completedJobs.length > 0 && (
+            <View style={[styles.tabBadge, { backgroundColor: '#10B981' }]}>
+              <Text style={styles.tabBadgeText}>{completedJobs.length}</Text>
             </View>
           )}
         </TouchableOpacity>
@@ -332,7 +370,9 @@ export default function ProviderRequestsScreen({ navigation }) {
             <Text style={styles.emptyTitle}>
               {activeTab === 'pending'
                 ? 'No pending booking requests'
-                : 'No active jobs in progress'}
+                : activeTab === 'active'
+                ? 'No active jobs in progress'
+                : 'No completed jobs yet'}
             </Text>
             <Text style={styles.emptyProviderBadge}>
               {user?.name || 'Partner'} • {user?.category || 'Service Specialist'}
@@ -340,7 +380,9 @@ export default function ProviderRequestsScreen({ navigation }) {
             <Text style={styles.emptyDesc}>
               {activeTab === 'pending'
                 ? `You are currently online and available in your service area. When customers book your services, incoming bookings will appear here in real-time.`
-                : 'Jobs you have accepted will appear here. You can mark status as "On The Way" and "Service Completed".'}
+                : activeTab === 'active'
+                ? 'Jobs you have accepted will appear here. You can mark status as "On The Way" and "Service Completed".'
+                : 'Jobs you have completed will appear here with history and payment details.'}
             </Text>
 
             <View style={styles.onlineStatusRow}>
@@ -366,7 +408,11 @@ export default function ProviderRequestsScreen({ navigation }) {
             const basePrice = item.pricing?.basePrice || 0;
             const addOnsTotal = item.pricing?.addOnsTotal || 0;
 
-            const isItemSubmitting = submittingId === item._id;
+            const isItemSubmitting = submittingAction?.id === item._id;
+            const isAcceptLoading = isItemSubmitting && submittingAction?.action === 'accept';
+            const isOnTheWayLoading = isItemSubmitting && submittingAction?.action === 'on_the_way';
+            const isCompletedLoading = isItemSubmitting && submittingAction?.action === 'completed';
+            const customerAvatarUri = item.customer?.avatar || item.customerAvatar;
 
             return (
               <View key={item._id} style={styles.ticketCard}>
@@ -410,14 +456,16 @@ export default function ProviderRequestsScreen({ navigation }) {
 
                 {/* Customer Information */}
                 <View style={styles.customerRow}>
-                  <Image
-                    source={{
-                      uri:
-                        item.customer?.avatar ||
-                        'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200',
-                    }}
-                    style={styles.customerAvatar}
-                  />
+                  {customerAvatarUri ? (
+                    <Image
+                      source={{ uri: customerAvatarUri }}
+                      style={styles.customerAvatar}
+                    />
+                  ) : (
+                    <View style={styles.customerInitialsAvatar}>
+                      <Text style={styles.customerInitialsText}>{getInitials(customerName)}</Text>
+                    </View>
+                  )}
                   <View style={{ flex: 1, marginLeft: 12 }}>
                     <Text style={styles.customerName}>{customerName}</Text>
                     <View style={styles.verifiedRow}>
@@ -513,7 +561,17 @@ export default function ProviderRequestsScreen({ navigation }) {
                 </View>
 
                 {/* Actions Based on Tab & Status */}
-                {item.status === 'pending' ? (
+                {item.status === 'completed' ? (
+                  <View style={styles.completedJobBanner}>
+                    <View style={styles.completedBannerHeader}>
+                      <Ionicons name="checkmark-done-circle" size={20} color="#10B981" style={{ marginRight: 6 }} />
+                      <Text style={styles.completedBannerTitle}>Job Successfully Completed</Text>
+                    </View>
+                    <Text style={styles.completedBannerSub}>
+                      Service delivered • Payment status: {(item.paymentStatus || 'Pending Payment').toUpperCase()}
+                    </Text>
+                  </View>
+                ) : item.status === 'pending' ? (
                   <View style={styles.btnRow}>
                     <TouchableOpacity
                       style={styles.rejectBtn}
@@ -530,7 +588,7 @@ export default function ProviderRequestsScreen({ navigation }) {
                       disabled={isItemSubmitting}
                       activeOpacity={0.85}
                     >
-                      {isItemSubmitting ? (
+                      {isAcceptLoading ? (
                         <ActivityIndicator color={colors.white} />
                       ) : (
                         <>
@@ -548,7 +606,7 @@ export default function ProviderRequestsScreen({ navigation }) {
                       disabled={isItemSubmitting}
                       activeOpacity={0.85}
                     >
-                      {isItemSubmitting ? (
+                      {isOnTheWayLoading ? (
                         <ActivityIndicator color={colors.white} />
                       ) : (
                         <>
@@ -564,7 +622,7 @@ export default function ProviderRequestsScreen({ navigation }) {
                       disabled={isItemSubmitting}
                       activeOpacity={0.85}
                     >
-                      {isItemSubmitting ? (
+                      {isCompletedLoading ? (
                         <ActivityIndicator color={colors.white} />
                       ) : (
                         <>
@@ -588,7 +646,7 @@ export default function ProviderRequestsScreen({ navigation }) {
                       disabled={isItemSubmitting}
                       activeOpacity={0.85}
                     >
-                      {isItemSubmitting ? (
+                      {isCompletedLoading ? (
                         <ActivityIndicator color={colors.white} />
                       ) : (
                         <>
@@ -647,9 +705,9 @@ export default function ProviderRequestsScreen({ navigation }) {
               <TouchableOpacity
                 style={styles.modalConfirmRejectBtn}
                 onPress={handleConfirmReject}
-                disabled={submittingId !== null}
+                disabled={submittingAction !== null}
               >
-                {submittingId ? (
+                {submittingAction?.action === 'reject' ? (
                   <ActivityIndicator color={colors.white} />
                 ) : (
                   <Text style={styles.modalConfirmRejectText}>Confirm Rejection</Text>
@@ -1204,5 +1262,43 @@ const styles = StyleSheet.create({
   modalConfirmRejectText: {
     color: colors.white,
     fontWeight: '700',
+  },
+  customerInitialsAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#EBF5EE',
+    borderWidth: 1.5,
+    borderColor: colors.forestGreen,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  customerInitialsText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.forestGreen,
+  },
+  completedJobBanner: {
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 8,
+  },
+  completedBannerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  completedBannerTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#065F46',
+  },
+  completedBannerSub: {
+    fontSize: 12,
+    color: '#047857',
+    fontWeight: '500',
   },
 });

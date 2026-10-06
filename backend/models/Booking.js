@@ -43,6 +43,14 @@ const bookingSchema = new mongoose.Schema(
       type: String,
       default: '+94 77 123 4567',
     },
+    customerName: {
+      type: String,
+      default: null,
+    },
+    customerAvatar: {
+      type: String,
+      default: null,
+    },
     notes: {
       type: String,
       default: '',

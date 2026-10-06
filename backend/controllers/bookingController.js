@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
 const Booking = require('../models/Booking');
 const ProviderProfile = require('../models/ProviderProfile');
 const User = require('../models/User');
@@ -16,7 +17,6 @@ exports.createBooking = async (req, res) => {
     }
 
     const {
-      providerId,
       serviceCategory,
       serviceTitle,
       scheduledDate,
@@ -27,6 +27,7 @@ exports.createBooking = async (req, res) => {
       addOns = [],
       pricing,
     } = req.body;
+    const providerId = req.body.providerId || req.body.provider;
 
     if (!providerId || !scheduledDate || !timeSlot || !serviceAddress) {
       return res.status(400).json({
@@ -51,15 +52,49 @@ exports.createBooking = async (req, res) => {
     const serviceFee = pricing?.serviceFee || 250;
     const totalAmount = pricing?.totalAmount || basePrice + addOnsTotal + serviceFee;
 
+    // Resolve customer ID from req.user, Bearer token, or request body
+    let resolvedCustomerId = null;
+    if (req.user && req.user.id) {
+      resolvedCustomerId = req.user.id;
+    } else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      try {
+        const token = req.headers.authorization.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fixora_super_secret_jwt_key_2026_it3060_hci');
+        resolvedCustomerId = decoded.id;
+      } catch (e) {}
+    }
+
+    if (!resolvedCustomerId && req.body.customerId && mongoose.Types.ObjectId.isValid(req.body.customerId)) {
+      const existing = await User.findById(req.body.customerId);
+      if (existing) resolvedCustomerId = existing._id;
+    }
+
+    if (!resolvedCustomerId && req.body.customerEmail) {
+      const existingByEmail = await User.findOne({ email: req.body.customerEmail.toLowerCase().trim() });
+      if (existingByEmail) resolvedCustomerId = existingByEmail._id;
+    }
+
+    if (!resolvedCustomerId) {
+      const defaultCustomer = await User.findOne({ role: 'customer' });
+      if (defaultCustomer) resolvedCustomerId = defaultCustomer._id;
+    }
+
+    const customerUser = resolvedCustomerId ? await User.findById(resolvedCustomerId) : null;
+    const finalCustomerAvatar = customerUser?.avatar || req.body.customerAvatar || null;
+    const finalCustomerName = customerUser?.name || req.body.customerName || 'Customer';
+    const finalCustomerPhone = customerPhone || customerUser?.phone || '+94 77 123 4567';
+
     const booking = await Booking.create({
-      customer: req.user ? req.user.id : req.body.customerId,
+      customer: resolvedCustomerId,
+      customerName: finalCustomerName,
+      customerAvatar: finalCustomerAvatar,
       provider: provider._id,
       serviceCategory: serviceCategory || provider.category,
       serviceTitle: serviceTitle || `${provider.category} Service`,
       scheduledDate,
       timeSlot,
       serviceAddress,
-      customerPhone: customerPhone || (req.user ? req.user.phone : '+94 77 123 4567'),
+      customerPhone: finalCustomerPhone,
       notes: notes || '',
       addOns,
       pricing: {

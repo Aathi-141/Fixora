@@ -38,14 +38,17 @@ export default function BookingDetailsScreen({ navigation, route }) {
     setIsSubmitting(true);
     const trimmedNotes = notes.trim();
     const payload = {
-      customerId: user?.id || '66f000000000000000000001',
+      customerId: user?.id || user?._id || '66f000000000000000000001',
+      customerName: user?.name || 'Customer',
+      customerEmail: user?.email,
+      customerAvatar: user?.avatar || null,
       providerId: provider?._id || '66f000000000000000000002',
       serviceCategory: provider?.category || 'Cleaner',
       serviceTitle: provider?.specialization || 'Deep Home Botanical Cleaning',
       scheduledDate: bookingData?.scheduledDate || '2026-10-15',
       timeSlot: bookingData?.timeSlot || '11:00 AM',
       serviceAddress: currentAddress,
-      customerPhone: phone,
+      customerPhone: phone || user?.phone,
       notes: trimmedNotes,
       addOns: bookingData?.addOns || [],
       pricing,

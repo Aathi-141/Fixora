@@ -49,9 +49,8 @@ export default function ProviderSignUpScreen({ navigation }) {
 
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.6,
+        allowsEditing: false,
+        quality: 0.7,
         base64: true,
       });
 

@@ -81,9 +81,8 @@ export default function ProviderAccountScreen({ navigation }) {
       setIsPickingImage(true);
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.6,
+        allowsEditing: false,
+        quality: 0.7,
         base64: true,
       });
 
@@ -214,8 +213,9 @@ export default function ProviderAccountScreen({ navigation }) {
             <TouchableOpacity
               onPress={() => setShowPhotoModal(true)}
               style={styles.changePhotoBtn}
-              activeOpacity={0.7}
+              activeOpacity={0.75}
             >
+              <Ionicons name="camera" size={13} color={colors.forestGreen} style={{ marginRight: 5 }} />
               <Text style={styles.changePhotoText}>
                 {user?.avatar ? 'Change Photo' : 'Add Profile Photo +'}
               </Text>
@@ -547,12 +547,22 @@ const styles = StyleSheet.create({
     borderColor: colors.white,
   },
   changePhotoBtn: {
-    marginTop: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: '#EBF4EE',
+    borderWidth: 1,
+    borderColor: colors.forestGreen,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    marginTop: 6,
+    marginBottom: 4,
   },
   changePhotoText: {
     fontSize: 12,
     fontWeight: '700',
-    color: colors.emerald,
+    color: colors.forestGreen,
   },
   presetGrid: {
     flexDirection: 'row',

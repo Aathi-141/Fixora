@@ -9,6 +9,8 @@ import {
   Alert,
   StatusBar,
   TextInput,
+  Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -169,7 +171,16 @@ export default function CancelRescheduleScreen({ navigation, route }) {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollBody} showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollBody}
+          showsVerticalScrollIndicator={true}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+        >
         {/* Top Policy Card */}
         <View style={styles.policyCard}>
           <View style={styles.policyHeaderRow}>
@@ -452,6 +463,7 @@ export default function CancelRescheduleScreen({ navigation, route }) {
           </View>
         )}
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Sticky Bottom Bar for Reschedule Mode */}
       {activeTab === 'reschedule' && (
@@ -523,7 +535,7 @@ const styles = StyleSheet.create({
   },
   scrollBody: {
     padding: 16,
-    paddingBottom: 160,
+    paddingBottom: 240,
   },
   policyCard: {
     backgroundColor: colors.white,
@@ -810,7 +822,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   instructionsInput: {
-    minHeight: 70,
+    minHeight: 85,
+    maxHeight: 150,
     fontSize: 13,
     color: colors.textPrimary,
     lineHeight: 18,
