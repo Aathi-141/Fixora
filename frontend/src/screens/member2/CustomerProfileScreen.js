@@ -9,7 +9,9 @@ import {
   Alert,
   Modal,
   TextInput,
+  ActivityIndicator,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
@@ -76,6 +78,7 @@ export default function CustomerProfileScreen({ navigation }) {
 
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [photoUrlInput, setPhotoUrlInput] = useState('');
+  const [isPickingImage, setIsPickingImage] = useState(false);
 
   const getInitials = (fullName) => {
     if (!fullName) return 'FM';
@@ -92,6 +95,43 @@ export default function CustomerProfileScreen({ navigation }) {
     }
     setShowPhotoModal(false);
     Alert.alert('Profile Photo Updated', 'Your profile photo has been refreshed.');
+  };
+
+  const handlePickFromGallery = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Required',
+          'Fixora needs photo library access to upload your profile photo.'
+        );
+        return;
+      }
+
+      setIsPickingImage(true);
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.6,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        const permanentUri = asset.base64 ? `data:image/jpeg;base64,${asset.base64}` : asset.uri;
+        if (updateUser) {
+          await updateUser({ avatar: permanentUri });
+        }
+        setShowPhotoModal(false);
+        Alert.alert('Profile Photo Updated', 'Your profile photo has been updated and saved.');
+      }
+    } catch (err) {
+      console.warn('Image picker error:', err);
+      Alert.alert('Image Selection Error', 'Could not open device photo library.');
+    } finally {
+      setIsPickingImage(false);
+    }
   };
 
   const handleClearAvatar = () => {
@@ -378,8 +418,31 @@ export default function CustomerProfileScreen({ navigation }) {
               </TouchableOpacity>
             </View>
             <Text style={styles.modalSub}>
-              Enter a photo image URL or keep your personalized initials badge.
+              Select a photo from your gallery or paste an image URL to update your profile.
             </Text>
+
+            {/* Gallery Upload Option */}
+            <TouchableOpacity
+              style={styles.galleryUploadBtn}
+              onPress={handlePickFromGallery}
+              disabled={isPickingImage}
+              activeOpacity={0.85}
+            >
+              {isPickingImage ? (
+                <ActivityIndicator size="small" color={colors.white} />
+              ) : (
+                <>
+                  <Ionicons name="images-outline" size={20} color={colors.white} style={{ marginRight: 8 }} />
+                  <Text style={styles.galleryUploadBtnText}>Choose from Device Gallery</Text>
+                </>
+              )}
+            </TouchableOpacity>
+
+            <View style={styles.orDividerContainer}>
+              <View style={styles.orDividerLine} />
+              <Text style={styles.orDividerText}>OR PASTE IMAGE URL</Text>
+              <View style={styles.orDividerLine} />
+            </View>
 
             <Text style={styles.inputLabel}>Profile Photo Image URL</Text>
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
@@ -755,5 +818,41 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: colors.white,
+  },
+  galleryUploadBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.forestGreen,
+    paddingVertical: 14,
+    borderRadius: 14,
+    marginBottom: 16,
+    shadowColor: colors.forestGreen,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  galleryUploadBtnText: {
+    color: colors.white,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  orDividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  orDividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E2E8F0',
+  },
+  orDividerText: {
+    marginHorizontal: 10,
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textMuted,
+    letterSpacing: 0.8,
   },
 });
