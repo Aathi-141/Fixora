@@ -10,51 +10,90 @@ import {
   Linking,
   Alert,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 
-const TIMELINE_STEPS = [
-  {
-    id: 1,
-    title: 'Request Confirmed',
-    time: '09:30 AM',
-    desc: 'Order validated and scheduled with priority specialist.',
-    status: 'completed',
-  },
-  {
-    id: 2,
-    title: 'On the Way',
-    time: '09:45 AM',
-    desc: 'Specialist is en route via Baseline Road (~15 mins ETA).',
-    status: 'active',
-  },
-  {
-    id: 3,
-    title: 'Work in Progress',
-    time: 'Pending',
-    desc: 'Diagnostics, pipe repairs, and pressure sealing.',
-    status: 'upcoming',
-  },
-  {
-    id: 4,
-    title: 'Service Completed & Invoiced',
-    time: 'Pending',
-    desc: 'Digital sign-off, final inspection, and warranty activation.',
-    status: 'upcoming',
-  },
-];
-
 export default function RequestStatusTrackingScreen({ navigation, route }) {
   const { booking } = route.params || {};
+  const [currentBooking, setCurrentBooking] = useState(booking || null);
 
-  const serviceTitle = booking?.serviceTitle || 'Plumbing Repair - Leaking Pipe';
+  useEffect(() => {
+    loadLatestStatus();
+  }, [booking]);
+
+  const loadLatestStatus = async () => {
+    try {
+      const stored = await AsyncStorage.getItem('fixora_latest_booking');
+      if (stored) {
+        const b = JSON.parse(stored);
+        if (!booking || b._id === booking?._id || b.bookingRef === booking?.bookingRef) {
+          setCurrentBooking(b);
+        }
+      }
+    } catch (e) {
+      console.log('Error reading latest booking in tracking:', e);
+    }
+  };
+
+  const effectiveBooking = currentBooking || booking;
+  const status = effectiveBooking?.status || 'on_the_way';
+  const isPaid = effectiveBooking?.isPaid || false;
+
+  const serviceTitle = effectiveBooking?.serviceTitle || 'Plumbing Repair - Leaking Pipe';
   const providerName =
-    booking?.provider?.user?.name || booking?.provider?.name || 'Sunil Perera';
+    effectiveBooking?.provider?.user?.name || effectiveBooking?.provider?.name || 'Sunil Perera';
   const providerSpecialization =
-    booking?.provider?.specialization || 'Master Plumber • 12 Yrs Exp';
-  const etaTime = booking?.etaTime || '10:00 AM';
-  const etaMinutes = booking?.etaMinutes || 15;
+    effectiveBooking?.provider?.specialization || 'Master Plumber • 12 Yrs Exp';
+  const etaTime = effectiveBooking?.etaTime || '10:00 AM';
+  const etaMinutes = effectiveBooking?.etaMinutes || 15;
+
+  const getTimelineSteps = () => {
+    const isCompleted = status === 'completed' || isPaid;
+    const isOnTheWay = status === 'on_the_way';
+
+    return [
+      {
+        id: 1,
+        title: 'Request Confirmed',
+        time: effectiveBooking?.scheduledDate ? `${effectiveBooking.scheduledDate} • Confirmed` : '09:30 AM',
+        desc: 'Order validated and scheduled with priority specialist.',
+        status: 'completed',
+      },
+      {
+        id: 2,
+        title: 'On the Way',
+        time: isOnTheWay || isCompleted ? (effectiveBooking?.etaTime || 'En Route') : 'Pending',
+        desc: `Specialist is en route to service location (~${etaMinutes} mins ETA).`,
+        status: isCompleted ? 'completed' : isOnTheWay ? 'active' : 'upcoming',
+      },
+      {
+        id: 3,
+        title: 'Work in Progress',
+        time: isCompleted ? 'Completed' : 'Pending',
+        desc: 'Diagnostics, precision repairs, and pressure leak testing.',
+        status: isCompleted ? 'completed' : 'upcoming',
+      },
+      {
+        id: 4,
+        title: isPaid ? 'Service Completed & Paid' : 'Service Completed & Invoiced',
+        time: isCompleted ? (isPaid ? 'Settled' : 'Ready for Payment') : 'Pending',
+        desc: isPaid
+          ? 'Payment confirmed and verified. Protection guarantee active.'
+          : 'Digital sign-off completed. Final itemized bill ready for payment.',
+        status: isPaid ? 'completed' : isCompleted ? 'active' : 'upcoming',
+      },
+    ];
+  };
+
+  const timelineSteps = getTimelineSteps();
+  const bannerMessage =
+    status === 'completed' || isPaid
+      ? 'Service Completed • Final Bill Ready'
+      : status === 'on_the_way'
+      ? `Specialist is En Route • Arriving in ~${etaMinutes} mins`
+      : 'Specialist Assigned & Accepted';
 
   const handleCallSpecialist = () => {
     Alert.alert(
@@ -97,7 +136,7 @@ export default function RequestStatusTrackingScreen({ navigation, route }) {
           <View style={styles.enRouteRow}>
             <View style={styles.pulsingDot} />
             <Text style={styles.enRouteText}>
-              Specialist is En Route • Arriving in ~{etaMinutes} mins
+              {bannerMessage}
             </Text>
           </View>
           <Text style={styles.etaTimeText}>Expected Arrival: {etaTime}</Text>
@@ -110,7 +149,7 @@ export default function RequestStatusTrackingScreen({ navigation, route }) {
             <Image
               source={{
                 uri:
-                  booking?.provider?.avatar ||
+                  effectiveBooking?.provider?.avatar ||
                   'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200',
               }}
               style={styles.providerAvatar}
@@ -129,7 +168,7 @@ export default function RequestStatusTrackingScreen({ navigation, route }) {
           <View style={styles.actionBtnRow}>
             <TouchableOpacity
               style={styles.messageBtn}
-              onPress={() => navigation.navigate('Chat', { booking })}
+              onPress={() => navigation.navigate('Chat', { booking: effectiveBooking })}
               activeOpacity={0.8}
             >
               <Ionicons name="chatbubble-ellipses-outline" size={18} color={colors.forestGreen} style={{ marginRight: 6 }} />
@@ -152,8 +191,8 @@ export default function RequestStatusTrackingScreen({ navigation, route }) {
           <Text style={styles.cardSectionLabel}>LIVE PROGRESS TIMELINE</Text>
 
           <View style={styles.timelineList}>
-            {TIMELINE_STEPS.map((step, index) => {
-              const isLast = index === TIMELINE_STEPS.length - 1;
+            {timelineSteps.map((step, index) => {
+              const isLast = index === timelineSteps.length - 1;
               const isCompleted = step.status === 'completed';
               const isActive = step.status === 'active';
 
@@ -207,10 +246,21 @@ export default function RequestStatusTrackingScreen({ navigation, route }) {
           </View>
         </View>
 
+        {/* Prominent Green Button: View Final Bill & Pay */}
+        <TouchableOpacity
+          style={styles.payBillBtn}
+          onPress={() => navigation.navigate('FinalBillPayment', { booking: effectiveBooking })}
+          activeOpacity={0.85}
+        >
+          <Ionicons name="card" size={20} color={colors.white} style={{ marginRight: 8 }} />
+          <Text style={styles.payBillBtnText}>View Final Bill & Pay</Text>
+          <Ionicons name="arrow-forward" size={18} color={colors.white} style={{ marginLeft: 8 }} />
+        </TouchableOpacity>
+
         {/* Complete & Review Shortcut */}
         <TouchableOpacity
           style={styles.reviewShortcutBtn}
-          onPress={() => navigation.navigate('RateReview', { booking })}
+          onPress={() => navigation.navigate('RateReview', { booking: effectiveBooking })}
           activeOpacity={0.85}
         >
           <Ionicons name="star-outline" size={18} color={colors.forestGreen} style={{ marginRight: 8 }} />
@@ -437,6 +487,26 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 3,
     lineHeight: 16,
+  },
+  payBillBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.forestGreen,
+    borderRadius: 14,
+    height: 52,
+    marginBottom: 12,
+    shadowColor: colors.forestGreen,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  payBillBtnText: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: colors.white,
+    letterSpacing: 0.3,
   },
   reviewShortcutBtn: {
     flexDirection: 'row',

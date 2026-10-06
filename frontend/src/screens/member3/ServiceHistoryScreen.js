@@ -561,7 +561,7 @@ export default function ServiceHistoryScreen({ navigation }) {
                         onPress={() => navigation.navigate('RequestStatusTracking', { booking: item })}
                       >
                         <Ionicons name="navigate-outline" size={16} color={colors.white} style={{ marginRight: 4 }} />
-                        <Text style={styles.trackBtnText}>Track Status</Text>
+                        <Text style={styles.trackBtnText}>Track Service</Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity
