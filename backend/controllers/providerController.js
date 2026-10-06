@@ -1,3 +1,5 @@
+const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
 const ProviderProfile = require('../models/ProviderProfile');
 const Booking = require('../models/Booking');
 const Review = require('../models/Review');
@@ -168,16 +170,74 @@ exports.updateProviderProfile = async (req, res) => {
 
 // @desc    Get incoming service requests for provider
 // @route   GET /api/provider/requests
-// @access  Private (Provider)
+// @access  Public / Private (Provider)
 exports.getProviderRequests = async (req, res) => {
   try {
-    let provider = await ProviderProfile.findOne({ user: req.user.id });
-    let query = {};
+    // Check MongoDB connection readiness
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({
+        success: false,
+        message: 'MongoDB is currently disconnected. Please verify database connectivity.',
+      });
+    }
 
-    if (provider) {
-      query.provider = provider._id;
-    } else if (req.query.providerId) {
-      query.provider = req.query.providerId;
+    let providerProfileId = null;
+
+    // 1. Direct query param if provided
+    if (req.query.providerId) {
+      providerProfileId = req.query.providerId;
+    }
+
+    // 2. Resolve provider from req.user or Authorization Bearer token header
+    if (!providerProfileId) {
+      let userId = req.user ? (req.user._id || req.user.id) : null;
+
+      if (!userId && req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        try {
+          const token = req.headers.authorization.split(' ')[1];
+          const decoded = jwt.verify(
+            token,
+            process.env.JWT_SECRET || 'fixora_super_secret_jwt_key_2026_it3060_hci'
+          );
+          userId = decoded.id;
+        } catch (e) {
+          // Token invalid or expired
+        }
+      }
+
+      if (userId) {
+        // Find ProviderProfile for this user
+        const profile = await ProviderProfile.findOne({ user: userId });
+        if (profile) {
+          providerProfileId = profile._id;
+        } else {
+          // Check if userId itself is a ProviderProfile ID
+          const directProfile = await ProviderProfile.findById(userId);
+          if (directProfile) {
+            providerProfileId = directProfile._id;
+          }
+        }
+      }
+    }
+
+    // If still no providerProfileId could be identified
+    if (!providerProfileId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Provider profile is not linked to this account. Please complete your provider profile setup.',
+      });
+    }
+
+    // Build query scoped strictly to this provider
+    let query = { provider: providerProfileId };
+
+    // Support status filter (e.g. ?status=pending or ?status=pending,accepted,on_the_way)
+    if (req.query.status) {
+      if (req.query.status.includes(',')) {
+        query.status = { $in: req.query.status.split(',').map((s) => s.trim()) };
+      } else {
+        query.status = req.query.status.trim();
+      }
     }
 
     const bookings = await Booking.find(query)
@@ -188,9 +248,11 @@ exports.getProviderRequests = async (req, res) => {
     return res.status(200).json({
       success: true,
       count: bookings.length,
+      providerProfileId,
       data: bookings,
     });
   } catch (error) {
+    console.error('getProviderRequests error:', error);
     return res.status(500).json({ success: false, message: error.message });
   }
 };

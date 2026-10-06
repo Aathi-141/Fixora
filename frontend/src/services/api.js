@@ -94,8 +94,13 @@ export const getProviders = (params = {}) => {
 export const getProviderById = (id) => apiRequest(`/api/providers/${id}`);
 export const updateProviderAvailability = (data) => apiRequest('/api/provider/availability', 'PUT', data);
 export const updateProviderProfile = (data) => apiRequest('/api/provider/profile', 'PUT', data);
-export const getProviderRequests = (providerId) =>
-  apiRequest(providerId ? `/api/provider/requests?providerId=${providerId}` : '/api/provider/requests');
+export const getProviderRequests = (providerId, status) => {
+  const query = new URLSearchParams();
+  if (providerId) query.append('providerId', providerId);
+  if (status) query.append('status', status);
+  const qStr = query.toString() ? `?${query.toString()}` : '';
+  return apiRequest(`/api/provider/requests${qStr}`);
+};
 
 // ----------------- Bookings API (Member 2, 3 & 4) -----------------
 export const createBooking = (bookingData) => apiRequest('/api/bookings', 'POST', bookingData);

@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Booking = require('../models/Booking');
 const ProviderProfile = require('../models/ProviderProfile');
 const User = require('../models/User');
@@ -7,6 +8,13 @@ const User = require('../models/User');
 // @access  Private (Customer)
 exports.createBooking = async (req, res) => {
   try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({
+        success: false,
+        message: 'MongoDB is currently disconnected. Please verify database connectivity.',
+      });
+    }
+
     const {
       providerId,
       serviceCategory,
@@ -27,9 +35,12 @@ exports.createBooking = async (req, res) => {
       });
     }
 
-    const provider = await ProviderProfile.findById(providerId);
+    let provider = await ProviderProfile.findById(providerId);
     if (!provider) {
-      return res.status(404).json({ success: false, message: 'Provider not found' });
+      provider = await ProviderProfile.findOne({ user: providerId });
+    }
+    if (!provider) {
+      return res.status(404).json({ success: false, message: 'Provider profile not found' });
     }
 
     // Calculate or accept pricing
@@ -215,6 +226,13 @@ exports.cancelBooking = async (req, res) => {
 // @access  Private
 exports.updateBookingStatus = async (req, res) => {
   try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({
+        success: false,
+        message: 'MongoDB is currently disconnected. Please verify database connectivity.',
+      });
+    }
+
     const { status, etaMinutes, rejectionReason } = req.body;
 
     const booking = await Booking.findById(req.params.id);

@@ -201,6 +201,7 @@ exports.getMe = async (req, res) => {
         address: user.address,
         avatar: user.avatar,
         providerProfile,
+        providerProfileId: providerProfile ? providerProfile._id : null,
       },
     });
   } catch (error) {
