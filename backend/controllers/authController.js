@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const User = require('../models/User');
 const ProviderProfile = require('../models/ProviderProfile');
 const bcrypt = require('bcryptjs');
@@ -214,25 +215,74 @@ exports.getMe = async (req, res) => {
 // @access  Private
 exports.updateProfile = async (req, res) => {
   try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(503).json({
+        success: false,
+        message: 'Database is currently disconnected. Please retry shortly.',
+      });
+    }
+
     const { name, phone, address, avatar } = req.body;
     const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    if (name) user.name = name;
-    if (phone) user.phone = phone;
-    if (address) user.address = address;
-    if (avatar) user.avatar = avatar;
+    if (name !== undefined) {
+      if (typeof name !== 'string' || name.trim().length < 2) {
+        return res.status(400).json({
+          success: false,
+          message: 'Full name must be at least 2 characters long.',
+        });
+      }
+      user.name = name.trim();
+    }
+
+    if (phone !== undefined) {
+      if (typeof phone !== 'string' || !phone.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: 'Phone number cannot be empty.',
+        });
+      }
+      const cleaned = phone.trim().replace(/[\s\-\(\)\.]/g, '');
+      if (!/^\+?[0-9]{8,15}$/.test(cleaned)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please provide a valid phone number (e.g. 077 123 4567 or +94 77 123 4567).',
+        });
+      }
+      user.phone = phone.trim();
+    }
+
+    if (address !== undefined) {
+      if (typeof address !== 'string' || address.trim().length < 4) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please provide a valid street address (minimum 4 characters).',
+        });
+      }
+      user.address = address.trim();
+    }
+
+    if (avatar !== undefined) {
+      user.avatar = avatar; // accepts image string or null to reset to default initials
+    }
 
     await user.save();
 
-    if (user.role === 'provider' && avatar) {
+    if (user.role === 'provider' && avatar !== undefined) {
       await ProviderProfile.updateOne({ user: user._id }, { $set: { avatar } });
+    }
+
+    let providerProfile = null;
+    if (user.role === 'provider') {
+      providerProfile = await ProviderProfile.findOne({ user: user._id });
     }
 
     return res.status(200).json({
       success: true,
+      message: 'Profile updated successfully',
       user: {
         id: user._id,
         name: user.name,
@@ -241,9 +291,11 @@ exports.updateProfile = async (req, res) => {
         role: user.role,
         address: user.address,
         avatar: user.avatar,
+        providerProfileId: providerProfile ? providerProfile._id : null,
       },
     });
   } catch (error) {
+    console.error('Update profile error:', error);
     return res.status(500).json({ success: false, message: error.message });
   }
 };

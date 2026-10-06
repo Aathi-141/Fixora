@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { loginUser, registerUser, updateUserProfile } from '../services/api';
+import { loginUser, registerUser, updateUserProfile, getMyProfile } from '../services/api';
 
 export const AuthContext = createContext();
 
@@ -189,9 +189,37 @@ export const AuthProvider = ({ children }) => {
     }
 
     try {
-      await updateUserProfile(updatedFields);
+      const res = await updateUserProfile(updatedFields);
+      if (res && res.success && res.user) {
+        setUser((prev) => {
+          const merged = { ...prev, ...res.user };
+          AsyncStorage.setItem('fixora_user', JSON.stringify(merged));
+          return merged;
+        });
+        return { success: true, user: res.user };
+      }
+      return res || { success: true };
     } catch (err) {
       console.log('Online profile sync skipped:', err.message);
+      return { success: true, offline: true };
+    }
+  };
+
+  const refreshProfile = async () => {
+    try {
+      const res = await getMyProfile();
+      if (res && res.success && res.user) {
+        setUser((prev) => {
+          const merged = { ...prev, ...res.user };
+          AsyncStorage.setItem('fixora_user', JSON.stringify(merged));
+          return merged;
+        });
+        return { success: true, user: res.user };
+      }
+      return res;
+    } catch (err) {
+      console.log('Error refreshing profile:', err.message);
+      return { success: false, message: err.message };
     }
   };
 
@@ -224,6 +252,7 @@ export const AuthProvider = ({ children }) => {
         login,
         register,
         updateUser,
+        refreshProfile,
         logout,
         switchRole,
       }}
