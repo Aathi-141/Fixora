@@ -98,6 +98,10 @@ function BookingsStackNavigator() {
   return (
     <BookingsStack.Navigator screenOptions={{ headerShown: false }}>
       <BookingsStack.Screen name="ServiceHistory" component={ServiceHistoryScreen} />
+      <BookingsStack.Screen name="DateTimeSelection" component={DateTimeSelectionScreen} />
+      <BookingsStack.Screen name="BookingDetails" component={BookingDetailsScreen} />
+      <BookingsStack.Screen name="BookingSuccessful" component={BookingSuccessfulScreen} />
+      <BookingsStack.Screen name="ProviderProfile" component={ProviderProfileScreen} />
       <BookingsStack.Screen name="RequestStatusTracking" component={RequestStatusTrackingScreen} />
       <BookingsStack.Screen name="Chat" component={ChatScreen} />
       <BookingsStack.Screen name="Call" component={CallScreen} />
