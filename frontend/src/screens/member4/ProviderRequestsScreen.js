@@ -90,6 +90,21 @@ export default function ProviderRequestsScreen({ navigation }) {
     TRADE_REQUEST_TEMPLATES[providerCategory] ||
     TRADE_REQUEST_TEMPLATES['Electrician'];
 
+  const getReadableStatus = (status) => {
+    switch (status) {
+      case 'accepted':
+        return 'Accepted - In Progress';
+      case 'on_the_way':
+        return 'On The Way';
+      case 'completed':
+        return 'Service Completed';
+      case 'rejected':
+        return 'Rejected';
+      default:
+        return 'Pending Review';
+    }
+  };
+
   useEffect(() => {
     loadRequests();
   }, [user]);
@@ -102,7 +117,7 @@ export default function ProviderRequestsScreen({ navigation }) {
         const req = res.data[0];
         setActiveBooking(req);
         setHasActiveRequest(true);
-        setTicketStatus(req.status === 'accepted' ? 'Accepted - In Progress' : 'Pending Review');
+        setTicketStatus(getReadableStatus(req.status));
         return;
       }
 
@@ -112,9 +127,7 @@ export default function ProviderRequestsScreen({ navigation }) {
         const b = JSON.parse(stored);
         setActiveBooking(b);
         setHasActiveRequest(true);
-        if (b.status === 'accepted') {
-          setTicketStatus('Accepted - In Progress');
-        }
+        setTicketStatus(getReadableStatus(b.status));
         return;
       }
     } catch (e) {
@@ -163,7 +176,7 @@ export default function ProviderRequestsScreen({ navigation }) {
 
     Alert.alert(
       'Service Accepted!',
-      'You have accepted this service request. The customer has been notified and is expecting your arrival.',
+      'You have accepted this service request. You can now update status to "On The Way" when heading to customer location.',
       [
         {
           text: 'View Schedule',
@@ -171,6 +184,46 @@ export default function ProviderRequestsScreen({ navigation }) {
         },
         { text: 'OK' },
       ]
+    );
+  };
+
+  const handleSetOnTheWay = async () => {
+    setIsSubmitting(true);
+    const bookingId = activeBooking?._id || '66f000000000000000000003';
+    await updateBookingStatus(bookingId, 'on_the_way', 15);
+    setIsSubmitting(false);
+    setTicketStatus('On The Way');
+
+    if (activeBooking) {
+      const updated = { ...activeBooking, status: 'on_the_way', etaMinutes: 15 };
+      setActiveBooking(updated);
+      AsyncStorage.setItem('fixora_latest_booking', JSON.stringify(updated));
+    }
+
+    Alert.alert(
+      'Status Updated: On The Way',
+      'The customer has been notified with your real-time ETA (~15 mins). Tap "Mark Service Completed" once the job is finished.',
+      [{ text: 'OK' }]
+    );
+  };
+
+  const handleSetCompleted = async () => {
+    setIsSubmitting(true);
+    const bookingId = activeBooking?._id || '66f000000000000000000003';
+    await updateBookingStatus(bookingId, 'completed');
+    setIsSubmitting(false);
+    setTicketStatus('Service Completed');
+
+    if (activeBooking) {
+      const updated = { ...activeBooking, status: 'completed' };
+      setActiveBooking(updated);
+      AsyncStorage.setItem('fixora_latest_booking', JSON.stringify(updated));
+    }
+
+    Alert.alert(
+      'Service Completed!',
+      'Job completed successfully. The final bill is ready for customer review and payment.',
+      [{ text: 'OK' }]
     );
   };
 
@@ -252,7 +305,11 @@ export default function ProviderRequestsScreen({ navigation }) {
               <View
                 style={[
                   styles.statusBadge,
-                  ticketStatus.includes('Accepted')
+                  ticketStatus === 'On The Way'
+                    ? styles.badgeOnTheWay
+                    : ticketStatus === 'Service Completed'
+                    ? styles.badgeCompleted
+                    : ticketStatus.includes('Accepted')
                     ? styles.badgeAccepted
                     : ticketStatus === 'Rejected'
                     ? styles.badgeRejected
@@ -262,7 +319,11 @@ export default function ProviderRequestsScreen({ navigation }) {
                 <Text
                   style={[
                     styles.statusBadgeText,
-                    ticketStatus.includes('Accepted')
+                    ticketStatus === 'On The Way'
+                      ? styles.textOnTheWay
+                      : ticketStatus === 'Service Completed'
+                      ? styles.textCompleted
+                      : ticketStatus.includes('Accepted')
                       ? styles.textAccepted
                       : ticketStatus === 'Rejected'
                       ? styles.textRejected
@@ -367,7 +428,7 @@ export default function ProviderRequestsScreen({ navigation }) {
               </View>
             </View>
 
-            {/* Accept / Reject Buttons */}
+            {/* Action Buttons: Pending Review -> Accepted -> On The Way -> Completed */}
             {ticketStatus === 'Pending Review' ? (
               <View style={styles.btnRow}>
                 <TouchableOpacity
@@ -388,6 +449,89 @@ export default function ProviderRequestsScreen({ navigation }) {
                   ) : (
                     <Text style={styles.acceptBtnText}>Accept Request</Text>
                   )}
+                </TouchableOpacity>
+              </View>
+            ) : ticketStatus === 'Accepted - In Progress' ? (
+              <View style={styles.statusUpdateContainer}>
+                <View style={styles.statusBarBanner}>
+                  <Ionicons name="information-circle" size={18} color={colors.forestGreen} style={{ marginRight: 6 }} />
+                  <Text style={styles.statusBarBannerText}>
+                    Request Accepted. Update service status as you proceed:
+                  </Text>
+                </View>
+                <View style={styles.btnRow}>
+                  <TouchableOpacity
+                    style={styles.onTheWayBtn}
+                    onPress={handleSetOnTheWay}
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <ActivityIndicator color={colors.white} />
+                    ) : (
+                      <>
+                        <Ionicons name="navigate" size={17} color={colors.white} style={{ marginRight: 6 }} />
+                        <Text style={styles.actionBtnText}>On The Way</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.completedBtn}
+                    onPress={handleSetCompleted}
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <ActivityIndicator color={colors.white} />
+                    ) : (
+                      <>
+                        <Ionicons name="checkmark-circle" size={17} color={colors.white} style={{ marginRight: 6 }} />
+                        <Text style={styles.actionBtnText}>Service Completed</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : ticketStatus === 'On The Way' ? (
+              <View style={styles.statusUpdateContainer}>
+                <View style={[styles.statusBarBanner, { backgroundColor: '#E0F2FE', borderColor: '#BAE6FD' }]}>
+                  <Ionicons name="car" size={18} color="#0369A1" style={{ marginRight: 6 }} />
+                  <Text style={[styles.statusBarBannerText, { color: '#0369A1' }]}>
+                    En route to customer location (~15 mins ETA).
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  style={[styles.completedBtn, { width: '100%', height: 50 }]}
+                  onPress={handleSetCompleted}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <ActivityIndicator color={colors.white} />
+                  ) : (
+                    <>
+                      <Ionicons name="checkmark-done-circle" size={20} color={colors.white} style={{ marginRight: 8 }} />
+                      <Text style={styles.actionBtnText}>Mark "Service Completed"</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
+            ) : ticketStatus === 'Service Completed' ? (
+              <View style={styles.statusUpdateContainer}>
+                <View style={[styles.statusBarBanner, { backgroundColor: '#EBF4EE', borderColor: '#D2E7D8' }]}>
+                  <Ionicons name="checkmark-circle" size={20} color={colors.forestGreen} style={{ marginRight: 6 }} />
+                  <Text style={[styles.statusBarBannerText, { color: colors.forestGreen, fontWeight: '700' }]}>
+                    Service Completed! Final bill dispatched to customer.
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.resetDemoBtn}
+                  onPress={() => {
+                    setHasActiveRequest(false);
+                    setTicketStatus('Pending Review');
+                  }}
+                >
+                  <Text style={styles.resetDemoText}>Return to Live Inbox</Text>
                 </TouchableOpacity>
               </View>
             ) : (
@@ -587,6 +731,12 @@ const styles = StyleSheet.create({
   badgeAccepted: {
     backgroundColor: '#EBF4EE',
   },
+  badgeOnTheWay: {
+    backgroundColor: '#E0F2FE',
+  },
+  badgeCompleted: {
+    backgroundColor: '#DCFCE7',
+  },
   badgeRejected: {
     backgroundColor: '#FEE2E2',
   },
@@ -599,6 +749,12 @@ const styles = StyleSheet.create({
   },
   textAccepted: {
     color: colors.forestGreen,
+  },
+  textOnTheWay: {
+    color: '#0369A1',
+  },
+  textCompleted: {
+    color: '#15803D',
   },
   textRejected: {
     color: colors.danger,
@@ -765,6 +921,58 @@ const styles = StyleSheet.create({
   },
   acceptBtnText: {
     fontSize: 15,
+    fontWeight: '700',
+    color: colors.white,
+  },
+  statusUpdateContainer: {
+    marginTop: 6,
+  },
+  statusBarBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3F9F5',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#D2E7D8',
+    marginBottom: 12,
+  },
+  statusBarBannerText: {
+    flex: 1,
+    fontSize: 13,
+    color: colors.forestGreen,
+    fontWeight: '600',
+  },
+  onTheWayBtn: {
+    flex: 1,
+    height: 50,
+    borderRadius: 12,
+    backgroundColor: '#0284C7',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#0284C7',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  completedBtn: {
+    flex: 1.25,
+    height: 50,
+    borderRadius: 12,
+    backgroundColor: colors.emerald,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: colors.emerald,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  actionBtnText: {
+    fontSize: 14,
     fontWeight: '700',
     color: colors.white,
   },
