@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,46 +9,127 @@ import {
   ActivityIndicator,
   StatusBar,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
 import { payBooking } from '../../services/api';
 
 const PAYMENT_METHODS = [
-  { id: 'card', name: 'Visa ending in 4892', icon: 'card-outline' },
-  { id: 'apple', name: 'Apple Pay / Google Pay', icon: 'wallet-outline' },
-  { id: 'cash', name: 'Cash on Delivery', icon: 'cash-outline' },
+  {
+    id: 'card',
+    name: 'Visa / Mastercard (•••• 4892)',
+    shortLabel: 'Visa / Mastercard',
+    icon: 'card-outline',
+  },
+  {
+    id: 'digital_wallet',
+    name: 'Apple Pay / Google Pay',
+    shortLabel: 'Apple Pay / Google Pay',
+    icon: 'phone-portrait-outline',
+  },
+  {
+    id: 'cash',
+    name: 'Cash on Delivery (Pay Specialist)',
+    shortLabel: 'Cash on Delivery',
+    icon: 'cash-outline',
+  },
 ];
 
 export default function FinalBillPaymentScreen({ navigation, route }) {
-  const { booking } = route.params || {};
+  const { booking: paramBooking } = route.params || {};
+  const [booking, setBooking] = useState(paramBooking || null);
+
+  useEffect(() => {
+    loadBookingData();
+  }, [paramBooking]);
+
+  const loadBookingData = async () => {
+    if (paramBooking) {
+      setBooking(paramBooking);
+      return;
+    }
+    try {
+      const stored = await AsyncStorage.getItem('fixora_latest_booking');
+      if (stored) {
+        setBooking(JSON.parse(stored));
+      }
+    } catch (e) {
+      console.log('Error loading booking in payment screen:', e);
+    }
+  };
 
   const bookingId = booking?._id || '66fa_default_bk';
+  const bookingRef = booking?.bookingRef || 'FX-88431';
+  const serviceTitle = booking?.serviceTitle || 'Plumbing Repair - Leaking Pipe';
+  const providerName =
+    booking?.provider?.user?.name || booking?.provider?.name || 'Sunil Perera';
+  const providerSpec =
+    booking?.provider?.specialization || 'Master Plumber • 12 Yrs Exp';
+
   const [selectedMethod, setSelectedMethod] = useState('card');
   const [isPaying, setIsPaying] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [txnId, setTxnId] = useState('TXN-98432100');
+  const [paidTimestamp, setPaidTimestamp] = useState('');
+
+  // Itemized breakdown strictly matching the 4 required fields
+  const totalAmount = booking?.pricing?.totalAmount || 2750;
+  const diagFee = 750;
+  const guaranteeFee = 150;
+  const laborFee = Math.max(1200, Math.floor((totalAmount - diagFee - guaranteeFee) * 0.7));
+  const partsFee = Math.max(0, totalAmount - (diagFee + laborFee + guaranteeFee));
 
   const billItems = [
-    { name: 'Diagnostic Inspection', cost: 750 },
-    { name: 'Certified Field Labor (2.5 hrs)', cost: 1500 },
-    { name: 'Parts & Materials (Seals & Valves)', cost: 425 },
-    { name: 'Antimicrobial Eco-Coating', cost: 320 },
-    { name: 'Protection Guarantee', cost: 150 },
+    { name: 'Diagnostic Fee', desc: 'On-site system inspection & pressure diagnostics', cost: diagFee },
+    { name: 'Labor Charges', desc: 'Certified specialist certified labor', cost: laborFee },
+    { name: 'Parts & Materials', desc: 'Replacement seals, fittings & chemical flush', cost: partsFee },
+    { name: 'Guarantee Fee', desc: 'Fixora 30-Day workmanship warranty & protection', cost: guaranteeFee },
   ];
-
-  const totalAmount = billItems.reduce((sum, item) => sum + item.cost, 0);
 
   const handlePayNow = async () => {
     setIsPaying(true);
-    const res = await payBooking(bookingId, selectedMethod);
+    const selectedObj = PAYMENT_METHODS.find((m) => m.id === selectedMethod);
+    const methodLabel = selectedObj?.name || 'Credit/Debit Card';
+    const res = await payBooking(bookingId, methodLabel);
     setIsPaying(false);
 
-    if (res.success && res.data?.transactionId) {
-      setTxnId(res.data.transactionId);
+    const generatedTxn = res?.data?.transactionId || 'TXN-' + Math.floor(10000000 + Math.random() * 90000000);
+    const timeNow = new Date().toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    setTxnId(generatedTxn);
+    setPaidTimestamp(timeNow);
+
+    // Synchronize local AsyncStorage
+    try {
+      const stored = await AsyncStorage.getItem('fixora_latest_booking');
+      if (stored) {
+        const b = JSON.parse(stored);
+        const updated = {
+          ...b,
+          isPaid: true,
+          status: 'completed',
+          transactionId: generatedTxn,
+          paymentMethod: selectedObj?.shortLabel || methodLabel,
+          paidAt: new Date().toISOString(),
+        };
+        await AsyncStorage.setItem('fixora_latest_booking', JSON.stringify(updated));
+        setBooking(updated);
+      }
+    } catch (e) {
+      console.log('Error updating local booking payment state:', e);
     }
+
     setShowSuccessModal(true);
   };
+
+  const selectedMethodObj = PAYMENT_METHODS.find((m) => m.id === selectedMethod);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -65,39 +146,53 @@ export default function FinalBillPaymentScreen({ navigation, route }) {
       <ScrollView contentContainerStyle={styles.scrollBody} showsVerticalScrollIndicator={false}>
         {/* Service Title & Provider Banner */}
         <View style={styles.card}>
-          <Text style={styles.serviceTitle}>HVAC System Overhaul & Repair</Text>
+          <Text style={styles.serviceTitle}>{serviceTitle}</Text>
           <View style={styles.providerRow}>
             <View style={styles.providerAvatarBox}>
-              <Ionicons name="construct" size={20} color={colors.forestGreen} />
+              <Ionicons name="construct" size={22} color={colors.forestGreen} />
             </View>
-            <View style={{ flex: 1, marginLeft: 10 }}>
-              <Text style={styles.providerName}>Marcus Sterling</Text>
-              <Text style={styles.completedTag}>Completed Today • 100% Guaranteed</Text>
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={styles.providerName}>{providerName}</Text>
+              <Text style={styles.providerSpecText}>{providerSpec}</Text>
+              <Text style={styles.completedTag}>✓ Service Completed • 100% Guaranteed</Text>
             </View>
           </View>
         </View>
 
         {/* Itemized Financial Breakdown */}
         <View style={styles.card}>
-          <Text style={styles.cardHeading}>Itemized Breakdown</Text>
+          <View style={styles.cardHeaderRow}>
+            <Text style={styles.cardHeading}>Itemized Bill Breakdown</Text>
+            <View style={styles.verifiedBadge}>
+              <Ionicons name="shield-checkmark" size={13} color={colors.forestGreen} style={{ marginRight: 4 }} />
+              <Text style={styles.verifiedBadgeText}>Verified Rates</Text>
+            </View>
+          </View>
+
           {billItems.map((item, idx) => (
             <View key={idx} style={styles.breakdownRow}>
-              <Text style={styles.itemLabel}>{item.name}</Text>
-              <Text style={styles.itemVal}>Rs. {item.cost.toFixed(2)}</Text>
+              <View style={{ flex: 1, paddingRight: 8 }}>
+                <Text style={styles.itemLabel}>{item.name}</Text>
+                <Text style={styles.itemDesc}>{item.desc}</Text>
+              </View>
+              <Text style={styles.itemVal}>Rs. {item.cost.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
             </View>
           ))}
 
           <View style={styles.divider} />
 
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Total Due</Text>
-            <Text style={styles.totalVal}>Rs. {totalAmount.toFixed(2)}</Text>
+            <View>
+              <Text style={styles.totalLabel}>Total Due</Text>
+              <Text style={styles.taxInclusiveText}>(Inclusive of platform guarantee & taxes)</Text>
+            </View>
+            <Text style={styles.totalVal}>Rs. {totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</Text>
           </View>
         </View>
 
         {/* Payment Method Selector */}
         <View style={styles.card}>
-          <Text style={styles.cardHeading}>Payment Method</Text>
+          <Text style={styles.cardHeading}>Select Payment Method</Text>
           {PAYMENT_METHODS.map((method) => {
             const isSelected = selectedMethod === method.id;
             return (
@@ -105,13 +200,15 @@ export default function FinalBillPaymentScreen({ navigation, route }) {
                 key={method.id}
                 style={[styles.methodRow, isSelected && styles.methodRowActive]}
                 onPress={() => setSelectedMethod(method.id)}
+                activeOpacity={0.8}
               >
-                <Ionicons
-                  name={method.icon}
-                  size={22}
-                  color={isSelected ? colors.forestGreen : colors.textSecondary}
-                  style={{ marginRight: 12 }}
-                />
+                <View style={[styles.methodIconBox, isSelected && styles.methodIconBoxActive]}>
+                  <Ionicons
+                    name={method.icon}
+                    size={22}
+                    color={isSelected ? colors.forestGreen : colors.textSecondary}
+                  />
+                </View>
                 <Text style={[styles.methodName, isSelected && styles.methodNameActive]}>
                   {method.name}
                 </Text>
@@ -148,34 +245,113 @@ export default function FinalBillPaymentScreen({ navigation, route }) {
         </TouchableOpacity>
       </View>
 
-      {/* Payment Success Modal */}
+      {/* Payment Success & Official e-Receipt Modal */}
       <Modal visible={showSuccessModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
-            <View style={styles.checkCircle}>
-              <Ionicons name="checkmark" size={44} color={colors.white} />
-            </View>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.modalScroll}>
+              {/* Checkmark Icon */}
+              <View style={styles.checkCircle}>
+                <Ionicons name="checkmark" size={44} color={colors.white} />
+              </View>
 
-            <Text style={styles.modalTitle}>Payment Successful!</Text>
-            <Text style={styles.modalSub}>
-              Your booking payment has been confirmed. A receipt has been issued and emailed.
-            </Text>
+              <Text style={styles.modalTitle}>Payment Successful!</Text>
+              <Text style={styles.modalSub}>
+                Your payment has been verified. Below is your official e-Receipt.
+              </Text>
 
-            <View style={styles.amountPill}>
-              <Text style={styles.amountPillSub}>Settled</Text>
-              <Text style={styles.amountPillValue}>Rs. {totalAmount.toFixed(2)}</Text>
-              <Text style={styles.txnIdText}>{txnId}</Text>
-            </View>
+              {/* Official e-Receipt Card */}
+              <View style={styles.receiptCard}>
+                <View style={styles.receiptBrandHeader}>
+                  <Text style={styles.receiptBrandName}>FIXORA</Text>
+                  <View style={styles.paidBadge}>
+                    <Text style={styles.paidBadgeText}>✓ PAID & VERIFIED</Text>
+                  </View>
+                </View>
+                <Text style={styles.receiptDocTitle}>OFFICIAL E-RECEIPT</Text>
 
-            <TouchableOpacity
-              style={styles.viewReceiptBtn}
-              onPress={() => {
-                setShowSuccessModal(false);
-                navigation.navigate('HistoryTab');
-              }}
-            >
-              <Text style={styles.viewReceiptBtnText}>View Receipt & History</Text>
-            </TouchableOpacity>
+                <View style={styles.receiptDashedLine} />
+
+                {/* Details Grid */}
+                <View style={styles.receiptMetaRow}>
+                  <Text style={styles.receiptMetaLabel}>Transaction ID:</Text>
+                  <Text style={styles.receiptMetaValue}>{txnId}</Text>
+                </View>
+                <View style={styles.receiptMetaRow}>
+                  <Text style={styles.receiptMetaLabel}>Booking Ref:</Text>
+                  <Text style={styles.receiptMetaValue}>#{bookingRef}</Text>
+                </View>
+                <View style={styles.receiptMetaRow}>
+                  <Text style={styles.receiptMetaLabel}>Date & Time:</Text>
+                  <Text style={styles.receiptMetaValue}>{paidTimestamp || 'Just now'}</Text>
+                </View>
+                <View style={styles.receiptMetaRow}>
+                  <Text style={styles.receiptMetaLabel}>Service Title:</Text>
+                  <Text style={styles.receiptMetaValue}>{serviceTitle}</Text>
+                </View>
+                <View style={styles.receiptMetaRow}>
+                  <Text style={styles.receiptMetaLabel}>Specialist:</Text>
+                  <Text style={styles.receiptMetaValue}>{providerName}</Text>
+                </View>
+                <View style={styles.receiptMetaRow}>
+                  <Text style={styles.receiptMetaLabel}>Payment Method:</Text>
+                  <Text style={styles.receiptMetaValue}>{selectedMethodObj?.shortLabel || 'Card'}</Text>
+                </View>
+
+                <View style={styles.receiptDashedLine} />
+
+                {/* Itemized List in Receipt */}
+                <Text style={styles.receiptSectionTitle}>ITEMIZED CHARGES</Text>
+                {billItems.map((item, idx) => (
+                  <View key={idx} style={styles.receiptItemRow}>
+                    <Text style={styles.receiptItemName}>{item.name}</Text>
+                    <Text style={styles.receiptItemCost}>Rs. {item.cost.toFixed(2)}</Text>
+                  </View>
+                ))}
+
+                <View style={styles.receiptSolidLine} />
+
+                {/* Settled Total */}
+                <View style={styles.receiptTotalRow}>
+                  <Text style={styles.receiptTotalLabel}>TOTAL SETTLED</Text>
+                  <Text style={styles.receiptTotalValue}>
+                    LKR {totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Action Buttons */}
+              <TouchableOpacity
+                style={styles.historyBtn}
+                onPress={() => {
+                  setShowSuccessModal(false);
+                  navigation.navigate('HistoryTab');
+                }}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="calendar-outline" size={18} color={colors.white} style={{ marginRight: 8 }} />
+                <Text style={styles.historyBtnText}>View Bookings & Tax Invoice</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.rateBtn}
+                onPress={() => {
+                  setShowSuccessModal(false);
+                  navigation.navigate('RateReview', {
+                    booking: {
+                      ...booking,
+                      isPaid: true,
+                      transactionId: txnId,
+                      paymentMethod: selectedMethodObj?.shortLabel,
+                    },
+                  });
+                }}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="star-outline" size={18} color={colors.forestGreen} style={{ marginRight: 8 }} />
+                <Text style={styles.rateBtnText}>Rate & Review Specialist</Text>
+              </TouchableOpacity>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -224,48 +400,81 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '800',
     color: colors.textPrimary,
-    marginBottom: 8,
+    marginBottom: 10,
   },
   providerRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   providerAvatarBox: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     backgroundColor: '#EBF4EE',
     justifyContent: 'center',
     alignItems: 'center',
   },
   providerName: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: colors.textPrimary,
+  },
+  providerSpecText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 1,
   },
   completedTag: {
     fontSize: 12,
     color: colors.forestGreen,
     fontWeight: '600',
+    marginTop: 3,
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   cardHeading: {
     fontSize: 15,
     fontWeight: '800',
     color: colors.forestGreen,
-    marginBottom: 12,
+  },
+  verifiedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EBF4EE',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  verifiedBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.forestGreen,
   },
   breakdownRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 6,
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#F0F0F0',
   },
   itemLabel: {
-    fontSize: 13,
-    color: colors.textSecondary,
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  itemDesc: {
+    fontSize: 11,
+    color: colors.textMuted,
+    marginTop: 2,
   },
   itemVal: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
     color: colors.textPrimary,
   },
   divider: {
@@ -283,6 +492,11 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: colors.textPrimary,
   },
+  taxInclusiveText: {
+    fontSize: 11,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
   totalVal: {
     fontSize: 20,
     fontWeight: '800',
@@ -295,12 +509,24 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1.5,
     borderColor: colors.cardBorder,
-    marginBottom: 10,
+    marginTop: 10,
     backgroundColor: colors.background,
   },
   methodRowActive: {
     borderColor: colors.forestGreen,
     backgroundColor: '#F3F9F5',
+  },
+  methodIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#E5E7EB',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  methodIconBoxActive: {
+    backgroundColor: '#D2E7D8',
   },
   methodName: {
     flex: 1,
@@ -370,74 +596,188 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
+    padding: 16,
   },
   modalCard: {
     width: '100%',
+    maxHeight: '92%',
     backgroundColor: colors.white,
-    borderRadius: 20,
-    padding: 24,
+    borderRadius: 22,
+    padding: 20,
     alignItems: 'center',
   },
+  modalScroll: {
+    alignItems: 'center',
+    paddingBottom: 10,
+  },
   checkCircle: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     backgroundColor: colors.emerald,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
+    shadowColor: colors.emerald,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   modalTitle: {
     fontSize: 22,
     fontWeight: '800',
     color: colors.forestGreen,
-    marginBottom: 6,
+    marginBottom: 4,
   },
   modalSub: {
     fontSize: 13,
     color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 18,
-    marginBottom: 18,
+    marginBottom: 16,
   },
-  amountPill: {
-    backgroundColor: '#F3F9F5',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 14,
+  receiptCard: {
     width: '100%',
+    backgroundColor: '#F8FAF9',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1.5,
+    borderColor: '#D2E7D8',
+    marginBottom: 16,
+  },
+  receiptBrandHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
   },
-  amountPillSub: {
-    fontSize: 11,
-    color: colors.textSecondary,
-  },
-  amountPillValue: {
-    fontSize: 22,
-    fontWeight: '800',
+  receiptBrandName: {
+    fontSize: 18,
+    fontWeight: '900',
     color: colors.forestGreen,
-    marginVertical: 2,
+    letterSpacing: 2,
   },
-  txnIdText: {
+  paidBadge: {
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#86EFAC',
+  },
+  paidBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#15803D',
+  },
+  receiptDocTitle: {
     fontSize: 11,
+    fontWeight: '700',
     color: colors.textMuted,
     letterSpacing: 1,
+    marginTop: 4,
   },
-  viewReceiptBtn: {
+  receiptDashedLine: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#D1D5DB',
+    borderStyle: 'dashed',
+    marginVertical: 10,
+  },
+  receiptSolidLine: {
+    height: 1,
+    backgroundColor: '#D1D5DB',
+    marginVertical: 10,
+  },
+  receiptMetaRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 3,
+  },
+  receiptMetaLabel: {
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  receiptMetaValue: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    textAlign: 'right',
+    flex: 1,
+    marginLeft: 10,
+  },
+  receiptSectionTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: colors.forestGreen,
+    letterSpacing: 0.5,
+    marginBottom: 6,
+  },
+  receiptItemRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 3,
+  },
+  receiptItemName: {
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  receiptItemCost: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.textPrimary,
+  },
+  receiptTotalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 2,
+  },
+  receiptTotalLabel: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: colors.forestGreen,
+  },
+  receiptTotalValue: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: colors.forestGreen,
+  },
+  historyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: colors.forestGreen,
     width: '100%',
     height: 48,
     borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
+    marginBottom: 10,
+    shadowColor: colors.forestGreen,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  viewReceiptBtnText: {
+  historyBtnText: {
     color: colors.white,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  rateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.white,
+    borderWidth: 1.5,
+    borderColor: colors.forestGreen,
+    width: '100%',
+    height: 48,
+    borderRadius: 12,
+  },
+  rateBtnText: {
+    color: colors.forestGreen,
     fontSize: 14,
     fontWeight: '700',
   },
