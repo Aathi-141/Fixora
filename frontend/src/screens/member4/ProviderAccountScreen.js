@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { colors } from '../../theme/colors';
 import { AuthContext } from '../../context/AuthContext';
 import { updateProviderProfile } from '../../services/api';
@@ -36,6 +37,7 @@ export default function ProviderAccountScreen({ navigation }) {
   const [isSaving, setIsSaving] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [photoUrlInput, setPhotoUrlInput] = useState('');
+  const [isPickingImage, setIsPickingImage] = useState(false);
 
   const getInitials = (fullName) => {
     if (!fullName) return 'SP';
@@ -52,17 +54,60 @@ export default function ProviderAccountScreen({ navigation }) {
     { id: '3', label: 'Technician 3', uri: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop' },
   ];
 
-  const handleSelectAvatar = (uri) => {
+  const handleSelectAvatar = async (uri) => {
     if (updateUser) {
-      updateUser({ avatar: uri });
+      await updateUser({ avatar: uri });
+    }
+    try {
+      await updateProviderProfile({ avatar: uri });
+    } catch (e) {
+      console.log('Provider profile avatar sync error:', e);
     }
     setShowPhotoModal(false);
-    Alert.alert('Profile Photo Updated', 'Your provider profile picture has been updated.');
+    Alert.alert('Profile Photo Updated', 'Your provider profile picture has been updated and saved.');
   };
 
-  const handleClearAvatar = () => {
+  const handlePickFromGallery = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Required',
+          'Fixora needs photo library access to upload your business/profile photo.'
+        );
+        return;
+      }
+
+      setIsPickingImage(true);
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.6,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        const permanentUri = asset.base64 ? `data:image/jpeg;base64,${asset.base64}` : asset.uri;
+        await handleSelectAvatar(permanentUri);
+      }
+    } catch (err) {
+      console.warn('Image picker error:', err);
+      Alert.alert('Image Selection Error', 'Could not open device photo library.');
+    } finally {
+      setIsPickingImage(false);
+    }
+  };
+
+  const handleClearAvatar = async () => {
     if (updateUser) {
-      updateUser({ avatar: null });
+      await updateUser({ avatar: null });
+    }
+    try {
+      await updateProviderProfile({ avatar: null });
+    } catch (e) {
+      console.log('Provider profile avatar clear error:', e);
     }
     setShowPhotoModal(false);
     Alert.alert('Default Initials Set', 'Your provider card will now display your clean initials badge.');
@@ -350,8 +395,31 @@ export default function ProviderAccountScreen({ navigation }) {
               </TouchableOpacity>
             </View>
             <Text style={styles.modalSub}>
-              Select a professional trade badge or provide your image link for customer trust.
+              Select a photo from your gallery, choose a pro badge, or paste an image URL.
             </Text>
+
+            {/* Gallery Upload Option */}
+            <TouchableOpacity
+              style={styles.galleryUploadBtn}
+              onPress={handlePickFromGallery}
+              disabled={isPickingImage}
+              activeOpacity={0.85}
+            >
+              {isPickingImage ? (
+                <ActivityIndicator size="small" color={colors.white} />
+              ) : (
+                <>
+                  <Ionicons name="images-outline" size={20} color={colors.white} style={{ marginRight: 8 }} />
+                  <Text style={styles.galleryUploadBtnText}>Choose from Device Gallery</Text>
+                </>
+              )}
+            </TouchableOpacity>
+
+            <View style={styles.orDividerContainer}>
+              <View style={styles.orDividerLine} />
+              <Text style={styles.orDividerText}>OR CHOOSE PRO BADGE</Text>
+              <View style={styles.orDividerLine} />
+            </View>
 
             <Text style={styles.inputLabel}>Choose Pro Technician Photo</Text>
             <View style={styles.presetGrid}>
@@ -368,7 +436,13 @@ export default function ProviderAccountScreen({ navigation }) {
               ))}
             </View>
 
-            <Text style={[styles.inputLabel, { marginTop: 10 }]}>Or Enter Custom Image URL</Text>
+            <View style={[styles.orDividerContainer, { marginTop: 14 }]}>
+              <View style={styles.orDividerLine} />
+              <Text style={styles.orDividerText}>OR PASTE IMAGE URL</Text>
+              <View style={styles.orDividerLine} />
+            </View>
+
+            <Text style={styles.inputLabel}>Custom Image URL</Text>
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
               <TextInput
                 style={[styles.textInput, { flex: 1, marginBottom: 0 }]}
@@ -744,5 +818,41 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.textMuted,
     marginBottom: 10,
+  },
+  galleryUploadBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.forestGreen,
+    paddingVertical: 14,
+    borderRadius: 14,
+    marginBottom: 16,
+    shadowColor: colors.forestGreen,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  galleryUploadBtnText: {
+    color: colors.white,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  orDividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  orDividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E2E8F0',
+  },
+  orDividerText: {
+    marginHorizontal: 10,
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textMuted,
+    letterSpacing: 0.8,
   },
 });
