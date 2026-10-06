@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View,
   Text,
@@ -8,17 +8,26 @@ import {
   ScrollView,
   ActivityIndicator,
   StatusBar,
+  Modal,
+  TextInput,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { colors } from '../../theme/colors';
-import { getProviderById } from '../../services/api';
+import { AuthContext } from '../../context/AuthContext';
+import { getProviderById, updateProviderProfile } from '../../services/api';
 
 export default function ProviderProfileScreen({ navigation, route }) {
+  const { user, updateUser } = useContext(AuthContext);
   const { providerId, provider: initialProvider } = route.params || {};
   const [provider, setProvider] = useState(initialProvider || null);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(!initialProvider);
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [photoUrlInput, setPhotoUrlInput] = useState('');
+  const [isPickingImage, setIsPickingImage] = useState(false);
 
   useEffect(() => {
     if (providerId) {
@@ -33,6 +42,62 @@ export default function ProviderProfileScreen({ navigation, route }) {
       setReviews(res.data.reviews || []);
     }
     setLoading(false);
+  };
+
+  const handleSelectAvatar = async (uri) => {
+    if (updateUser) {
+      await updateUser({ avatar: uri });
+    }
+    try {
+      await updateProviderProfile({ avatar: uri, providerId: provider?._id });
+    } catch (e) {
+      console.log('Provider avatar sync error:', e);
+    }
+    setProvider((prev) => (prev ? { ...prev, avatar: uri, user: { ...prev.user, avatar: uri } } : prev));
+    setShowPhotoModal(false);
+    Alert.alert('Profile Photo Updated', 'Provider profile picture has been updated and saved.');
+  };
+
+  const handlePickFromGallery = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Required',
+          'Fixora needs photo library access to upload your profile photo.'
+        );
+        return;
+      }
+
+      setIsPickingImage(true);
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.6,
+        base64: true,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const asset = result.assets[0];
+        const permanentUri = asset.base64 ? `data:image/jpeg;base64,${asset.base64}` : asset.uri;
+        await handleSelectAvatar(permanentUri);
+      }
+    } catch (err) {
+      console.warn('Image picker error:', err);
+      Alert.alert('Image Selection Error', 'Could not open device photo library.');
+    } finally {
+      setIsPickingImage(false);
+    }
+  };
+
+  const handleSaveCustomPhotoUrl = () => {
+    if (!photoUrlInput.trim()) {
+      Alert.alert('Please enter a valid photo link');
+      return;
+    }
+    handleSelectAvatar(photoUrlInput.trim());
+    setPhotoUrlInput('');
   };
 
   const name = provider?.user?.name || provider?.name || 'Ramesh Mendis';
@@ -68,7 +133,16 @@ export default function ProviderProfileScreen({ navigation, route }) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollBody}>
         {/* Cover / Profile Card */}
         <View style={styles.profileHeaderCard}>
-          <Image source={{ uri: avatarUrl }} style={styles.avatarLarge} />
+          <TouchableOpacity
+            style={styles.avatarWrap}
+            onPress={() => setShowPhotoModal(true)}
+            activeOpacity={0.85}
+          >
+            <Image source={{ uri: avatarUrl }} style={styles.avatarLarge} />
+            <View style={styles.cameraBadge}>
+              <Ionicons name="camera" size={14} color={colors.white} />
+            </View>
+          </TouchableOpacity>
           <Text style={styles.providerNameText}>{name}</Text>
           <View style={styles.specBadge}>
             <Ionicons name="shield-checkmark" size={14} color={colors.forestGreen} style={{ marginRight: 4 }} />
@@ -200,6 +274,64 @@ export default function ProviderProfileScreen({ navigation, route }) {
           <Ionicons name="arrow-forward" size={18} color={colors.white} style={{ marginLeft: 6 }} />
         </TouchableOpacity>
       </View>
+
+      {/* Photo Picker Modal */}
+      <Modal visible={showPhotoModal} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Update Provider Photo</Text>
+              <TouchableOpacity onPress={() => setShowPhotoModal(false)}>
+                <Ionicons name="close" size={24} color={colors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.modalSub}>
+              Select a photo from your gallery or paste an image URL to update your profile photo.
+            </Text>
+
+            {/* Gallery Upload Option */}
+            <TouchableOpacity
+              style={styles.galleryUploadBtn}
+              onPress={handlePickFromGallery}
+              disabled={isPickingImage}
+              activeOpacity={0.85}
+            >
+              {isPickingImage ? (
+                <ActivityIndicator size="small" color={colors.white} />
+              ) : (
+                <>
+                  <Ionicons name="images-outline" size={20} color={colors.white} style={{ marginRight: 8 }} />
+                  <Text style={styles.galleryUploadBtnText}>Choose from Device Gallery</Text>
+                </>
+              )}
+            </TouchableOpacity>
+
+            <View style={styles.orDividerContainer}>
+              <View style={styles.orDividerLine} />
+              <Text style={styles.orDividerText}>OR PASTE IMAGE URL</Text>
+              <View style={styles.orDividerLine} />
+            </View>
+
+            <Text style={styles.inputLabel}>Provider Photo Image URL</Text>
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
+              <TextInput
+                style={[styles.textInput, { flex: 1 }]}
+                value={photoUrlInput}
+                onChangeText={setPhotoUrlInput}
+                placeholder="https://... photo link"
+                placeholderTextColor={colors.textMuted}
+                autoCapitalize="none"
+              />
+              <TouchableOpacity
+                style={[styles.modalSaveBtn, { justifyContent: 'center' }]}
+                onPress={handleSaveCustomPhotoUrl}
+              >
+                <Text style={styles.modalSaveText}>Apply</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -457,5 +589,114 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: 15,
     fontWeight: '700',
+  },
+  avatarWrap: {
+    position: 'relative',
+    marginBottom: 12,
+  },
+  cameraBadge: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    backgroundColor: colors.forestGreen,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.white,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: colors.white,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: 40,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: colors.textPrimary,
+  },
+  modalSub: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginBottom: 16,
+    lineHeight: 18,
+  },
+  galleryUploadBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.forestGreen,
+    paddingVertical: 14,
+    borderRadius: 14,
+    marginBottom: 16,
+    shadowColor: colors.forestGreen,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.18,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  galleryUploadBtnText: {
+    color: colors.white,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  orDividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  orDividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E2E8F0',
+  },
+  orDividerText: {
+    marginHorizontal: 10,
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textMuted,
+    letterSpacing: 0.8,
+  },
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    marginBottom: 6,
+  },
+  textInput: {
+    backgroundColor: '#F8FAF9',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
+  modalSaveBtn: {
+    backgroundColor: colors.forestGreen,
+    paddingHorizontal: 22,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  modalSaveText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.white,
   },
 });

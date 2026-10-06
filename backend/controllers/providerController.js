@@ -1,6 +1,7 @@
 const ProviderProfile = require('../models/ProviderProfile');
 const Booking = require('../models/Booking');
 const Review = require('../models/Review');
+const User = require('../models/User');
 
 // @desc    Get all providers with filters and search
 // @route   GET /api/providers
@@ -124,7 +125,7 @@ exports.updateAvailability = async (req, res) => {
 // @access  Private / Public
 exports.updateProviderProfile = async (req, res) => {
   try {
-    const { specialization, hourlyRate, about, skills, licenseNumber, providerId } = req.body;
+    const { specialization, hourlyRate, about, skills, licenseNumber, providerId, avatar } = req.body;
 
     let provider = null;
     if (req.user && req.user.id) {
@@ -146,6 +147,12 @@ exports.updateProviderProfile = async (req, res) => {
     if (about) provider.about = about;
     if (skills) provider.skills = skills;
     if (licenseNumber) provider.licenseNumber = licenseNumber;
+    if (avatar) {
+      provider.avatar = avatar;
+      if (provider.user) {
+        await User.findByIdAndUpdate(provider.user, { avatar });
+      }
+    }
 
     await provider.save();
 

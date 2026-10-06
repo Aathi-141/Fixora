@@ -14,7 +14,7 @@ const signToken = (id) => {
 // @access  Public
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, phone, role, category, city, hourlyRate } = req.body;
+    const { name, email, password, phone, role, category, city, hourlyRate, avatar } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ success: false, message: 'Please provide name, email, and password' });
@@ -34,6 +34,7 @@ exports.register = async (req, res) => {
       password: hashedPassword,
       phone: phone || '',
       role: role || 'customer',
+      avatar: avatar || null,
       address: city ? `${city}, Sri Lanka` : 'Colombo, Sri Lanka',
     });
 
@@ -45,6 +46,7 @@ exports.register = async (req, res) => {
         specialization: `${category || 'Home Service'} Specialist`,
         city: city || 'Colombo',
         hourlyRate: hourlyRate || 700,
+        avatar: avatar || 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=200&auto=format&fit=crop',
         isAvailable: true,
       });
     }
@@ -223,6 +225,10 @@ exports.updateProfile = async (req, res) => {
     if (avatar) user.avatar = avatar;
 
     await user.save();
+
+    if (user.role === 'provider' && avatar) {
+      await ProviderProfile.updateOne({ user: user._id }, { $set: { avatar } });
+    }
 
     return res.status(200).json({
       success: true,
