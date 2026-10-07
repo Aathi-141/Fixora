@@ -287,13 +287,28 @@ export default function ProviderProfileScreen({ navigation, route }) {
       </View>
 
       {/* Photo Picker Modal */}
-      <Modal visible={showPhotoModal} transparent animationType="slide">
+      <Modal
+        visible={showPhotoModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowPhotoModal(false)}
+      >
         <View style={styles.modalOverlay}>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFillObject}
+            activeOpacity={1}
+            onPress={() => setShowPhotoModal(false)}
+          />
           <View style={styles.modalContent}>
+            <View style={styles.modalHandle} />
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Update Provider Photo</Text>
-              <TouchableOpacity onPress={() => setShowPhotoModal(false)}>
-                <Ionicons name="close" size={24} color={colors.textPrimary} />
+              <TouchableOpacity
+                onPress={() => setShowPhotoModal(false)}
+                style={styles.modalCloseBtn}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="close" size={20} color={colors.textPrimary} />
               </TouchableOpacity>
             </View>
             <Text style={styles.modalSub}>
@@ -625,16 +640,39 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: colors.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
+    borderTopLeftRadius: 26,
+    borderTopRightRadius: 26,
+    paddingHorizontal: 22,
+    paddingTop: 12,
     paddingBottom: 40,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    elevation: 10,
+    maxHeight: '90%',
+  },
+  modalHandle: {
+    width: 44,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: '#D1D5DB',
+    alignSelf: 'center',
+    marginBottom: 14,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
+  },
+  modalCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalTitle: {
     fontSize: 18,

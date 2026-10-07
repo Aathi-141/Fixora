@@ -385,87 +385,109 @@ export default function ProviderAccountScreen({ navigation }) {
       </ScrollView>
 
       {/* Photo Picker Modal */}
-      <Modal visible={showPhotoModal} transparent animationType="slide">
+      <Modal
+        visible={showPhotoModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowPhotoModal(false)}
+      >
         <View style={styles.modalOverlay}>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFillObject}
+            activeOpacity={1}
+            onPress={() => setShowPhotoModal(false)}
+          />
           <View style={styles.modalContent}>
+            <View style={styles.modalHandle} />
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Update Provider Photo</Text>
-              <TouchableOpacity onPress={() => setShowPhotoModal(false)}>
-                <Ionicons name="close" size={24} color={colors.textPrimary} />
+              <TouchableOpacity
+                onPress={() => setShowPhotoModal(false)}
+                style={styles.modalCloseBtn}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="close" size={20} color={colors.textPrimary} />
               </TouchableOpacity>
             </View>
             <Text style={styles.modalSub}>
               Select a photo from your gallery, choose a pro badge, or paste an image URL.
             </Text>
 
-            {/* Gallery Upload Option */}
-            <TouchableOpacity
-              style={styles.galleryUploadBtn}
-              onPress={handlePickFromGallery}
-              disabled={isPickingImage}
-              activeOpacity={0.85}
-            >
-              {isPickingImage ? (
-                <ActivityIndicator size="small" color={colors.white} />
-              ) : (
-                <>
-                  <Ionicons name="images-outline" size={20} color={colors.white} style={{ marginRight: 8 }} />
-                  <Text style={styles.galleryUploadBtnText}>Choose from Device Gallery</Text>
-                </>
-              )}
-            </TouchableOpacity>
+            <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
+              {/* Gallery Upload Option */}
+              <TouchableOpacity
+                style={styles.galleryUploadBtn}
+                onPress={handlePickFromGallery}
+                disabled={isPickingImage}
+                activeOpacity={0.85}
+              >
+                {isPickingImage ? (
+                  <ActivityIndicator size="small" color={colors.white} />
+                ) : (
+                  <>
+                    <Ionicons name="images-outline" size={20} color={colors.white} style={{ marginRight: 8 }} />
+                    <Text style={styles.galleryUploadBtnText}>Choose from Device Gallery</Text>
+                  </>
+                )}
+              </TouchableOpacity>
 
-            <View style={styles.orDividerContainer}>
-              <View style={styles.orDividerLine} />
-              <Text style={styles.orDividerText}>OR CHOOSE PRO BADGE</Text>
-              <View style={styles.orDividerLine} />
-            </View>
+              <View style={styles.orDividerContainer}>
+                <View style={styles.orDividerLine} />
+                <Text style={styles.orDividerText}>OR CHOOSE PRO BADGE</Text>
+                <View style={styles.orDividerLine} />
+              </View>
 
-            <Text style={styles.inputLabel}>Choose Pro Technician Photo</Text>
-            <View style={styles.presetGrid}>
-              {PRESET_AVATARS.map((p) => (
+              <Text style={styles.inputLabel}>Choose Pro Technician Photo</Text>
+              <View style={styles.presetGrid}>
+                {PRESET_AVATARS.map((p) => (
+                  <TouchableOpacity
+                    key={p.id}
+                    style={styles.presetItem}
+                    onPress={() => handleSelectAvatar(p.uri)}
+                    activeOpacity={0.8}
+                  >
+                    <Image source={{ uri: p.uri }} style={styles.presetImg} />
+                    <Text style={styles.presetLabel}>{p.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <View style={[styles.orDividerContainer, { marginTop: 14 }]}>
+                <View style={styles.orDividerLine} />
+                <Text style={styles.orDividerText}>OR PASTE IMAGE URL</Text>
+                <View style={styles.orDividerLine} />
+              </View>
+
+              <Text style={styles.inputLabel}>Custom Image URL</Text>
+              <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
+                <TextInput
+                  style={[styles.textInput, { flex: 1, marginBottom: 0 }]}
+                  value={photoUrlInput}
+                  onChangeText={setPhotoUrlInput}
+                  placeholder="https://... photo link"
+                  placeholderTextColor={colors.textMuted}
+                  autoCapitalize="none"
+                />
                 <TouchableOpacity
-                  key={p.id}
-                  style={styles.presetItem}
-                  onPress={() => handleSelectAvatar(p.uri)}
+                  style={styles.applyUrlBtn}
+                  onPress={handleSaveCustomPhotoUrl}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.applyUrlBtnText}>Apply</Text>
+                </TouchableOpacity>
+              </View>
+
+              {user?.avatar ? (
+                <TouchableOpacity
+                  style={styles.clearAvatarBtn}
+                  onPress={handleClearAvatar}
                   activeOpacity={0.8}
                 >
-                  <Image source={{ uri: p.uri }} style={styles.presetImg} />
-                  <Text style={styles.presetLabel}>{p.label}</Text>
+                  <Ionicons name="trash-outline" size={16} color="#DC2626" />
+                  <Text style={styles.clearAvatarText}>Remove Photo & Use Initials</Text>
                 </TouchableOpacity>
-              ))}
-            </View>
-
-            <View style={[styles.orDividerContainer, { marginTop: 14 }]}>
-              <View style={styles.orDividerLine} />
-              <Text style={styles.orDividerText}>OR PASTE IMAGE URL</Text>
-              <View style={styles.orDividerLine} />
-            </View>
-
-            <Text style={styles.inputLabel}>Custom Image URL</Text>
-            <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
-              <TextInput
-                style={[styles.textInput, { flex: 1, marginBottom: 0 }]}
-                value={photoUrlInput}
-                onChangeText={setPhotoUrlInput}
-                placeholder="https://... photo link"
-                placeholderTextColor={colors.textMuted}
-                autoCapitalize="none"
-              />
-              <TouchableOpacity
-                style={[styles.saveBtn, { marginTop: 0, paddingHorizontal: 16 }]}
-                onPress={handleSaveCustomPhotoUrl}
-              >
-                <Text style={styles.saveBtnText}>Apply</Text>
-              </TouchableOpacity>
-            </View>
-
-            {user?.avatar ? (
-              <TouchableOpacity style={styles.clearAvatarBtn} onPress={handleClearAvatar}>
-                <Ionicons name="trash-outline" size={16} color="#DC2626" />
-                <Text style={styles.clearAvatarText}>Remove Photo & Use Initials</Text>
-              </TouchableOpacity>
-            ) : null}
+              ) : null}
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -864,5 +886,69 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.textMuted,
     letterSpacing: 0.8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: colors.white,
+    borderTopLeftRadius: 26,
+    borderTopRightRadius: 26,
+    paddingHorizontal: 22,
+    paddingTop: 12,
+    paddingBottom: 36,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    elevation: 10,
+    maxHeight: '90%',
+  },
+  modalHandle: {
+    width: 44,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: '#D1D5DB',
+    alignSelf: 'center',
+    marginBottom: 14,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: colors.textPrimary,
+  },
+  modalCloseBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalSub: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginBottom: 16,
+    lineHeight: 18,
+  },
+  applyUrlBtn: {
+    backgroundColor: colors.forestGreen,
+    paddingHorizontal: 18,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  applyUrlBtnText: {
+    color: colors.white,
+    fontSize: 14,
+    fontWeight: '700',
   },
 });
