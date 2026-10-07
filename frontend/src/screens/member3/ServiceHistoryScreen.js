@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useCallback } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { colors } from '../../theme/colors';
@@ -25,6 +27,20 @@ export default function ServiceHistoryScreen({ navigation }) {
   const [expandedReceiptId, setExpandedReceiptId] = useState('b_comp_1');
   const [downloadingId, setDownloadingId] = useState(null);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [customBookings, setCustomBookings] = useState([]);
+
+  useFocusEffect(
+    useCallback(() => {
+      AsyncStorage.getItem('fixora_all_bookings').then((raw) => {
+        if (raw) {
+          try {
+            const list = JSON.parse(raw);
+            if (Array.isArray(list)) setCustomBookings(list);
+          } catch (e) {}
+        }
+      });
+    }, [])
+  );
 
   // Customer seed data
   const customerOngoing = [
@@ -82,21 +98,54 @@ export default function ServiceHistoryScreen({ navigation }) {
 
   // Provider dynamic filtering: Providers only see jobs where they are the specialist
   const isProvider = user?.role === 'provider';
-  let ongoingBookings = customerOngoing;
-  let completedBookings = customerCompleted;
+
+  let dynamicOngoing = [...customerOngoing];
+  let dynamicCompleted = [...customerCompleted];
+
+  customBookings.forEach((b) => {
+    const isCancelledOrDone =
+      b.status?.toLowerCase() === 'completed' || b.status?.toLowerCase() === 'cancelled';
+    const formattedItem = {
+      ...b,
+      serviceTitle: b.serviceTitle || b.provider?.specialization || 'Home Service',
+      category: b.serviceCategory || b.category || b.provider?.category || 'Cleaner',
+      scheduledDate: b.scheduledDate || 'Today',
+      timeSlot: b.timeSlot || '10:00 AM',
+      status: b.status?.toLowerCase() === 'cancelled' ? 'Cancelled' : (b.status || 'Confirmed'),
+      pricing: b.pricing || { totalAmount: 3750 },
+      provider: b.provider || {
+        name: 'Chaminda Wickramasinghe',
+        specialization: 'Cleaning Specialist',
+        avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200',
+      },
+    };
+
+    if (isCancelledOrDone) {
+      dynamicOngoing = dynamicOngoing.filter((o) => o._id !== b._id && o.bookingRef !== b.bookingRef);
+      if (!dynamicCompleted.some((c) => c._id === b._id || c.bookingRef === b.bookingRef)) {
+        dynamicCompleted.unshift(formattedItem);
+      }
+    } else {
+      if (!dynamicOngoing.some((o) => o._id === b._id || o.bookingRef === b.bookingRef)) {
+        dynamicOngoing.unshift(formattedItem);
+      }
+    }
+  });
+
+  let ongoingBookings = dynamicOngoing;
+  let completedBookings = dynamicCompleted;
 
   if (isProvider) {
     if (user?.name?.includes('Sunil')) {
-      ongoingBookings = customerOngoing.filter((b) => b.provider.name.includes('Sunil'));
+      ongoingBookings = dynamicOngoing.filter((b) => b.provider?.name?.includes('Sunil'));
       completedBookings = [];
     } else if (user?.name?.includes('Ramesh')) {
       ongoingBookings = [];
-      completedBookings = customerCompleted.filter((b) => b.provider.name.includes('Ramesh'));
+      completedBookings = dynamicCompleted.filter((b) => b.provider?.name?.includes('Ramesh'));
     } else if (user?.name?.includes('Chaminda')) {
       ongoingBookings = [];
-      completedBookings = customerCompleted.filter((b) => b.provider.name.includes('Chaminda'));
+      completedBookings = dynamicCompleted.filter((b) => b.provider?.name?.includes('Chaminda'));
     } else {
-      // Any new provider (like Hibishi) has no jobs until booked
       ongoingBookings = [];
       completedBookings = [];
     }
@@ -374,7 +423,6 @@ export default function ServiceHistoryScreen({ navigation }) {
       setDownloadingId(null);
     }
   };
-  };
 
   const handleBookAgain = (item) => {
     const provider = item.provider;
@@ -494,13 +542,21 @@ export default function ServiceHistoryScreen({ navigation }) {
                   <View
                     style={[
                       styles.statusBadge,
-                      item.status === 'Completed' ? styles.statusBadgeCompleted : styles.statusBadgeOngoing,
+                      item.status === 'Completed'
+                        ? styles.statusBadgeCompleted
+                        : item.status === 'Cancelled'
+                        ? { backgroundColor: '#FEE2E2', borderColor: '#FCA5A5', borderWidth: 1 }
+                        : styles.statusBadgeOngoing,
                     ]}
                   >
                     <Text
                       style={[
                         styles.statusBadgeText,
-                        item.status === 'Completed' ? styles.statusTextCompleted : styles.statusTextOngoing,
+                        item.status === 'Completed'
+                          ? styles.statusTextCompleted
+                          : item.status === 'Cancelled'
+                          ? { color: '#DC2626' }
+                          : styles.statusTextOngoing,
                       ]}
                     >
                       {item.status}

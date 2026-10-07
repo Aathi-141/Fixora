@@ -11,8 +11,7 @@
     "test:member1": "node test/member1.test.js",
     "test:member2": "node test/member2.test.js",
     "test:member3": "node test/member3.test.js",
-    "test:member4": "node test/member4.test.js",
-    "test:browser": "start http://localhost:5000/tests"
+    "test:member4": "node test/member4.test.js"
   },
   "keywords": ["fixora", "express", "mongodb", "rest-api", "home-services"],
   "author": "Fixora Group",

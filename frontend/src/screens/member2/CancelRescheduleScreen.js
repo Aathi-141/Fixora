@@ -138,24 +138,111 @@ export default function CancelRescheduleScreen({ navigation, route }) {
 
   const handleConfirmCancel = async () => {
     setIsSubmitting(true);
-    await cancelBooking(bookingId, cancelReason);
+    let cancelRes = null;
+    try {
+      cancelRes = await cancelBooking(bookingId, cancelReason);
+    } catch (e) {
+      console.warn('API cancel error:', e);
+    }
+
+    const cancelledBooking = {
+      ...(booking || {}),
+      ...(cancelRes?.data || {}),
+      _id: bookingId,
+      status: 'Cancelled',
+      cancellationReason: cancelReason,
+      cancelledAt: new Date().toISOString(),
+    };
+
+    // Update both latest booking and full booking list in storage
+    try {
+      await AsyncStorage.setItem('fixora_latest_booking', JSON.stringify(cancelledBooking));
+      const allBookingsRaw = await AsyncStorage.getItem('fixora_all_bookings');
+      if (allBookingsRaw) {
+        const allBookings = JSON.parse(allBookingsRaw);
+        const updatedList = allBookings.map((b) =>
+          b._id === bookingId || (b.bookingRef && b.bookingRef === cancelledBooking.bookingRef)
+            ? { ...b, ...cancelledBooking }
+            : b
+        );
+        await AsyncStorage.setItem('fixora_all_bookings', JSON.stringify(updatedList));
+      } else {
+        await AsyncStorage.setItem('fixora_all_bookings', JSON.stringify([cancelledBooking]));
+      }
+    } catch (e) {
+      console.warn('AsyncStorage cancel update error:', e);
+    }
+
     setIsSubmitting(false);
+
+    const navigateToHome = () => {
+      try {
+        const state = navigation.getState?.();
+        const routeNames = state?.routeNames || [];
+        if (routeNames.includes('Home')) {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Home' }],
+          });
+          return;
+        }
+      } catch (e) {
+        console.warn('Reset error on navigateToHome:', e);
+      }
+
+      try {
+        if (navigation.canGoBack()) {
+          navigation.popToTop();
+        }
+      } catch (_) {}
+
+      navigation.navigate('HomeTab', {
+        screen: 'Home',
+      });
+    };
+
+    const navigateToBookings = () => {
+      const parent = navigation.getParent?.();
+      try {
+        const state = navigation.getState?.();
+        const routeNames = state?.routeNames || [];
+        if (routeNames.includes('Home')) {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Home' }],
+          });
+        }
+      } catch (e) {
+        console.warn('Reset error before history:', e);
+      }
+
+      if (parent) {
+        parent.navigate('HistoryTab', {
+          screen: 'ServiceHistory',
+          params: { refresh: Date.now() },
+        });
+      } else {
+        navigation.navigate('HistoryTab', {
+          screen: 'ServiceHistory',
+          params: { refresh: Date.now() },
+        });
+      }
+    };
 
     Alert.alert(
       'Booking Cancelled',
       `Your booking has been cancelled. A 100% refund of Rs. ${totalAmount.toLocaleString()} has been initiated to your original payment method.`,
       [
         {
-          text: 'Back to Bookings',
-          onPress: () => {
-            if (navigation.canGoBack()) {
-              navigation.goBack();
-            } else {
-              navigation.navigate('HistoryTab');
-            }
-          },
+          text: 'View Bookings',
+          onPress: navigateToBookings,
         },
-      ]
+        {
+          text: 'Explore Services',
+          onPress: navigateToHome,
+        },
+      ],
+      { cancelable: false }
     );
   };
 

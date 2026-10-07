@@ -55,6 +55,62 @@ export default function BookingSuccessfulScreen({ navigation, route }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const isCancelled = booking?.status?.toLowerCase() === 'cancelled';
+
+  const navigateToHome = () => {
+    try {
+      const state = navigation.getState?.();
+      const routeNames = state?.routeNames || [];
+      if (routeNames.includes('Home')) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Home' }],
+        });
+        return;
+      }
+    } catch (e) {
+      console.warn('Reset error on navigateToHome:', e);
+    }
+
+    try {
+      if (navigation.canGoBack()) {
+        navigation.popToTop();
+      }
+    } catch (_) {}
+
+    navigation.navigate('HomeTab', {
+      screen: 'Home',
+    });
+  };
+
+  const navigateToBookings = () => {
+    const parent = navigation.getParent?.();
+    try {
+      const state = navigation.getState?.();
+      const routeNames = state?.routeNames || [];
+      if (routeNames.includes('Home')) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Home' }],
+        });
+      }
+    } catch (e) {
+      console.warn('Reset error before history:', e);
+    }
+
+    if (parent) {
+      parent.navigate('HistoryTab', {
+        screen: 'ServiceHistory',
+        params: { refresh: Date.now() },
+      });
+    } else {
+      navigation.navigate('HistoryTab', {
+        screen: 'ServiceHistory',
+        params: { refresh: Date.now() },
+      });
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
@@ -62,23 +118,27 @@ export default function BookingSuccessfulScreen({ navigation, route }) {
       <View style={styles.topHeader}>
         <TouchableOpacity
           style={styles.backBtn}
-          onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('BookingDetails'))}
+          onPress={navigateToHome}
         >
           <Ionicons name="arrow-back" size={24} color={colors.white} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Booking Confirmed</Text>
+        <Text style={styles.headerTitle}>{isCancelled ? 'Booking Cancelled' : 'Booking Confirmed'}</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollBody} showsVerticalScrollIndicator={false}>
-        {/* Celebration Badge */}
+        {/* Celebration / Status Badge */}
         <View style={styles.celebrationCard}>
-          <View style={styles.checkCircle}>
-            <Ionicons name="checkmark" size={44} color={colors.white} />
+          <View style={[styles.checkCircle, isCancelled && { backgroundColor: '#EF4444' }]}>
+            <Ionicons name={isCancelled ? 'close' : 'checkmark'} size={44} color={colors.white} />
           </View>
-          <Text style={styles.successTitle}>Booking Successful!</Text>
+          <Text style={[styles.successTitle, isCancelled && { color: '#B91C1C' }]}>
+            {isCancelled ? 'Booking Cancelled' : 'Booking Successful!'}
+          </Text>
           <Text style={styles.successSub}>
-            Your service request has been confirmed and scheduled with the specialist.
+            {isCancelled
+              ? `This service request has been cancelled. A 100% refund of LKR ${totalAmount.toLocaleString()} has been initiated to your original payment method.`
+              : 'Your service request has been confirmed and scheduled with the specialist.'}
           </Text>
 
           {/* Reference Pill with Copy Button */}
@@ -104,6 +164,18 @@ export default function BookingSuccessfulScreen({ navigation, route }) {
         {/* Appointment Summary Card */}
         <View style={styles.summaryCard}>
           <Text style={styles.summaryHeading}>Appointment Summary</Text>
+
+          {isCancelled && (
+            <View style={styles.detailItem}>
+              <Ionicons name="alert-circle" size={18} color="#EF4444" style={styles.iconStyle} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.itemTitle}>Booking Status</Text>
+                <Text style={[styles.itemSub, { color: '#DC2626', fontWeight: '700' }]}>
+                  Cancelled (100% Refund Initiated)
+                </Text>
+              </View>
+            </View>
+          )}
 
           <View style={styles.detailItem}>
             <Ionicons name="person-outline" size={18} color={colors.forestGreen} style={styles.iconStyle} />
@@ -162,21 +234,43 @@ export default function BookingSuccessfulScreen({ navigation, route }) {
 
         {/* Actions */}
         <View style={styles.actionSection}>
-          <TouchableOpacity
-            style={styles.trackStatusBtn}
-            onPress={() => navigation.navigate('RequestStatusTracking', { booking })}
-            activeOpacity={0.85}
-          >
-            <Ionicons name="navigate-outline" size={20} color={colors.white} style={{ marginRight: 8 }} />
-            <Text style={styles.trackStatusBtnText}>Track Specialist in Timeline</Text>
-          </TouchableOpacity>
+          {isCancelled ? (
+            <>
+              <TouchableOpacity
+                style={styles.trackStatusBtn}
+                onPress={navigateToHome}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="compass-outline" size={20} color={colors.white} style={{ marginRight: 8 }} />
+                <Text style={styles.trackStatusBtnText}>Explore Other Specialists</Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.manageLinkBtn}
-            onPress={() => navigation.navigate('CancelReschedule', { booking })}
-          >
-            <Text style={styles.manageLinkText}>Need to change time? Reschedule / Cancel</Text>
-          </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.manageLinkBtn}
+                onPress={navigateToBookings}
+              >
+                <Text style={styles.manageLinkText}>View In Service Request History</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <TouchableOpacity
+                style={styles.trackStatusBtn}
+                onPress={() => navigation.navigate('RequestStatusTracking', { booking })}
+                activeOpacity={0.85}
+              >
+                <Ionicons name="navigate-outline" size={20} color={colors.white} style={{ marginRight: 8 }} />
+                <Text style={styles.trackStatusBtnText}>Track Specialist in Timeline</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.manageLinkBtn}
+                onPress={() => navigation.navigate('CancelReschedule', { booking })}
+              >
+                <Text style={styles.manageLinkText}>Need to change time? Reschedule / Cancel</Text>
+              </TouchableOpacity>
+            </>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
