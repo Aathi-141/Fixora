@@ -175,26 +175,74 @@ export default function CancelRescheduleScreen({ navigation, route }) {
 
     setIsSubmitting(false);
 
+    const navigateToHome = () => {
+      try {
+        const state = navigation.getState?.();
+        const routeNames = state?.routeNames || [];
+        if (routeNames.includes('Home')) {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Home' }],
+          });
+          return;
+        }
+      } catch (e) {
+        console.warn('Reset error on navigateToHome:', e);
+      }
+
+      try {
+        if (navigation.canGoBack()) {
+          navigation.popToTop();
+        }
+      } catch (_) {}
+
+      navigation.navigate('HomeTab', {
+        screen: 'Home',
+      });
+    };
+
+    const navigateToBookings = () => {
+      const parent = navigation.getParent?.();
+      try {
+        const state = navigation.getState?.();
+        const routeNames = state?.routeNames || [];
+        if (routeNames.includes('Home')) {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Home' }],
+          });
+        }
+      } catch (e) {
+        console.warn('Reset error before history:', e);
+      }
+
+      if (parent) {
+        parent.navigate('HistoryTab', {
+          screen: 'ServiceHistory',
+          params: { refresh: Date.now() },
+        });
+      } else {
+        navigation.navigate('HistoryTab', {
+          screen: 'ServiceHistory',
+          params: { refresh: Date.now() },
+        });
+      }
+    };
+
     Alert.alert(
       'Booking Cancelled',
       `Your booking has been cancelled. A 100% refund of Rs. ${totalAmount.toLocaleString()} has been initiated to your original payment method.`,
       [
         {
           text: 'View Bookings',
-          onPress: () => {
-            navigation.navigate('HistoryTab', {
-              screen: 'ServiceHistory',
-              params: { refresh: Date.now() },
-            });
-          },
+          onPress: navigateToBookings,
         },
         {
           text: 'Explore Services',
-          onPress: () => {
-            navigation.navigate('HomeTab');
-          },
+          onPress: navigateToHome,
         },
-      ]
+      ],
+      { cancelable: false }
     );
   };
 
