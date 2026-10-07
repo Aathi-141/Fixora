@@ -101,6 +101,34 @@ const run = async () => {
     const provSearchRes = await request('/api/providers?category=Plumber');
     assert(provSearchRes.status === 200 && provSearchRes.data.count > 0, 'FR-03/04: Provider Search & Category Filtering (Plumber)');
 
+    // 5b. Multi-token City Filter (e.g. "Colombo, Western Province")
+    const provCityRes = await request('/api/providers?city=Colombo,%20Western%20Province');
+    assert(provCityRes.status === 200 && provCityRes.data.count > 0, 'FR-03/04b: Multi-token Area & City Filter (Colombo, Western Province)');
+
+    // 5c. Specific City District Filter (e.g. "Gampaha")
+    const provGampahaRes = await request('/api/providers?city=Gampaha');
+    assert(
+      provGampahaRes.status === 200 &&
+      provGampahaRes.data.data.every((p) => (p.city || '').toLowerCase().includes('gampaha') || (p.user?.address || '').toLowerCase().includes('gampaha')),
+      'FR-03/04c: Strict City District Filter (Gampaha)'
+    );
+
+    // 5d. Max Price & Minimum Rating Filters
+    const provPriceRatingRes = await request('/api/providers?maxPrice=700&minRating=4.8');
+    assert(
+      provPriceRatingRes.status === 200 &&
+      provPriceRatingRes.data.data.every((p) => p.hourlyRate <= 700 && p.rating >= 4.8),
+      'FR-03/04d: Max Hourly Rate & Minimum Rating Filtering (≤700 LKR, ≥4.8★)'
+    );
+
+    // 5e. Combined Category, City & Price Filter
+    const provCombinedRes = await request('/api/providers?category=Plumber&city=Colombo');
+    assert(
+      provCombinedRes.status === 200 &&
+      provCombinedRes.data.data.every((p) => /plumb/i.test(p.category)),
+      'FR-03/04e: Combined Category & City Filter (Plumber in Colombo)'
+    );
+
     // 6. View Provider Profile & Reviews
     const sampleId = provSearchRes.data.data[0]._id;
     const provDetailRes = await request(`/api/providers/${sampleId}`);

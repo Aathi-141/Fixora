@@ -22,13 +22,28 @@ const PRICE_PRESETS = ['600', '800', '1000', '1500', '2500'];
 export default function FiltersScreen({ navigation, route }) {
   const currentFilters = route.params?.currentFilters || {};
 
-  const [location, setLocation] = useState(currentFilters.city || 'Colombo, Western Province');
+  const parseInitialRating = (val) => {
+    if (!val || val === 'Any') return 'Any';
+    const num = String(val).replace('+', '').trim();
+    const matched = RATINGS.find((r) => r.startsWith(num));
+    return matched || 'Any';
+  };
+
+  const getInitialTypes = () => {
+    if (currentFilters.categories && Array.isArray(currentFilters.categories) && currentFilters.categories.length > 0) {
+      return currentFilters.categories;
+    }
+    if (currentFilters.category && currentFilters.category !== 'All') {
+      return [currentFilters.category];
+    }
+    return [];
+  };
+
+  const [location, setLocation] = useState(currentFilters.city || '');
   const [selectedRadius, setSelectedRadius] = useState(currentFilters.radius || 15);
-  const [selectedTypes, setSelectedTypes] = useState(
-    currentFilters.category ? [currentFilters.category] : ['Electrician']
-  );
-  const [minRating, setMinRating] = useState(currentFilters.minRating || '4.0+');
-  const [maxPrice, setMaxPrice] = useState(currentFilters.maxPrice ? String(currentFilters.maxPrice) : '1500');
+  const [selectedTypes, setSelectedTypes] = useState(getInitialTypes());
+  const [minRating, setMinRating] = useState(parseInitialRating(currentFilters.minRating));
+  const [maxPrice, setMaxPrice] = useState(currentFilters.maxPrice ? String(currentFilters.maxPrice) : '');
 
   const toggleType = (type) => {
     if (selectedTypes.includes(type)) {
@@ -44,17 +59,35 @@ export default function FiltersScreen({ navigation, route }) {
     setSelectedTypes([]);
     setMinRating('Any');
     setMaxPrice('');
+    navigation.navigate('Home', {
+      filters: {
+        applied: false,
+        city: '',
+        radius: 15,
+        category: 'All',
+        categories: [],
+        minRating: null,
+        maxPrice: null,
+      },
+    });
   };
 
   const handleApply = () => {
+    const hasCategory = selectedTypes.length > 0;
+    const hasRating = minRating && minRating !== 'Any';
+    const hasPrice = Boolean(maxPrice && Number(maxPrice) > 0);
+    const hasCity = Boolean(location && location.trim().length > 0);
+    const isApplied = hasCategory || hasRating || hasPrice || hasCity;
+
     navigation.navigate('Home', {
       filters: {
-        applied: true,
-        city: location,
+        applied: isApplied,
+        city: location.trim(),
         radius: selectedRadius,
-        category: selectedTypes[0] || 'All',
-        minRating: minRating === 'Any' ? null : minRating.replace('+', ''),
-        maxPrice: maxPrice ? Number(maxPrice) : null,
+        category: selectedTypes.length === 1 ? selectedTypes[0] : (selectedTypes.length > 1 ? selectedTypes.join(',') : 'All'),
+        categories: selectedTypes,
+        minRating: hasRating ? minRating.replace('+', '') : null,
+        maxPrice: hasPrice ? Number(maxPrice) : null,
       },
     });
   };
@@ -99,6 +132,11 @@ export default function FiltersScreen({ navigation, route }) {
               placeholder="Enter city or district (e.g. Colombo, Malabe)"
               placeholderTextColor={colors.textMuted}
             />
+            {location ? (
+              <TouchableOpacity onPress={() => setLocation('')} style={{ padding: 4 }}>
+                <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+              </TouchableOpacity>
+            ) : null}
           </View>
 
           {/* Search Radius */}
@@ -121,7 +159,16 @@ export default function FiltersScreen({ navigation, route }) {
           </View>
 
           {/* Service Type */}
-          <Text style={[styles.filterGroupTitle, { marginTop: 24 }]}>Service Category</Text>
+          <View style={[styles.groupHeaderRow, { marginTop: 24 }]}>
+            <Text style={styles.filterGroupTitle}>Service Category</Text>
+            {selectedTypes.length > 0 && (
+              <TouchableOpacity onPress={() => setSelectedTypes([])}>
+                <Text style={{ fontSize: 13, color: colors.forestGreen, fontWeight: '600' }}>
+                  Clear ({selectedTypes.length})
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
           <View style={styles.typeGrid}>
             {SERVICE_TYPES.map((type) => {
               const isSelected = selectedTypes.includes(type);

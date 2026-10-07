@@ -131,12 +131,18 @@ const SRI_LANKAN_PROVIDERS = [
 
 export default function HomeScreen({ navigation, route }) {
   const { user } = useContext(AuthContext);
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const filterParams = route.params?.filters || {};
+  const [selectedCategory, setSelectedCategory] = useState(filterParams.category || 'All');
   const [searchQuery, setSearchQuery] = useState('');
   const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const filterParams = route.params?.filters || {};
+  // Keep selectedCategory in sync when returning from FiltersScreen
+  useEffect(() => {
+    if (route.params?.filters?.category !== undefined) {
+      setSelectedCategory(route.params.filters.category);
+    }
+  }, [route.params?.filters?.category]);
 
   useEffect(() => {
     fetchProviders();
@@ -144,37 +150,54 @@ export default function HomeScreen({ navigation, route }) {
 
   const fetchProviders = async () => {
     setLoading(true);
+    const effectiveCategory =
+      selectedCategory !== 'All'
+        ? selectedCategory
+        : (filterParams.category && filterParams.category !== 'All' ? filterParams.category : undefined);
+
     const params = {
-      category: selectedCategory !== 'All' ? selectedCategory : undefined,
-      search: searchQuery,
-      minRating: filterParams.minRating,
-      maxPrice: filterParams.maxPrice,
-      city: filterParams.city,
+      category: effectiveCategory,
+      search: searchQuery.trim() || undefined,
+      minRating: filterParams.minRating || undefined,
+      maxPrice: filterParams.maxPrice || undefined,
+      city: filterParams.city?.trim() || undefined,
+      radius: filterParams.radius || undefined,
     };
+
     const res = await getProviders(params);
-    if (res.success && res.data && res.data.length > 0) {
+    if (res.success && Array.isArray(res.data)) {
       setProviders(res.data);
     } else {
       let filtered = [...SRI_LANKAN_PROVIDERS];
-      if (selectedCategory && selectedCategory !== 'All') {
-        filtered = filtered.filter(
-          (p) => p.category.toLowerCase() === selectedCategory.toLowerCase()
+      if (effectiveCategory && effectiveCategory !== 'All') {
+        const catList = effectiveCategory.toLowerCase().split(',');
+        filtered = filtered.filter((p) =>
+          catList.some((c) => p.category.toLowerCase().includes(c.trim()))
         );
       }
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         filtered = filtered.filter(
           (p) =>
-            p.category.toLowerCase().includes(q) ||
-            p.user.name.toLowerCase().includes(q) ||
-            p.specialization.toLowerCase().includes(q)
+            p.category?.toLowerCase().includes(q) ||
+            p.user?.name?.toLowerCase().includes(q) ||
+            p.specialization?.toLowerCase().includes(q)
         );
       }
       if (filterParams.maxPrice) {
-        filtered = filtered.filter((p) => p.hourlyRate <= filterParams.maxPrice);
+        filtered = filtered.filter((p) => p.hourlyRate <= Number(filterParams.maxPrice));
       }
       if (filterParams.minRating) {
         filtered = filtered.filter((p) => p.rating >= Number(filterParams.minRating));
+      }
+      if (filterParams.city?.trim()) {
+        const cityQ = filterParams.city.trim().toLowerCase();
+        const tokens = cityQ.split(/[,;\-\/]+/).map((t) => t.trim()).filter((t) => t.length > 1);
+        filtered = filtered.filter((p) => {
+          const pCity = (p.city || '').toLowerCase();
+          const pAddress = (p.user?.address || '').toLowerCase();
+          return tokens.some((t) => pCity.includes(t) || pAddress.includes(t) || t.includes(pCity));
+        });
       }
       setProviders(filtered);
     }
@@ -182,12 +205,82 @@ export default function HomeScreen({ navigation, route }) {
   };
 
   const handleSelectPopularService = (categoryName) => {
-    if (selectedCategory === categoryName) {
-      setSelectedCategory('All');
-    } else {
-      setSelectedCategory(categoryName);
-    }
+    const nextCategory = selectedCategory === categoryName ? 'All' : categoryName;
+    setSelectedCategory(nextCategory);
+    navigation.setParams({
+      filters: {
+        ...filterParams,
+        category: nextCategory,
+        applied: Boolean(
+          nextCategory !== 'All' ||
+          filterParams.minRating ||
+          filterParams.maxPrice ||
+          (filterParams.city && filterParams.city.trim().length > 0)
+        ),
+      },
+    });
   };
+
+  const clearAllFilters = () => {
+    setSelectedCategory('All');
+    setSearchQuery('');
+    navigation.setParams({
+      filters: {
+        applied: false,
+        category: 'All',
+        categories: [],
+        city: '',
+        minRating: null,
+        maxPrice: null,
+      },
+    });
+  };
+
+  const removeFilter = (filterKey) => {
+    const updatedFilters = { ...filterParams };
+    if (filterKey === 'category') {
+      setSelectedCategory('All');
+      updatedFilters.category = 'All';
+      updatedFilters.categories = [];
+    } else if (filterKey === 'city') {
+      updatedFilters.city = '';
+    } else if (filterKey === 'minRating') {
+      updatedFilters.minRating = null;
+    } else if (filterKey === 'maxPrice') {
+      updatedFilters.maxPrice = null;
+    }
+    const isStillApplied = Boolean(
+      (updatedFilters.category && updatedFilters.category !== 'All') ||
+      (updatedFilters.city && updatedFilters.city.trim().length > 0) ||
+      updatedFilters.minRating ||
+      updatedFilters.maxPrice
+    );
+    updatedFilters.applied = isStillApplied;
+    navigation.setParams({ filters: updatedFilters });
+  };
+
+  const openFilters = () => {
+    navigation.navigate('Filters', {
+      currentFilters: {
+        ...filterParams,
+        category: selectedCategory !== 'All' ? selectedCategory : (filterParams.category || 'All'),
+      },
+    });
+  };
+
+  const hasActiveFilters = Boolean(
+    (selectedCategory && selectedCategory !== 'All') ||
+    (filterParams.city && filterParams.city.trim().length > 0) ||
+    filterParams.minRating ||
+    filterParams.maxPrice
+  );
+
+  const activeFiltersCount = [
+    selectedCategory !== 'All',
+    Boolean(filterParams.city?.trim()),
+    Boolean(filterParams.minRating),
+    Boolean(filterParams.maxPrice),
+  ].filter(Boolean).length;
 
   const userAddress = user?.address || 'No. 42, New Kandy Road, Malabe';
   const displayAddress = userAddress.split(',')[0];
@@ -257,21 +350,83 @@ export default function HomeScreen({ navigation, route }) {
         </View>
 
         <TouchableOpacity
-          style={[styles.filterBtn, filterParams.applied && styles.filterBtnActive]}
-          onPress={() => navigation.navigate('Filters', { currentFilters: filterParams })}
+          style={[styles.filterBtn, hasActiveFilters && styles.filterBtnActive]}
+          onPress={openFilters}
           activeOpacity={0.8}
         >
           <Ionicons
             name="options-outline"
             size={18}
-            color={filterParams.applied ? colors.white : colors.forestGreen}
+            color={hasActiveFilters ? colors.white : colors.forestGreen}
             style={{ marginRight: 5 }}
           />
-          <Text style={[styles.filterBtnText, filterParams.applied && styles.filterBtnTextActive]}>
+          <Text style={[styles.filterBtnText, hasActiveFilters && styles.filterBtnTextActive]}>
             Filter
           </Text>
+          {hasActiveFilters && (
+            <View style={styles.activeFilterCountBadge}>
+              <Text style={styles.activeFilterCountText}>{activeFiltersCount}</Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
+
+      {/* 2b. Live Active Filter Chips Row */}
+      {hasActiveFilters && (
+        <View style={styles.activeFiltersContainer}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.activeFiltersScroll}
+          >
+            {selectedCategory !== 'All' && (
+              <TouchableOpacity
+                style={styles.activeFilterPill}
+                onPress={() => removeFilter('category')}
+                activeOpacity={0.75}
+              >
+                <Text style={styles.activeFilterPillText}>{selectedCategory}</Text>
+                <Ionicons name="close" size={13} color={colors.forestGreen} style={{ marginLeft: 4 }} />
+              </TouchableOpacity>
+            )}
+            {filterParams.city ? (
+              <TouchableOpacity
+                style={styles.activeFilterPill}
+                onPress={() => removeFilter('city')}
+                activeOpacity={0.75}
+              >
+                <Ionicons name="location-sharp" size={11} color={colors.forestGreen} style={{ marginRight: 3 }} />
+                <Text style={styles.activeFilterPillText}>{filterParams.city}</Text>
+                <Ionicons name="close" size={13} color={colors.forestGreen} style={{ marginLeft: 4 }} />
+              </TouchableOpacity>
+            ) : null}
+            {filterParams.minRating ? (
+              <TouchableOpacity
+                style={styles.activeFilterPill}
+                onPress={() => removeFilter('minRating')}
+                activeOpacity={0.75}
+              >
+                <Ionicons name="star" size={11} color="#F59E0B" style={{ marginRight: 3 }} />
+                <Text style={styles.activeFilterPillText}>{filterParams.minRating}+</Text>
+                <Ionicons name="close" size={13} color={colors.forestGreen} style={{ marginLeft: 4 }} />
+              </TouchableOpacity>
+            ) : null}
+            {filterParams.maxPrice ? (
+              <TouchableOpacity
+                style={styles.activeFilterPill}
+                onPress={() => removeFilter('maxPrice')}
+                activeOpacity={0.75}
+              >
+                <Text style={styles.activeFilterPillText}>≤ Rs. {filterParams.maxPrice}</Text>
+                <Ionicons name="close" size={13} color={colors.forestGreen} style={{ marginLeft: 4 }} />
+              </TouchableOpacity>
+            ) : null}
+            <TouchableOpacity style={styles.clearAllBtn} onPress={clearAllFilters} activeOpacity={0.75}>
+              <Text style={styles.clearAllBtnText}>Clear All</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      )}
 
       {/* Main Scroll Content */}
       <ScrollView
@@ -341,9 +496,9 @@ export default function HomeScreen({ navigation, route }) {
         {/* 4. Popular Services Section (2x4 Grid Matching Reference) */}
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionTitle}>Popular Services</Text>
-          <TouchableOpacity onPress={() => setSelectedCategory('All')}>
+          <TouchableOpacity onPress={clearAllFilters}>
             <Text style={styles.seeAllLink}>
-              {selectedCategory !== 'All' ? 'Clear Filter' : 'See all >'}
+              {hasActiveFilters ? 'Clear Filters' : 'See all >'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -379,8 +534,8 @@ export default function HomeScreen({ navigation, route }) {
         {/* 5. Recommended For You Section (Clean Cards Matching Reference) */}
         <View style={[styles.sectionHeaderRow, { marginTop: 26 }]}>
           <Text style={styles.sectionTitle}>Recommended for you</Text>
-          <TouchableOpacity onPress={() => setSelectedCategory('All')}>
-            <Text style={styles.seeAllLink}>View all &gt;</Text>
+          <TouchableOpacity onPress={clearAllFilters}>
+            <Text style={styles.seeAllLink}>{hasActiveFilters ? 'Reset Filters' : 'View all >'}</Text>
           </TouchableOpacity>
         </View>
 
@@ -390,7 +545,7 @@ export default function HomeScreen({ navigation, route }) {
           <View style={styles.emptyBox}>
             <Ionicons name="search" size={40} color={colors.textMuted} />
             <Text style={styles.emptyText}>No specialists found matching your search.</Text>
-            <TouchableOpacity style={styles.resetFilterBtn} onPress={() => setSelectedCategory('All')}>
+            <TouchableOpacity style={styles.resetFilterBtn} onPress={clearAllFilters}>
               <Text style={styles.resetFilterText}>Show All Services</Text>
             </TouchableOpacity>
           </View>
@@ -617,6 +772,56 @@ const styles = StyleSheet.create({
   },
   filterBtnTextActive: {
     color: colors.white,
+  },
+  activeFilterCountBadge: {
+    backgroundColor: '#FEF3C7',
+    borderRadius: 10,
+    width: 18,
+    height: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 5,
+  },
+  activeFilterCountText: {
+    color: '#92400E',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  activeFiltersContainer: {
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    backgroundColor: colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  activeFiltersScroll: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  activeFilterPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#EBF4EE',
+    borderColor: '#C3E0CC',
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    marginRight: 8,
+  },
+  activeFilterPillText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.forestGreen,
+  },
+  clearAllBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+  },
+  clearAllBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#DC2626',
   },
 
   // Main Scroll Body

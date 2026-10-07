@@ -88,6 +88,9 @@ export const getProviders = (params = {}) => {
   if (params.search) query.append('search', params.search);
   if (params.minRating) query.append('minRating', params.minRating);
   if (params.maxPrice) query.append('maxPrice', params.maxPrice);
+  if (params.city) query.append('city', params.city);
+  if (params.radius) query.append('radius', params.radius);
+  if (params.availableOnly) query.append('availableOnly', params.availableOnly);
   const qStr = query.toString() ? `?${query.toString()}` : '';
   return apiRequest(`/api/providers${qStr}`);
 };

@@ -15,19 +15,34 @@ exports.getProviders = async (req, res) => {
     let query = {};
 
     if (category && category !== 'All') {
-      query.category = category;
+      const catList = category.split(',').map((c) => c.trim()).filter(Boolean);
+      const catRegexes = [];
+      for (const c of catList) {
+        if (/ac|hvac/i.test(c)) {
+          catRegexes.push(/ac/i, /hvac/i);
+        } else if (/carpent/i.test(c)) {
+          catRegexes.push(/carpent/i);
+        } else if (/paint/i.test(c)) {
+          catRegexes.push(/paint/i);
+        } else if (/clean/i.test(c)) {
+          catRegexes.push(/clean/i);
+        } else if (/electr/i.test(c)) {
+          catRegexes.push(/electr/i);
+        } else if (/plumb/i.test(c)) {
+          catRegexes.push(/plumb/i);
+        } else {
+          catRegexes.push(new RegExp(c, 'i'));
+        }
+      }
+      query.category = { $in: catRegexes };
     }
 
-    if (minRating) {
+    if (minRating && !isNaN(parseFloat(minRating))) {
       query.rating = { $gte: parseFloat(minRating) };
     }
 
-    if (maxPrice) {
+    if (maxPrice && !isNaN(parseFloat(maxPrice))) {
       query.hourlyRate = { $lte: parseFloat(maxPrice) };
-    }
-
-    if (city) {
-      query.city = new RegExp(city, 'i');
     }
 
     if (availableOnly === 'true') {
@@ -36,14 +51,37 @@ exports.getProviders = async (req, res) => {
 
     let providers = await ProviderProfile.find(query).populate('user', 'name email phone avatar address');
 
-    if (search) {
-      const searchRegex = new RegExp(search, 'i');
+    // Multi-token city & area search matching against provider city and user address
+    if (city && city.trim()) {
+      const cityTokens = city
+        .trim()
+        .split(/[,;\-\/]+/)
+        .map((t) => t.trim().toLowerCase())
+        .filter((t) => t.length > 1);
+
+      if (cityTokens.length > 0) {
+        providers = providers.filter((p) => {
+          const pCity = (p.city || '').toLowerCase();
+          const pAddress = (p.user?.address || '').toLowerCase();
+          return cityTokens.some(
+            (t) =>
+              pCity.includes(t) ||
+              pAddress.includes(t) ||
+              (pCity.length > 2 && t.includes(pCity))
+          );
+        });
+      }
+    }
+
+    if (search && search.trim()) {
+      const searchRegex = new RegExp(search.trim(), 'i');
       providers = providers.filter((p) => {
-        const nameMatch = p.user && searchRegex.test(p.user.name);
-        const catMatch = searchRegex.test(p.category);
-        const specMatch = searchRegex.test(p.specialization);
+        const nameMatch = p.user?.name && searchRegex.test(p.user.name);
+        const catMatch = p.category && searchRegex.test(p.category);
+        const specMatch = p.specialization && searchRegex.test(p.specialization);
         const skillsMatch = p.skills && p.skills.some((s) => searchRegex.test(s));
-        return nameMatch || catMatch || specMatch || skillsMatch;
+        const cityMatch = (p.city && searchRegex.test(p.city)) || (p.user?.address && searchRegex.test(p.user.address));
+        return nameMatch || catMatch || specMatch || skillsMatch || cityMatch;
       });
     }
 
