@@ -374,7 +374,6 @@ export default function ServiceHistoryScreen({ navigation }) {
       setDownloadingId(null);
     }
   };
-  };
 
   const handleBookAgain = (item) => {
     const provider = item.provider;
