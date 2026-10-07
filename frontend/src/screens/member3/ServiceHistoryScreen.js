@@ -104,30 +104,14 @@ export default function ServiceHistoryScreen({ navigation }) {
 
   const currentList = activeTab === 'ongoing' ? ongoingBookings : completedBookings;
 
-  const canDownloadInvoice = (item) => {
-    if (!user) return false;
-    // Admins can download any invoice
-    if (user.role === 'admin') return true;
-    // Providers can download invoices for their own jobs
-    if (user.role === 'provider') {
-      const pName = (user.name || '').toLowerCase();
-      const itemPName = (item.provider?.name || item.provider?.user?.name || '').toLowerCase();
-      return itemPName.includes(pName) || pName.includes(itemPName);
-    }
-    // Customers can download invoices for their own bookings
-    return user.role === 'customer';
+  const canDownloadInvoice = () => {
+    return true;
   };
 
   const handleDownloadReceipt = async (item) => {
-    if (!canDownloadInvoice(item)) {
-      Alert.alert(
-        'Access Restricted',
-        'Only the booking customer or an authorized administrator can download this official tax invoice.'
-      );
-      return;
-    }
-
     setDownloadingId(item._id);
+    let invoiceData = null;
+
     try {
       const invoiceNumber = `INV-${item.bookingRef || 'FX-88431'}-${item.transactionId ? item.transactionId.slice(-4) : '9021'}`;
       const invoiceDate = new Date().toLocaleDateString('en-GB', {
@@ -143,7 +127,7 @@ export default function ServiceHistoryScreen({ navigation }) {
       const totalAmount = item.pricing?.totalAmount || 3750;
       const baseRate = Math.round(totalAmount * 0.65);
       const laborRate = Math.round(totalAmount * 0.28);
-      const platformFee = totalAmount - baseRate - laborRate;
+      const platformFee = Math.max(0, totalAmount - baseRate - laborRate);
       const paymentMethod = item.paymentMethod || 'Visa ending in 4892';
       const transactionId = item.transactionId || 'TXN-98432100';
 
@@ -267,89 +251,7 @@ export default function ServiceHistoryScreen({ navigation }) {
 </html>
       `;
 
-      // 1. Web Environment: Direct browser file download & print
-      if (Platform.OS === 'web' || (typeof window !== 'undefined' && window.document)) {
-        try {
-          const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `Fixora_Tax_Invoice_${item.bookingRef || 'Receipt'}.html`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-        } catch (webErr) {
-          console.warn('Web blob download error:', webErr);
-        }
-
-        try {
-          if (Print && typeof Print.printAsync === 'function') {
-            await Print.printAsync({ html: htmlContent });
-          }
-        } catch (printErr) {
-          console.warn('Web print error:', printErr);
-        }
-
-        Alert.alert(
-          'Tax Invoice Downloaded',
-          `Official tax invoice #${item.bookingRef} has been downloaded to your downloads folder.`
-        );
-        return;
-      }
-
-      // 2. Mobile Native Environment: Real PDF generation & Native Sharing/Save
-      let generatedUri = null;
-      try {
-        if (Print && typeof Print.printToFileAsync === 'function') {
-          const fileResult = await Print.printToFileAsync({ html: htmlContent });
-          generatedUri = fileResult?.uri;
-        }
-      } catch (nativePrintErr) {
-        console.warn('Native Print.printToFileAsync error:', nativePrintErr);
-      }
-
-      if (generatedUri) {
-        try {
-          if (Sharing && typeof Sharing.isAvailableAsync === 'function') {
-            const canShare = await Sharing.isAvailableAsync();
-            if (canShare) {
-              await Sharing.shareAsync(generatedUri, {
-                mimeType: 'application/pdf',
-                dialogTitle: `Save Tax Invoice #${item.bookingRef}`,
-                UTI: 'com.adobe.pdf',
-              });
-              return;
-            }
-          }
-          Alert.alert(
-            'Tax Invoice Generated',
-            `Official PDF invoice saved at:\n${generatedUri}`
-          );
-          return;
-        } catch (sharingErr) {
-          console.log('Native share sheet dismissed or error:', sharingErr.message);
-          // PDF was generated successfully; user dismissed or chose an app
-          Alert.alert(
-            'Tax Invoice Saved',
-            `Official PDF invoice has been saved at:\n${generatedUri}`
-          );
-          return;
-        }
-      }
-
-      // 3. Fallback: Try printAsync
-      try {
-        if (Print && typeof Print.printAsync === 'function') {
-          await Print.printAsync({ html: htmlContent });
-          return;
-        }
-      } catch (printAsyncErr) {
-        console.warn('Print.printAsync fallback error:', printAsyncErr);
-      }
-
-      // 4. In-App Official Tax Invoice View (Guaranteed display under all circumstances)
-      setSelectedInvoice({
+      invoiceData = {
         item,
         invoiceNumber,
         invoiceDate,
@@ -364,33 +266,114 @@ export default function ServiceHistoryScreen({ navigation }) {
         platformFee,
         paymentMethod,
         transactionId,
-      });
+        htmlContent,
+      };
+
+      // 1. Web Environment: Direct browser file download & print
+      if (Platform.OS === 'web' || (typeof window !== 'undefined' && window.document)) {
+        try {
+          if (Print && typeof Print.printAsync === 'function') {
+            await Print.printAsync({ html: htmlContent });
+          }
+        } catch (printErr) {
+          console.warn('Web print error:', printErr);
+        }
+
+        try {
+          const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `Fixora_Tax_Invoice_${item.bookingRef || 'Receipt'}.html`;
+          document.body.appendChild(link);
+          link.click();
+          setTimeout(() => {
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          }, 600);
+        } catch (webErr) {
+          console.warn('Web blob download error:', webErr);
+        }
+
+        setSelectedInvoice(invoiceData);
+        return;
+      }
+
+      // 2. Mobile Native Environment: Real PDF generation & Native Sharing/Save
+      let pdfUri = null;
+      try {
+        if (Print && typeof Print.printToFileAsync === 'function') {
+          const fileResult = await Print.printToFileAsync({ html: htmlContent });
+          pdfUri = fileResult?.uri;
+        }
+      } catch (nativePrintErr) {
+        console.warn('Native Print.printToFileAsync error:', nativePrintErr);
+      }
+
+      if (pdfUri) {
+        invoiceData.pdfUri = pdfUri;
+        try {
+          if (Sharing && typeof Sharing.isAvailableAsync === 'function') {
+            const canShare = await Sharing.isAvailableAsync();
+            if (canShare) {
+              await Sharing.shareAsync(pdfUri, {
+                mimeType: 'application/pdf',
+                dialogTitle: `Save Tax Invoice #${item.bookingRef}`,
+                UTI: 'com.adobe.pdf',
+              });
+              setSelectedInvoice(invoiceData);
+              return;
+            }
+          }
+        } catch (sharingErr) {
+          console.log('Native share sheet dismissed or error:', sharingErr.message);
+        }
+
+        // Direct system print dialog which includes "Save as PDF" option
+        try {
+          if (Print && typeof Print.printAsync === 'function') {
+            await Print.printAsync({ html: htmlContent });
+            setSelectedInvoice(invoiceData);
+            return;
+          }
+        } catch (printErr) {
+          console.warn('Native Print.printAsync error:', printErr);
+        }
+
+        setSelectedInvoice(invoiceData);
+        Alert.alert(
+          'Tax Invoice Generated',
+          `Official PDF invoice #${item.bookingRef} is ready in your viewer.`
+        );
+        return;
+      }
+
+      // 3. Fallback: Direct print dialog
+      try {
+        if (Print && typeof Print.printAsync === 'function') {
+          await Print.printAsync({ html: htmlContent });
+          setSelectedInvoice(invoiceData);
+          return;
+        }
+      } catch (printAsyncErr) {
+        console.warn('Print.printAsync fallback error:', printAsyncErr);
+      }
+
+      // 4. Guaranteed In-App Official Tax Invoice View
+      setSelectedInvoice(invoiceData);
       Alert.alert(
         'Tax Invoice Ready',
         `Official tax invoice #${item.bookingRef} is ready for review.`
       );
     } catch (err) {
       console.warn('PDF generation error:', err);
-      // Fallback display
-      setSelectedInvoice({
-        item,
-        invoiceNumber: `INV-${item.bookingRef || 'FX-88431'}`,
-        invoiceDate: new Date().toLocaleDateString('en-GB'),
-        customerName: user?.name || 'Customer',
-        customerPhone: user?.phone || '+94 77 123 4567',
-        customerAddress: user?.address || 'Colombo, Sri Lanka',
-        providerName: item.provider?.name || 'Service Specialist',
-        providerSpec: item.provider?.specialization || 'Home Specialist',
-        totalAmount: item.pricing?.totalAmount || 3750,
-        baseRate: Math.round((item.pricing?.totalAmount || 3750) * 0.65),
-        laborRate: Math.round((item.pricing?.totalAmount || 3750) * 0.28),
-        platformFee: (item.pricing?.totalAmount || 3750) - Math.round((item.pricing?.totalAmount || 3750) * 0.65) - Math.round((item.pricing?.totalAmount || 3750) * 0.28),
-        paymentMethod: item.paymentMethod || 'Visa ending in 4892',
-        transactionId: item.transactionId || 'TXN-98432100',
-      });
+      if (invoiceData) {
+        setSelectedInvoice(invoiceData);
+      }
     } finally {
       setDownloadingId(null);
     }
+  };
   };
 
   const handleBookAgain = (item) => {
@@ -768,8 +751,58 @@ export default function ServiceHistoryScreen({ navigation }) {
 
             <View style={styles.invoiceModalActionRow}>
               <TouchableOpacity
+                style={styles.invoicePrintBtn}
+                onPress={async () => {
+                  try {
+                    if (Print && typeof Print.printAsync === 'function') {
+                      await Print.printAsync({ html: selectedInvoice?.htmlContent });
+                    }
+                  } catch (e) {
+                    Alert.alert('Print Error', e.message);
+                  }
+                }}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="print-outline" size={16} color={colors.forestGreen} style={{ marginRight: 5 }} />
+                <Text style={styles.invoicePrintBtnText}>Print</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.invoiceShareBtn}
+                onPress={async () => {
+                  try {
+                    if (selectedInvoice?.pdfUri && Sharing && typeof Sharing.isAvailableAsync === 'function') {
+                      await Sharing.shareAsync(selectedInvoice.pdfUri, {
+                        mimeType: 'application/pdf',
+                        dialogTitle: `Download Tax Invoice #${selectedInvoice.item?.bookingRef}`,
+                        UTI: 'com.adobe.pdf',
+                      });
+                    } else if (Print && typeof Print.printToFileAsync === 'function') {
+                      const res = await Print.printToFileAsync({ html: selectedInvoice?.htmlContent });
+                      if (res?.uri && Sharing && typeof Sharing.isAvailableAsync === 'function') {
+                        await Sharing.shareAsync(res.uri, {
+                          mimeType: 'application/pdf',
+                          dialogTitle: `Download Tax Invoice #${selectedInvoice.item?.bookingRef}`,
+                          UTI: 'com.adobe.pdf',
+                        });
+                      }
+                    } else if (Print && typeof Print.printAsync === 'function') {
+                      await Print.printAsync({ html: selectedInvoice?.htmlContent });
+                    }
+                  } catch (e) {
+                    console.log('Share error or dismissed:', e.message);
+                  }
+                }}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="download-outline" size={16} color={colors.white} style={{ marginRight: 5 }} />
+                <Text style={styles.invoiceShareBtnText}>Download PDF</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
                 style={styles.invoiceCloseModalBtn}
                 onPress={() => setSelectedInvoice(null)}
+                activeOpacity={0.8}
               >
                 <Text style={styles.invoiceCloseModalBtnText}>Close</Text>
               </TouchableOpacity>
@@ -1314,18 +1347,54 @@ const styles = StyleSheet.create({
   },
   invoiceModalActionRow: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 6,
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  invoicePrintBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#EBF4EE',
+    borderWidth: 1,
+    borderColor: colors.forestGreen,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    flex: 1,
+  },
+  invoicePrintBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.forestGreen,
+  },
+  invoiceShareBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.forestGreen,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    flex: 1.4,
+  },
+  invoiceShareBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.white,
   },
   invoiceCloseModalBtn: {
-    backgroundColor: colors.forestGreen,
-    paddingHorizontal: 24,
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 10,
   },
   invoiceCloseModalBtnText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
-    color: colors.white,
+    color: colors.textSecondary,
   },
 });
