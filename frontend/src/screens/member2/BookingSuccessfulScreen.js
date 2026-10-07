@@ -269,15 +269,6 @@ export default function BookingSuccessfulScreen({ navigation, route }) {
               >
                 <Text style={styles.manageLinkText}>Need to change time? Reschedule / Cancel</Text>
               </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.manageLinkBtn, { marginTop: 6 }]}
-                onPress={navigateToHome}
-              >
-                <Text style={[styles.manageLinkText, { color: colors.forestGreen, fontWeight: '700' }]}>
-                  Back to Home
-                </Text>
-              </TouchableOpacity>
             </>
           )}
         </View>
