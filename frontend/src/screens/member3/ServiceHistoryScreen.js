@@ -419,7 +419,7 @@ export default function ServiceHistoryScreen({ navigation }) {
         },
       });
     }
-  };
+  
 
   return (
     <SafeAreaView style={styles.container}>
