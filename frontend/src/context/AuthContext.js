@@ -30,55 +30,90 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const res = await loginUser(email, password);
+      const trimmedEmail = email ? email.trim().toLowerCase() : '';
+      const trimmedPass = password || '';
+
+      const res = await loginUser(trimmedEmail, trimmedPass);
       if (res.success && res.token) {
         setToken(res.token);
         setUser(res.user);
         await AsyncStorage.setItem('fixora_token', res.token);
         await AsyncStorage.setItem('fixora_user', JSON.stringify(res.user));
-        return { success: true };
+        return { success: true, user: res.user };
       }
 
-      // Check locally registered accounts in AsyncStorage
+      // If backend responded with a credential or validation error (e.g. 401 Invalid email or password),
+      // strictly return the failure and NEVER bypass it with demo fallback!
+      const isNetworkFail =
+        Boolean(res.isNetworkError) ||
+        (res.message &&
+          (res.message.includes('Network request failed') ||
+            res.message.includes('aborted') ||
+            res.message.includes('Failed to fetch') ||
+            res.message.includes('ConnectException')));
+
+      if (!isNetworkFail) {
+        return { success: false, message: res.message || 'Invalid email or password' };
+      }
+
+      // Offline / Network Failure Fallback ONLY when the server cannot be reached
       const regAccountsStr = await AsyncStorage.getItem('fixora_registered_accounts');
       const regAccounts = regAccountsStr ? JSON.parse(regAccountsStr) : [];
       const matchedAccount = regAccounts.find(
-        (a) => a.email.toLowerCase() === email.toLowerCase().trim()
+        (a) => a.email && a.email.toLowerCase() === trimmedEmail
       );
 
-      // If backend network error or offline fallback, construct authenticated user
-      if (
-        matchedAccount ||
-        !res.success &&
-        (res.message?.includes('failed') ||
-          res.message?.includes('Network') ||
-          res.message?.includes('aborted') ||
-          res.message?.includes('ConnectException'))
-      ) {
-        const isAdmin = email.toLowerCase().includes('admin');
-        const isSunil = email.toLowerCase().includes('sunil');
-        const isRamesh = email.toLowerCase().includes('ramesh');
-        const isProvider =
-          matchedAccount?.role === 'provider' ||
-          email.toLowerCase().includes('provider') ||
-          isSunil ||
-          isRamesh;
+      // If registered account exists locally, verify password before allowing offline access
+      if (matchedAccount) {
+        if (matchedAccount.password && matchedAccount.password !== trimmedPass) {
+          return { success: false, message: 'Invalid email or password' };
+        }
 
-        let resolvedName = '';
+        const demoUser = {
+          id: matchedAccount._id || 'user_' + Date.now(),
+          name: matchedAccount.name,
+          email: matchedAccount.email.toLowerCase(),
+          role: matchedAccount.role || 'customer',
+          category: matchedAccount.category || 'Specialist',
+          address: matchedAccount.city
+            ? `${matchedAccount.city}, Sri Lanka`
+            : matchedAccount.businessAddress || 'Colombo, Sri Lanka',
+          avatar: matchedAccount.avatar || null,
+          phone: matchedAccount.phone || '+94 77 123 4567',
+        };
+
+        const demoToken = 'fixora_jwt_' + Date.now();
+        setToken(demoToken);
+        setUser(demoUser);
+        await AsyncStorage.setItem('fixora_token', demoToken);
+        await AsyncStorage.setItem('fixora_user', JSON.stringify(demoUser));
+        return { success: true, isDemo: true, user: demoUser };
+      }
+
+      // Offline fallback for predefined seed accounts strictly requiring default password
+      const isDemoEmail =
+        trimmedEmail.includes('admin') ||
+        trimmedEmail.includes('sunil') ||
+        trimmedEmail.includes('ramesh') ||
+        trimmedEmail === 'kasun@gmail.com';
+
+      if (isDemoEmail) {
+        if (trimmedPass !== 'password123') {
+          return { success: false, message: 'Invalid email or password' };
+        }
+
+        const isAdmin = trimmedEmail.includes('admin');
+        const isSunil = trimmedEmail.includes('sunil');
+        const isRamesh = trimmedEmail.includes('ramesh');
+        const isProvider = isSunil || isRamesh;
+
+        let resolvedName = 'Kasun Perera';
         let resolvedRole = 'customer';
         let resolvedCategory = 'Customer';
         let resolvedAddress = 'Colombo, Sri Lanka';
         let resolvedAvatar = null;
 
-        if (matchedAccount) {
-          resolvedName = matchedAccount.name;
-          resolvedRole = matchedAccount.role || 'customer';
-          resolvedCategory = matchedAccount.category || 'Specialist';
-          resolvedAddress = matchedAccount.city
-            ? `${matchedAccount.city}, Sri Lanka`
-            : matchedAccount.businessAddress || 'Colombo, Sri Lanka';
-          resolvedAvatar = matchedAccount.avatar || null;
-        } else if (isAdmin) {
+        if (isAdmin) {
           resolvedName = 'M. Shibly (Admin Coordinator)';
           resolvedRole = 'admin';
           resolvedAddress = 'Headquarters, Colombo 03';
@@ -96,27 +131,21 @@ export const AuthProvider = ({ children }) => {
           resolvedAddress = 'Colombo 05, Sri Lanka';
           resolvedAvatar = 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200';
         } else if (isProvider) {
-          const emailPrefix = email.split('@')[0];
+          const emailPrefix = trimmedEmail.split('@')[0];
           resolvedName = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1);
           resolvedRole = 'provider';
           resolvedCategory = 'Service Specialist';
-          resolvedAddress = 'Colombo, Sri Lanka';
-          resolvedAvatar = null;
-        } else {
-          const emailPrefix = email.split('@')[0];
-          resolvedName = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1);
-          resolvedAvatar = null;
         }
 
         const demoUser = {
-          id: matchedAccount?._id || 'user_' + Date.now(),
+          id: 'user_' + Date.now(),
           name: resolvedName,
-          email: email.trim().toLowerCase(),
+          email: trimmedEmail,
           role: resolvedRole,
           category: resolvedCategory,
           address: resolvedAddress,
           avatar: resolvedAvatar,
-          phone: matchedAccount?.phone || '+94 77 123 4567',
+          phone: '+94 77 123 4567',
         };
 
         const demoToken = 'fixora_jwt_' + Date.now();
@@ -124,10 +153,13 @@ export const AuthProvider = ({ children }) => {
         setUser(demoUser);
         await AsyncStorage.setItem('fixora_token', demoToken);
         await AsyncStorage.setItem('fixora_user', JSON.stringify(demoUser));
-        return { success: true, isDemo: true };
+        return { success: true, isDemo: true, user: demoUser };
       }
 
-      return { success: false, message: res.message || 'Login failed' };
+      return {
+        success: false,
+        message: 'Could not connect to Fixora service. Please check your internet connection.',
+      };
     } catch (error) {
       return { success: false, message: error.message };
     }

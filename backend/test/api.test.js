@@ -83,6 +83,12 @@ const runTests = async () => {
     });
     assert(loginRes.status === 200 && loginRes.data.success, 'FR-02: Member 1 - User Login with credentials');
 
+    const wrongLoginRes = await request('/api/auth/login', 'POST', {
+      email: 'kasun@gmail.com',
+      password: 'wrong_password_123',
+    });
+    assert(wrongLoginRes.status === 401 && !wrongLoginRes.data.success, 'FR-02b: Member 1 - Reject login with incorrect password');
+
     const googleAuthRes = await request('/api/auth/google', 'POST', {
       email: `google_${Date.now()}@fixora.lk`,
       name: 'Google Verified User',

@@ -73,7 +73,21 @@ const run = async () => {
       email: 'kasun@gmail.com',
       password: 'password123',
     });
-    assert(loginRes.status === 200 && loginRes.data.success, 'FR-02: User Login with credentials & session authorization');
+    assert(loginRes.status === 200 && loginRes.data.success, 'FR-02: User Login with valid credentials & session authorization');
+
+    // 3b. User Login with incorrect password (Strict validation)
+    const wrongPassRes = await request('/api/auth/login', 'POST', {
+      email: 'kasun@gmail.com',
+      password: 'wrong_password_999',
+    });
+    assert(wrongPassRes.status === 401 && !wrongPassRes.data.success, 'FR-02b: Reject login with incorrect password (HTTP 401)');
+
+    // 3c. User Login with non-existent email
+    const unknownUserRes = await request('/api/auth/login', 'POST', {
+      email: 'nonexistent_user_999@example.com',
+      password: 'password123',
+    });
+    assert(unknownUserRes.status === 401 && !unknownUserRes.data.success, 'FR-02c: Reject login with non-existent email (HTTP 401)');
 
     // 4. Google OAuth
     const googleRes = await request('/api/auth/google', 'POST', {

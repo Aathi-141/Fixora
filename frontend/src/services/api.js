@@ -70,7 +70,7 @@ const apiRequest = async (endpoint, method = 'GET', body = null) => {
   } catch (error) {
     clearTimeout(timeoutId);
     console.warn(`API call error on ${endpoint}:`, error.message);
-    return { success: false, message: error.message };
+    return { success: false, message: error.message, isNetworkError: true };
   }
 };
 
