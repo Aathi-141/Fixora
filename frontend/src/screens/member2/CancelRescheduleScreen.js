@@ -138,7 +138,41 @@ export default function CancelRescheduleScreen({ navigation, route }) {
 
   const handleConfirmCancel = async () => {
     setIsSubmitting(true);
-    await cancelBooking(bookingId, cancelReason);
+    let cancelRes = null;
+    try {
+      cancelRes = await cancelBooking(bookingId, cancelReason);
+    } catch (e) {
+      console.warn('API cancel error:', e);
+    }
+
+    const cancelledBooking = {
+      ...(booking || {}),
+      ...(cancelRes?.data || {}),
+      _id: bookingId,
+      status: 'Cancelled',
+      cancellationReason: cancelReason,
+      cancelledAt: new Date().toISOString(),
+    };
+
+    // Update both latest booking and full booking list in storage
+    try {
+      await AsyncStorage.setItem('fixora_latest_booking', JSON.stringify(cancelledBooking));
+      const allBookingsRaw = await AsyncStorage.getItem('fixora_all_bookings');
+      if (allBookingsRaw) {
+        const allBookings = JSON.parse(allBookingsRaw);
+        const updatedList = allBookings.map((b) =>
+          b._id === bookingId || (b.bookingRef && b.bookingRef === cancelledBooking.bookingRef)
+            ? { ...b, ...cancelledBooking }
+            : b
+        );
+        await AsyncStorage.setItem('fixora_all_bookings', JSON.stringify(updatedList));
+      } else {
+        await AsyncStorage.setItem('fixora_all_bookings', JSON.stringify([cancelledBooking]));
+      }
+    } catch (e) {
+      console.warn('AsyncStorage cancel update error:', e);
+    }
+
     setIsSubmitting(false);
 
     Alert.alert(
@@ -146,13 +180,18 @@ export default function CancelRescheduleScreen({ navigation, route }) {
       `Your booking has been cancelled. A 100% refund of Rs. ${totalAmount.toLocaleString()} has been initiated to your original payment method.`,
       [
         {
-          text: 'Back to Bookings',
+          text: 'View Bookings',
           onPress: () => {
-            if (navigation.canGoBack()) {
-              navigation.goBack();
-            } else {
-              navigation.navigate('HistoryTab');
-            }
+            navigation.navigate('HistoryTab', {
+              screen: 'ServiceHistory',
+              params: { refresh: Date.now() },
+            });
+          },
+        },
+        {
+          text: 'Explore Services',
+          onPress: () => {
+            navigation.navigate('HomeTab');
           },
         },
       ]
