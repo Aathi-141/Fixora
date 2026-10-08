@@ -21,6 +21,47 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(morgan('dev'));
 
+const PORT = process.env.PORT || 5000;
+const MONGODB_URI =
+  process.env.MONGODB_URI ||
+  'mongodb+srv://fixora_admin:fixora2026@cluster0.7ugiyyl.mongodb.net/fixora?retryWrites=true&w=majority';
+
+let cachedConnection = null;
+
+async function connectToDatabase() {
+  if (mongoose.connection.readyState === 1) {
+    return mongoose.connection;
+  }
+  if (!cachedConnection) {
+    cachedConnection = mongoose.connect(MONGODB_URI, {
+      serverSelectionTimeoutMS: 8000,
+      connectTimeoutMS: 10000,
+    });
+  }
+  try {
+    await cachedConnection;
+    return mongoose.connection;
+  } catch (error) {
+    cachedConnection = null;
+    throw error;
+  }
+}
+
+// Ensure DB is connected before processing any API route
+app.use(async (req, res, next) => {
+  if (req.path === '/') return next();
+  try {
+    await connectToDatabase();
+    next();
+  } catch (err) {
+    console.error('Database connection error in middleware:', err);
+    return res.status(500).json({
+      success: false,
+      message: 'Database connection failed: ' + err.message,
+    });
+  }
+});
+
 // Route Mounts
 app.use('/api/auth', authRoutes);
 app.use('/api/providers', providerRoutes);
@@ -37,6 +78,7 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     currency: 'LKR',
     status: 'Running',
+    dbState: mongoose.connection.readyState === 1 ? 'Connected' : 'Connecting/Disconnected',
     endpoints: [
       '/api/auth',
       '/api/providers',
@@ -56,24 +98,22 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = process.env.PORT || 5000;
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/fixora_db';
-
-mongoose
-  .connect(MONGODB_URI)
-  .then(() => {
-    console.log(` MongoDB Connected Successfully: ${MONGODB_URI}`);
-    app.listen(PORT, () => {
-      console.log(` Fixora Backend Server running on port ${PORT}`);
-      console.log(` Health check available at: http://localhost:${PORT}/`);
+// Start local server if not in Vercel serverless environment
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  connectToDatabase()
+    .then(() => {
+      console.log(` MongoDB Connected Successfully: ${MONGODB_URI}`);
+      app.listen(PORT, () => {
+        console.log(` Fixora Backend Server running on port ${PORT}`);
+        console.log(` Health check available at: http://localhost:${PORT}/`);
+      });
+    })
+    .catch((err) => {
+      console.error(' MongoDB Connection Error:', err.message);
+      app.listen(PORT, () => {
+        console.log(` Fixora Backend Server running on port ${PORT} (without MongoDB)`);
+      });
     });
-  })
-  .catch((err) => {
-    console.error(' MongoDB Connection Error:', err.message);
-    // Still run server so fallback or in-memory routes can be checked
-    app.listen(PORT, () => {
-      console.log(` Fixora Backend Server running on port ${PORT} (without MongoDB)`);
-    });
-  });
+}
 
 module.exports = app;
