@@ -101,10 +101,10 @@ export default function RequestStatusTrackingScreen({ navigation, route }) {
       'Choose communication method:',
       [
         {
-          text: 'Direct Phone (+94 77 990 1122)',
+          text: 'Direct Phone (+94 77 990 1123)',
           onPress: () => {
-            Linking.openURL('tel:+94779901122').catch(() => {
-              Alert.alert('Calling', `Dialing ${providerName} at +94 77 990 1122`);
+            Linking.openURL('tel:+94779901123').catch(() => {
+              Alert.alert('Calling', `Dialing ${providerName} at +94 77 990 1123`);
             });
           },
         },
