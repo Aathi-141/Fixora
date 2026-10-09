@@ -57,6 +57,60 @@ export default function BookingSuccessfulScreen({ navigation, route }) {
 
   const isCancelled = booking?.status?.toLowerCase() === 'cancelled';
 
+  const navigateToHome = () => {
+    try {
+      const state = navigation.getState?.();
+      const routeNames = state?.routeNames || [];
+      if (routeNames.includes('Home')) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Home' }],
+        });
+        return;
+      }
+    } catch (e) {
+      console.warn('Reset error on navigateToHome:', e);
+    }
+
+    try {
+      if (navigation.canGoBack()) {
+        navigation.popToTop();
+      }
+    } catch (_) {}
+
+    navigation.navigate('HomeTab', {
+      screen: 'Home',
+    });
+  };
+
+  const navigateToBookings = () => {
+    const parent = navigation.getParent?.();
+    try {
+      const state = navigation.getState?.();
+      const routeNames = state?.routeNames || [];
+      if (routeNames.includes('Home')) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Home' }],
+        });
+      }
+    } catch (e) {
+      console.warn('Reset error before history:', e);
+    }
+
+    if (parent) {
+      parent.navigate('HistoryTab', {
+        screen: 'ServiceHistory',
+        params: { refresh: Date.now() },
+      });
+    } else {
+      navigation.navigate('HistoryTab', {
+        screen: 'ServiceHistory',
+        params: { refresh: Date.now() },
+      });
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
@@ -64,13 +118,7 @@ export default function BookingSuccessfulScreen({ navigation, route }) {
       <View style={styles.topHeader}>
         <TouchableOpacity
           style={styles.backBtn}
-          onPress={() =>
-            isCancelled
-              ? navigation.navigate('HistoryTab')
-              : navigation.canGoBack()
-              ? navigation.goBack()
-              : navigation.navigate('BookingDetails')
-          }
+          onPress={navigateToHome}
         >
           <Ionicons name="arrow-back" size={24} color={colors.white} />
         </TouchableOpacity>
@@ -190,7 +238,7 @@ export default function BookingSuccessfulScreen({ navigation, route }) {
             <>
               <TouchableOpacity
                 style={styles.trackStatusBtn}
-                onPress={() => navigation.navigate('HomeTab')}
+                onPress={navigateToHome}
                 activeOpacity={0.85}
               >
                 <Ionicons name="compass-outline" size={20} color={colors.white} style={{ marginRight: 8 }} />
@@ -199,7 +247,7 @@ export default function BookingSuccessfulScreen({ navigation, route }) {
 
               <TouchableOpacity
                 style={styles.manageLinkBtn}
-                onPress={() => navigation.navigate('HistoryTab')}
+                onPress={navigateToBookings}
               >
                 <Text style={styles.manageLinkText}>View In Service Request History</Text>
               </TouchableOpacity>
