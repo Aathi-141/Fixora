@@ -314,7 +314,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: '700',
     color: colors.textPrimary,
   },
