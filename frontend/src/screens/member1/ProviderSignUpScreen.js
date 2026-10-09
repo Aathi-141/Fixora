@@ -324,7 +324,7 @@ export default function ProviderSignUpScreen({ navigation }) {
               {isSubmitting ? (
                 <ActivityIndicator color={colors.white} />
               ) : (
-                <Text style={styles.createBtnText}>Create Provider Account +</Text>
+                <Text style={styles.createBtnText}>Create Provider Account</Text>
               )}
             </TouchableOpacity>
 
