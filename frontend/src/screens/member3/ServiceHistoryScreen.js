@@ -194,7 +194,7 @@ export default function ServiceHistoryScreen({ navigation }) {
     .company-meta { font-size: 11px; color: #6B7280; margin-top: 6px; line-height: 1.4; }
     .inv-header { text-align: right; }
     .inv-title { font-size: 20px; font-weight: 800; color: #111827; }
-    .inv-meta { font-size: 12px; color: #4B5563; margin-top: 4px; }
+    .inv-meta { font-size: 12px; color: #374151; margin-top: 4px; }
     .status-badge { display: inline-block; background: #DCFCE7; color: #15803D; font-weight: 800; font-size: 11px; padding: 4px 10px; border-radius: 10px; margin-top: 8px; border: 1px solid #86EFAC; }
     .grid { display: flex; justify-content: space-between; margin-top: 28px; margin-bottom: 28px; }
     .col { width: 48%; }
