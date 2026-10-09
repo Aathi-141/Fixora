@@ -1,3 +1,8 @@
+// ===== FIX: Node.js DNS server eka Google DNS walata maru kireema (mulama thiyenna ona) =====
+const dns = require('dns');
+dns.setServers(['8.8.8.8', '8.8.4.4']);
+// ===========================================================================================
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -60,9 +65,11 @@ const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/fixora_db';
 
 mongoose
-  .connect(MONGODB_URI)
+  .connect(MONGODB_URI, {
+    serverSelectionTimeoutMS: 10000,
+  })
   .then(() => {
-    console.log(` MongoDB Connected Successfully: ${MONGODB_URI}`);
+    console.log(` MongoDB Connected Successfully (host: ${mongoose.connection.host})`);
     app.listen(PORT, () => {
       console.log(` Fixora Backend Server running on port ${PORT}`);
       console.log(` Health check available at: http://localhost:${PORT}/`);
@@ -70,7 +77,6 @@ mongoose
   })
   .catch((err) => {
     console.error(' MongoDB Connection Error:', err.message);
-    // Still run server so fallback or in-memory routes can be checked
     app.listen(PORT, () => {
       console.log(` Fixora Backend Server running on port ${PORT} (without MongoDB)`);
     });
