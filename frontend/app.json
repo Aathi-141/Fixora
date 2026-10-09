@@ -4,7 +4,7 @@
     "slug": "fixora",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/logo.png",
+    "icon": "./assets/logo-square.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
@@ -14,14 +14,28 @@
       "package": "com.fixora.app",
       "adaptiveIcon": {
         "backgroundColor": "#1E4D2B",
-        "foregroundImage": "./assets/logo.png"
+        "foregroundImage": "./assets/logo-square.png"
       }
     },
     "web": {
-      "favicon": "./assets/logo.png"
+      "favicon": "./assets/logo-square.png"
     },
     "plugins": [
-      "expo-sharing"
-    ]
+      "expo-sharing",
+      "expo-font",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "de64b9b1-3a5a-4b0f-8a6c-f0cf57f1901e"
+      }
+    }
   }
 }

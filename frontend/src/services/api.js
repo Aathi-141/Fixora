@@ -2,7 +2,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 
-// Automatically detect host computer IP when using Expo Go on physical device or emulator
+export const CLOUD_API_URL = 'https://fixora-mu-tan.vercel.app';
+
+// Automatically detect host computer IP when using Expo Go on physical device or emulator,
+// or use the live 24/7 cloud API in standalone APK for lecturers & external devices
 export const getApiBaseUrl = () => {
   try {
     const hostUri =
@@ -31,8 +34,8 @@ export const getApiBaseUrl = () => {
     return 'http://localhost:5000';
   }
 
-  // Active Wi-Fi IP address
-  return 'http://192.168.8.176:5000';
+  // Live 24/7 Cloud API URL (works anywhere on mobile data, university Wi-Fi, etc.)
+  return CLOUD_API_URL;
 };
 
 export let API_BASE_URL = getApiBaseUrl();
