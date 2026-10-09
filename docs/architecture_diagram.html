@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Fixora Architecture Diagram</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: #FFFFFF;
+    color: #1E293B;
+    padding: 40px 48px;
+    width: 1720px;
+    margin: 0 auto;
+  }
+
+  /* Title Header */
+  .header-container {
+    margin-bottom: 24px;
+    border-bottom: 2px solid #E2E8F0;
+    padding-bottom: 16px;
+  }
+
+  .main-title {
+    font-size: 32px;
+    font-weight: 800;
+    color: #0F291E;
+    letter-spacing: -0.5px;
+    margin-bottom: 6px;
+  }
+
+  .subtitle {
+    font-size: 15px;
+    font-weight: 600;
+    color: #2E7D32;
+    letter-spacing: 0.2px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .subtitle-tag {
+    background: #E8F5E9;
+    color: #1E4D2B;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 6px;
+    border: 1px solid #C8E6C9;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Master Layout */
+  .architecture-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 22px;
+  }
+
+  .main-column {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .sidebar-column {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* Layers */
+  .layer-container {
+    background: #FAFCFA;
+    border: 2px solid #D1E7D5;
+    border-radius: 14px;
+    padding: 18px 20px 22px;
+    position: relative;
+    box-shadow: 0 2px 6px rgba(30, 77, 43, 0.04);
+  }
+
+  .layer-label {
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: #1E4D2B;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .layer-label::before {
+    content: "";
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    background: #2E7D32;
+    border-radius: 3px;
+  }
+
+  /* Main App Container Box */
+  .app-banner-box {
+    background: linear-gradient(135deg, #1E4D2B 0%, #2E7D32 100%);
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 14px 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+    box-shadow: 0 4px 12px rgba(30, 77, 43, 0.15);
+  }
+
+  .app-banner-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .app-banner-icon {
+    width: 38px;
+    height: 38px;
+    background: rgba(255, 255, 255, 0.18);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .app-banner-title {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+  }
+
+  .app-banner-subtitle {
+    font-size: 12.5px;
+    color: #D1E7D5;
+    font-weight: 500;
+    margin-top: 2px;
+  }
+
+  .app-banner-badges {
+    display: flex;
+    gap: 8px;
+  }
+
+  .tech-pill {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #FFFFFF;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+
+  /* Three Column Role Split */
+  .roles-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+
+  .role-column {
+    background: #FFFFFF;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 10px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .role-header {
+    background: #F1F8F3;
+    border: 1px solid #C8E6C9;
+    border-radius: 8px;
+    padding: 9px 12px;
+    text-align: center;
+    margin-bottom: 2px;
+  }
+
+  .role-title {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #1E4D2B;
+  }
+
+  .role-subtitle {
+    font-size: 11px;
+    color: #4A6B53;
+    font-weight: 500;
+  }
+
+  .role-features {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+
+  .feature-chip {
+    background: #FFFFFF;
+    border: 1px solid #CBD5E1;
+    border-left: 3.5px solid #2E7D32;
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .feature-sub {
+    font-size: 9.5px;
+    color: #64748B;
+    font-weight: 500;
+  }
+
+  /* Protocol Connection Band */
+  .connector-band {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+    padding: 6px 0;
+  }
+
+  .connector-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #F0FDF4;
+    border: 1.5px dashed #86EFAC;
+    border-radius: 8px;
+    padding: 7px 18px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #166534;
+  }
+
+  .arrow-down {
+    color: #166534;
+    font-weight: bold;
+    font-size: 14px;
+  }
+
+  .arrow-up {
+    color: #166534;
+    font-weight: bold;
+    font-size: 14px;
+  }
+
+  /* Application Layer */
+  .app-layer-grid {
+    display: grid;
+    grid-template-columns: 260px 1fr 280px;
+    gap: 14px;
+  }
+
+  .app-subbox {
+    background: #FFFFFF;
+    border: 1.5px solid #E2E8F0;
+    border-radius: 10px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+  }
+
+  .subbox-title {
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #1E4D2B;
+    border-bottom: 1.5px solid #F1F5F9;
+    padding-bottom: 6px;
+    margin-bottom: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .subbox-badge {
+    font-size: 9.5px;
+    background: #E8F5E9;
+    color: #1E4D2B;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+  }
+
+  .pipeline-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .pipeline-step {
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 7px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .pipeline-step-name {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #1E293B;
+  }
+
+  .pipeline-step-desc {
+    font-size: 10px;
+    color: #64748B;
+  }
+
+  .controllers-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .controller-pill {
+    background: #F0FDF4;
+    border: 1px solid #BBF7D0;
+    border-radius: 6px;
+    padding: 6px 9px;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    color: #166534;
+  }
+
+  .controller-desc {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 9px;
+    color: #4B5563;
+    font-weight: 500;
+    display: block;
+    margin-top: 2px;
+  }
+
+  /* Data Layer */
+  .data-layer-grid {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 16px;
+  }
+
+  .database-card {
+    background: #FFFFFF;
+    border: 1.5px solid #CBD5E1;
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+
+  .database-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #E2E8F0;
+  }
+
+  .database-title {
+    font-size: 14px;
+    font-weight: 800;
+    color: #0F172A;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .database-badge {
+    font-size: 10px;
+    font-weight: 700;
+    background: #DCFCE7;
+    color: #15803D;
+    padding: 3px 8px;
+    border-radius: 4px;
+  }
+
+  .collections-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .collection-box {
+    background: #F8FAF9;
+    border: 1px solid #D1E7D5;
+    border-radius: 6px;
+    padding: 7px 10px;
+  }
+
+  .collection-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: #1E4D2B;
+    margin-bottom: 3px;
+  }
+
+  .collection-fields {
+    font-size: 9px;
+    color: #64748B;
+    line-height: 1.3;
+  }
+
+  /* Cloud DevOps Card */
+  .cloud-services-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .cloud-service-row {
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 8px;
+    padding: 9px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .cloud-service-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .cloud-service-name {
+    font-size: 12px;
+    font-weight: 700;
+    color: #0F172A;
+  }
+
+  .cloud-service-url {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: #2E7D32;
+    font-weight: 500;
+  }
+
+  .cloud-service-desc {
+    font-size: 9.5px;
+    color: #64748B;
+  }
+
+  /* Sidebar Supporting Services */
+  .sidebar-container {
+    background: #F8FAF9;
+    border: 2px solid #D1E7D5;
+    border-radius: 14px;
+    padding: 18px 18px 22px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    box-shadow: 0 2px 6px rgba(30, 77, 43, 0.04);
+  }
+
+  .service-card {
+    background: #FFFFFF;
+    border: 1.5px solid #CBD5E1;
+    border-radius: 10px;
+    padding: 13px 14px;
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .service-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .service-icon {
+    width: 28px;
+    height: 28px;
+    background: #E8F5E9;
+    color: #1E4D2B;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: bold;
+  }
+
+  .service-title {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #0F172A;
+  }
+
+  .service-package {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: #2E7D32;
+    background: #F0FDF4;
+    padding: 2px 6px;
+    border-radius: 4px;
+    display: inline-block;
+    align-self: flex-start;
+  }
+
+  .service-desc {
+    font-size: 10px;
+    color: #64748B;
+    line-height: 1.4;
+  }
+
+  /* Admin Console Panel in Sidebar */
+  .admin-panel-callout {
+    margin-top: auto;
+    background: linear-gradient(135deg, #0F291E 0%, #1E4D2B 100%);
+    color: #FFFFFF;
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+
+  .admin-panel-title {
+    font-size: 13px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .admin-panel-desc {
+    font-size: 10.5px;
+    color: #D1E7D5;
+    line-height: 1.4;
+    margin-bottom: 8px;
+  }
+
+  .admin-panel-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+
+  .admin-tag {
+    background: rgba(255, 255, 255, 0.15);
+    font-size: 9.5px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    color: #E8F5E9;
+  }
+
+  /* SVG Flow Connectors */
+  .flow-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #4A6B53;
+    padding: 4px 0;
+  }
+
+  .connector-line {
+    height: 1px;
+    background: #CBD5E1;
+    flex: 1;
+  }
+</style>
+</head>
+<body>
+
+  <!-- Section Title -->
+  <div class="header-container">
+    <h1 class="main-title">5.3. Architecture Diagram</h1>
+    <div class="subtitle">
+      <span>Fixora – On-Demand Home-Service Booking Mobile Application</span>
+      <span class="subtitle-tag">Milestone 03 Technical Architecture</span>
+      <span class="subtitle-tag" style="background: #DCFCE7; color: #166534; border-color: #86EFAC;">Production Ready (Vercel & MongoDB Atlas)</span>
+    </div>
+  </div>
+
+  <!-- Master Layout Grid -->
+  <div class="architecture-grid">
+
+    <!-- Left Main Column -->
+    <div class="main-column">
+
+      <!-- ================= 1. PRESENTATION LAYER ================= -->
+      <div class="layer-container">
+        <div class="layer-label">Presentation Layer</div>
+
+        <!-- Master Mobile Banner -->
+        <div class="app-banner-box">
+          <div class="app-banner-left">
+            <div class="app-banner-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                <line x1="12" y1="18" x2="12.01" y2="18"></line>
+              </svg>
+            </div>
+            <div>
+              <div class="app-banner-title">Fixora Mobile Client Application</div>
+              <div class="app-banner-subtitle">React Native (0.86.3) • Expo SDK 57 • React Navigation 7 • React Context API • LKR Currency Engine</div>
+            </div>
+          </div>
+          <div class="app-banner-badges">
+            <span class="tech-pill">Android Standalone APK</span>
+            <span class="tech-pill">Expo Web</span>
+            <span class="tech-pill">WCAG 2.1 AA Compliant</span>
+          </div>
+        </div>
+
+        <!-- Three Role Interfaces -->
+        <div class="roles-grid">
+
+          <!-- Role 1: Customer Interface -->
+          <div class="role-column">
+            <div class="role-header">
+              <div class="role-title">Customer Interface</div>
+              <div class="role-subtitle">Homeowner Experience</div>
+            </div>
+            <div class="role-features">
+              <div class="feature-chip">
+                <span>Splash & Role Onboarding</span>
+                <span class="feature-sub">Auth Flow</span>
+              </div>
+              <div class="feature-chip">
+                <span>Service Categories & Search</span>
+                <span class="feature-sub">6 Trades</span>
+              </div>
+              <div class="feature-chip">
+                <span>Dynamic Filters & Price Slider</span>
+                <span class="feature-sub">LKR Range</span>
+              </div>
+              <div class="feature-chip">
+                <span>Specialist Profiles & Reviews</span>
+                <span class="feature-sub">Verified Badges</span>
+              </div>
+              <div class="feature-chip">
+                <span>Date & Time Slot Selection</span>
+                <span class="feature-sub">Morning/Afternoon</span>
+              </div>
+              <div class="feature-chip">
+                <span>Booking Details & Add-ons</span>
+                <span class="feature-sub">Live Price Calc</span>
+              </div>
+              <div class="feature-chip">
+                <span>Booking Confirmation</span>
+                <span class="feature-sub">#FX-XXXXX Ref</span>
+              </div>
+              <div class="feature-chip">
+                <span>Cancel & Reschedule Flow</span>
+                <span class="feature-sub">100% Refund</span>
+              </div>
+              <div class="feature-chip">
+                <span>Customer Profile & History</span>
+                <span class="feature-sub">Saved Locations</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Role 2: Service Provider Interface -->
+          <div class="role-column">
+            <div class="role-header">
+              <div class="role-title">Service Provider Interface</div>
+              <div class="role-subtitle">Tradesperson Operations</div>
+            </div>
+            <div class="role-features">
+              <div class="feature-chip">
+                <span>Trade Sign-up & Onboarding</span>
+                <span class="feature-sub">License Upload</span>
+              </div>
+              <div class="feature-chip">
+                <span>Live Dispatch Requests Queue</span>
+                <span class="feature-sub">Instant Alert</span>
+              </div>
+              <div class="feature-chip">
+                <span>1-Tap Accept / Decline</span>
+                <span class="feature-sub">Dispatch Decision</span>
+              </div>
+              <div class="feature-chip">
+                <span>Online / Offline Status Toggle</span>
+                <span class="feature-sub">Real-time Switch</span>
+              </div>
+              <div class="feature-chip">
+                <span>Working Days & Hours Setup</span>
+                <span class="feature-sub">Schedule Grid</span>
+              </div>
+              <div class="feature-chip">
+                <span>Provider Profile & Analytics</span>
+                <span class="feature-sub">Rating & Jobs Done</span>
+              </div>
+              <div class="feature-chip">
+                <span>Hourly Rate Configuration</span>
+                <span class="feature-sub">LKR / Hour</span>
+              </div>
+              <div class="feature-chip">
+                <span>Final Bill Settlement</span>
+                <span class="feature-sub">Labor + Parts</span>
+              </div>
+              <div class="feature-chip">
+                <span>Completed Jobs Archive</span>
+                <span class="feature-sub">Earnings Summary</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Role 3: Live Coordination & Admin Interface -->
+          <div class="role-column">
+            <div class="role-header">
+              <div class="role-title">Live Tracking & Admin Console</div>
+              <div class="role-subtitle">Real-time Lifecycle & Oversight</div>
+            </div>
+            <div class="role-features">
+              <div class="feature-chip">
+                <span>5-Step Service Progress Timeline</span>
+                <span class="feature-sub">Live Step State</span>
+              </div>
+              <div class="feature-chip">
+                <span>Dynamic ETA Calculation</span>
+                <span class="feature-sub">Arrival Timer</span>
+              </div>
+              <div class="feature-chip">
+                <span>In-App Chat & Quick Replies</span>
+                <span class="feature-sub">1-Tap Chips</span>
+              </div>
+              <div class="feature-chip">
+                <span>VoIP Internet Call Simulation</span>
+                <span class="feature-sub">In-Call Controls</span>
+              </div>
+              <div class="feature-chip">
+                <span>5-Star Ratings & Praise Chips</span>
+                <span class="feature-sub">Post-Service</span>
+              </div>
+              <div class="feature-chip">
+                <span>Voluntary Tipping in LKR</span>
+                <span class="feature-sub">Fair Labor Tip</span>
+              </div>
+              <div class="feature-chip">
+                <span>Executive KPI Dashboards</span>
+                <span class="feature-sub">Users, Jobs, Revenue</span>
+              </div>
+              <div class="feature-chip">
+                <span>Provider Fleet Licensing Audit</span>
+                <span class="feature-sub">Verify / Reject</span>
+              </div>
+              <div class="feature-chip">
+                <span>Dispute Resolution & Credits</span>
+                <span class="feature-sub">Wallet Adjustments</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Protocol Connector Band -->
+      <div class="connector-band">
+        <div class="connector-item">
+          <span class="arrow-down">▼</span>
+          <span>HTTPS REST API Client (`api.js` with Bearer JWT Authorization)</span>
+        </div>
+        <div class="connector-item">
+          <span class="arrow-up">▲</span>
+          <span>JSON Structured Payloads (Mongoose Models & Audit Metadata)</span>
+        </div>
+      </div>
+
+      <!-- ================= 2. APPLICATION LAYER ================= -->
+      <div class="layer-container">
+        <div class="layer-label">Application Layer (Cloud Backend API)</div>
+
+        <!-- Master Backend Banner -->
+        <div class="app-banner-box" style="background: linear-gradient(135deg, #15803D 0%, #166534 100%);">
+          <div class="app-banner-left">
+            <div class="app-banner-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                <line x1="6" y1="18" x2="6.01" y2="18"></line>
+              </svg>
+            </div>
+            <div>
+              <div class="app-banner-title">Node.js REST API with Express.js (Vercel Serverless)</div>
+              <div class="app-banner-subtitle">Stateless Serverless Architecture • Global HTTPS SSL • CORS Security • Morgan Request Logger</div>
+            </div>
+          </div>
+          <div class="app-banner-badges">
+            <span class="tech-pill">Live on Vercel Cloud</span>
+            <span class="tech-pill">19/19 Automated Tests Passing</span>
+          </div>
+        </div>
+
+        <div class="app-layer-grid">
+
+          <!-- Security & Auth -->
+          <div class="app-subbox">
+            <div class="subbox-title">
+              <span>Security & Auth</span>
+              <span class="subbox-badge">Guards</span>
+            </div>
+            <div class="pipeline-step">
+              <div>
+                <div class="pipeline-step-name">JWT Token Middleware</div>
+                <div class="pipeline-step-desc">`authMiddleware.js` verification</div>
+              </div>
+            </div>
+            <div class="pipeline-step">
+              <div>
+                <div class="pipeline-step-name">Role-Based Access (RBAC)</div>
+                <div class="pipeline-step-desc">Customer • Provider • Admin</div>
+              </div>
+            </div>
+            <div class="pipeline-step">
+              <div>
+                <div class="pipeline-step-name">Bcrypt Password Hashing</div>
+                <div class="pipeline-step-desc">10 Salt Rounds Encryption</div>
+              </div>
+            </div>
+            <div class="pipeline-step">
+              <div>
+                <div class="pipeline-step-name">CORS & JSON Headers</div>
+                <div class="pipeline-step-desc">Domain origin filtering</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Request Pipeline & Controllers -->
+          <div class="app-subbox">
+            <div class="subbox-title">
+              <span>Route Dispatcher & Business Controllers</span>
+              <span class="subbox-badge">5 Domains</span>
+            </div>
+            <div class="controllers-list">
+              <div class="controller-pill">
+                /api/auth
+                <span class="controller-desc">authController.js (Register, Login, Me, Google OAuth)</span>
+              </div>
+              <div class="controller-pill">
+                /api/providers
+                <span class="controller-desc">providerController.js (Search, Category Filters, Profiles)</span>
+              </div>
+              <div class="controller-pill">
+                /api/bookings
+                <span class="controller-desc">bookingController.js (Create, Reschedule, Cancel, Status)</span>
+              </div>
+              <div class="controller-pill">
+                /api/reviews
+                <span class="controller-desc">reviewController.js (Ratings, Chips, Tips, In-App Chat)</span>
+              </div>
+              <div class="controller-pill" style="grid-column: span 2;">
+                /api/admin
+                <span class="controller-desc">adminController.js (KPI Metrics, Fleet Approvals, Dispute Resolution Credits)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- DB Pooling & Middlewares -->
+          <div class="app-subbox">
+            <div class="subbox-title">
+              <span>Serverless Handlers</span>
+              <span class="subbox-badge">Optimized</span>
+            </div>
+            <div class="pipeline-step">
+              <div>
+                <div class="pipeline-step-name">Cached DB Pool</div>
+                <div class="pipeline-step-desc">`connectToDatabase()` singleton</div>
+              </div>
+            </div>
+            <div class="pipeline-step">
+              <div>
+                <div class="pipeline-step-name">Zero Cold-Start Wait</div>
+                <div class="pipeline-step-desc">Prevents 10s Mongoose timeouts</div>
+              </div>
+            </div>
+            <div class="pipeline-step">
+              <div>
+                <div class="pipeline-step-name">Global Error Boundary</div>
+                <div class="pipeline-step-desc">Standardized JSON 4xx/5xx</div>
+              </div>
+            </div>
+            <div class="pipeline-step">
+              <div>
+                <div class="pipeline-step-name">Audit Logger (Morgan)</div>
+                <div class="pipeline-step-desc">Request method, status & latency</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Connector to Data -->
+      <div class="flow-indicator">
+        <div class="connector-line"></div>
+        <span>Mongoose ODM Schema Validation & Connection Pooling</span>
+        <div class="connector-line"></div>
+      </div>
+
+      <!-- ================= 3. DATA LAYER ================= -->
+      <div class="layer-container">
+        <div class="layer-label">Data Layer & Cloud Infrastructure</div>
+
+        <div class="data-layer-grid">
+
+          <!-- Database Card -->
+          <div class="database-card">
+            <div class="database-header">
+              <div class="database-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                  <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                  <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                </svg>
+                <span>MongoDB Atlas Cloud Database</span>
+              </div>
+              <span class="database-badge">Cluster0 (M0 Sandbox) • 24/7 Cloud</span>
+            </div>
+
+            <div class="collections-grid">
+              <div class="collection-box">
+                <div class="collection-name">users</div>
+                <div class="collection-fields">name, email, password, phone, role, address, avatar</div>
+              </div>
+              <div class="collection-box">
+                <div class="collection-name">providerprofiles</div>
+                <div class="collection-fields">category, hourlyRate, rating, isAvailable, licenseNumber</div>
+              </div>
+              <div class="collection-box">
+                <div class="collection-name">bookings</div>
+                <div class="collection-fields">bookingRef, customer, provider, date, timeSlot, status, pricing</div>
+              </div>
+              <div class="collection-box">
+                <div class="collection-name">chatmessages</div>
+                <div class="collection-fields">booking, sender, recipient, text, quickReply, timestamp</div>
+              </div>
+              <div class="collection-box">
+                <div class="collection-name">reviews</div>
+                <div class="collection-fields">booking, rating (1-5), comment, praiseChips, tipAmount</div>
+              </div>
+              <div class="collection-box">
+                <div class="collection-name">disputes</div>
+                <div class="collection-fields">booking, reason, evidenceUrl, status, resolutionCredit</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cloud Services -->
+          <div class="database-card">
+            <div class="database-header">
+              <div class="database-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2E7D32" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
+                </svg>
+                <span>Cloud Hosting & Distribution</span>
+              </div>
+              <span class="database-badge" style="background: #E0F2FE; color: #0369A1;">Production Cloud</span>
+            </div>
+
+            <div class="cloud-services-list">
+              <div class="cloud-service-row">
+                <div class="cloud-service-left">
+                  <div>
+                    <div class="cloud-service-name">Vercel Serverless Cloud</div>
+                    <div class="cloud-service-url">fixora-mu-tan.vercel.app</div>
+                  </div>
+                </div>
+                <div class="cloud-service-desc">Production REST API (HTTPS SSL)</div>
+              </div>
+
+              <div class="cloud-service-row">
+                <div class="cloud-service-left">
+                  <div>
+                    <div class="cloud-service-name">Expo Application Services (EAS)</div>
+                    <div class="cloud-service-url">@aathi141/fixora</div>
+                  </div>
+                </div>
+                <div class="cloud-service-desc">Cloud Gradle Android APK Build</div>
+              </div>
+
+              <div class="cloud-service-row">
+                <div class="cloud-service-left">
+                  <div>
+                    <div class="cloud-service-name">GitHub Version Control</div>
+                    <div class="cloud-service-url">github.com/Aathi-141/Fixora</div>
+                  </div>
+                </div>
+                <div class="cloud-service-desc">Multi-branch CI/CD Source Code</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right Sidebar Column: Supporting Services -->
+    <div class="sidebar-column">
+      <div class="sidebar-container">
+        <div class="layer-label">Supporting Services</div>
+
+        <!-- Service 1: Camera -->
+        <div class="service-card">
+          <div class="service-card-header">
+            <div class="service-icon">📷</div>
+            <div>
+              <div class="service-title">Camera & Photo Picker</div>
+            </div>
+          </div>
+          <div class="service-package">expo-image-picker</div>
+          <div class="service-desc">Captures user profile avatars, specialist trade license certificates, and customer dispute claim damage evidence.</div>
+        </div>
+
+        <!-- Service 2: Phone & VoIP -->
+        <div class="service-card">
+          <div class="service-card-header">
+            <div class="service-icon">📞</div>
+            <div>
+              <div class="service-title">Native Dialer & VoIP Calling</div>
+            </div>
+          </div>
+          <div class="service-package">Linking.openURL & CallScreen</div>
+          <div class="service-desc">Direct mobile telephone dialer integration with prefilled Sri Lankan numbers (+94) and simulated internet VoIP call interface with live timers.</div>
+        </div>
+
+        <!-- Service 3: Local Storage -->
+        <div class="service-card">
+          <div class="service-card-header">
+            <div class="service-icon">💾</div>
+            <div>
+              <div class="service-title">Local Cache & Persistence</div>
+            </div>
+          </div>
+          <div class="service-package">@react-native-async-storage</div>
+          <div class="service-desc">Persists JWT authentication tokens across app restarts, active bookings offline cache, and customer theme preferences.</div>
+        </div>
+
+        <!-- Service 4: PDF Printing & Sharing -->
+        <div class="service-card">
+          <div class="service-card-header">
+            <div class="service-icon">📄</div>
+            <div>
+              <div class="service-title">PDF Invoicing & Sharing</div>
+            </div>
+          </div>
+          <div class="service-package">expo-print & expo-sharing</div>
+          <div class="service-desc">Generates formatted, printable tax payment receipts with booking references, itemized parts, labor fees, and VAT calculations in LKR.</div>
+        </div>
+
+        <!-- Admin Console Callout Box (Matching Friend's Admin Panel in bottom-right) -->
+        <div class="admin-panel-callout">
+          <div class="admin-panel-title">
+            <span>🛡️ Fixora Admin Operations</span>
+          </div>
+          <div class="admin-panel-desc">
+            Integrated role-tailored console providing administrative platform governance, real-time KPI metrics, and dispute auditing.
+          </div>
+          <div class="admin-panel-tags">
+            <span class="admin-tag">User Audit</span>
+            <span class="admin-tag">Fleet Verification</span>
+            <span class="admin-tag">Dispute Resolution</span>
+            <span class="admin-tag">Wallet Credits</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

@@ -203,6 +203,12 @@ erDiagram
     }
 ```
 
+### 5.3 System Architecture Diagram
+
+The high-level system architecture of Fixora is illustrated below, mapping the Presentation Layer, Application Layer, Data Layer, and Supporting Native Device Integrations.
+
+![5.3. Architecture Diagram](Fixora_Architecture_Diagram.png)
+
 ---
 
 ## 6. Implementation Details & Fidelity Evaluation
