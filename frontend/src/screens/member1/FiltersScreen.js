@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
   },
   clearBtnText: {
     fontSize: 14,
-    color: '#DC2626',
+    color: '#B91C1C',
     fontWeight: '600',
   },
   scrollContent: {
